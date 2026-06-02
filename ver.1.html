@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>演奏者健康動作評估系統</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js CDN for interactive charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- MediaPipe Pose for CVA detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside>
+    <div class="brand">
+      <div class="brand-icon">
+        <i data-lucide="activity"></i>
+      </div>
+      <div class="brand-name">
+        演奏者健康<br>動作評估系統
+      </div>
+    </div>
+    
+    <ul class="nav-links">
+      <li>
+        <a id="nav-dashboard" class="nav-item active" onclick="switchSection('dashboard')">
+          <i data-lucide="layout-dashboard"></i>
+          <span>儀表板總覽</span>
+        </a>
+      </li>
+      <li>
+        <a id="nav-profile" class="nav-item" onclick="switchSection('profile')">
+          <i data-lucide="user-cog"></i>
+          <span>個資填寫</span>
+        </a>
+      </li>
+      <li>
+        <a id="nav-playing" class="nav-item" onclick="switchSection('playing')">
+          <i data-lucide="music"></i>
+          <span>演奏動作評估</span>
+        </a>
+      </li>
+      <li>
+        <a id="nav-static" class="nav-item" onclick="switchSection('static')">
+          <i data-lucide="body"></i>
+          <span>靜態動作評估</span>
+        </a>
+      </li>
+      <li>
+        <a id="nav-history" class="nav-item" onclick="switchSection('history')">
+          <i data-lucide="history"></i>
+          <span>使用者歷史紀錄</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="nav-footer">
+      <p>演奏者健康動作評估系統</p>
+      <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.7;">Version 1.0.0</p>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main>
+    
+    <!-- 1. DASHBOARD SECTION -->
+    <section id="section-dashboard" class="active">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>儀表板總覽</h1>
+          <p>歡迎使用演奏者動作評估系統，追蹤並改善演奏姿態與健康</p>
+        </div>
+        <div class="user-badge">
+          <div class="user-badge-avatar" id="header-avatar">?</div>
+          <span id="header-username">訪客</span>
+        </div>
+      </div>
+
+      <!-- Welcome Banner Card -->
+      <div class="card hero-card">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h2>開始您的健康動作評估</h2>
+            <p>本系統可記錄您在演奏前、中、後的身體姿態，或是診斷常見的靜態動作（如高低肩、頭部前傾與抬手姿勢）。請先填寫基本個資，隨後點選左側評估功能開始檢測。</p>
+          </div>
+          <button class="btn btn-primary" onclick="switchSection('profile')">
+            <i data-lucide="edit-3"></i> 填寫基本資料
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stat-grid">
+        <div class="card stat-card">
+          <div class="stat-num" id="stat-total-count">0</div>
+          <div class="stat-label">總評估次數</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-num" id="stat-last-score">--</div>
+          <div class="stat-label">最近評估得分</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-num" id="stat-instrument" style="font-size: 1.5rem; line-height: 2.2rem;">無</div>
+          <div class="stat-label">演奏樂器</div>
+        </div>
+      </div>
+
+      <!-- Dashboard Layout: Recent Trend & Recommendations -->
+      <div class="grid-main-side">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="trending-up"></i> 歷史評估趨勢
+            </div>
+          </div>
+          <div class="chart-container-large">
+            <canvas id="dashboardTrendChart"></canvas>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="heart-pulse"></i> 健康建議提示
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1rem;" id="dashboard-tips">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; padding: 2rem 0;">
+              暫無足夠的評估紀錄。請至少完成一次動作評估以獲得個人化的健康改善建議。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PERSONAL INFO SECTION -->
+    <section id="section-profile">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>個資填寫</h1>
+          <p>請輸入演奏者的基本資料，以便系統建立專屬的姿勢評估報告</p>
+        </div>
+      </div>
+
+      <div style="max-width: 600px; margin: 0 auto; width: 100%;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="user"></i> 演奏者基本資料表單
+            </div>
+          </div>
+          <form id="profile-form" onsubmit="saveProfile(event)">
+            <div class="form-group">
+              <label for="username">姓名 / 代號</label>
+              <input type="text" id="username" class="form-control" placeholder="請輸入姓名" required>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="gender">性別</label>
+                <select id="gender" class="form-control" required>
+                  <option value="" disabled selected>請選擇性別</option>
+                  <option value="男">男</option>
+                  <option value="女">女</option>
+                  <option value="其他">其他 / 不便透露</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="age">年齡</label>
+                <input type="number" id="age" class="form-control" placeholder="請輸入年齡" min="1" max="120" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="height">身高 (cm)</label>
+                <input type="number" id="height" class="form-control" placeholder="請輸入身高" min="50" max="250" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="instrument">演奏樂器</label>
+                <select id="instrument" class="form-control" required>
+                  <option value="" disabled selected>請選擇樂器</option>
+                  <option value="小提琴">小提琴 (Violin)</option>
+                  <option value="大提琴">大提琴 (Cello)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+              <button type="button" class="btn btn-outline" onclick="resetProfileForm()">重設</button>
+              <button type="submit" class="btn btn-primary">
+                <i data-lucide="check"></i> 儲存並開始評估
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PLAYING ASSESSMENT SECTION -->
+    <section id="section-playing">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>演奏動作評估</h1>
+          <p>記錄三個不同演奏狀態下的關節點位數值，生成當次姿態評估儀表板</p>
+        </div>
+        <div class="user-badge">
+          <div class="user-badge-avatar" id="playing-avatar">?</div>
+          <span id="playing-username">訪客</span>
+        </div>
+      </div>
+
+      <div class="grid-main-side">
+        <!-- Left: Simulator Video Frame -->
+        <div class="capture-container">
+          <div class="card" style="padding: 1rem;">
+            <div class="video-screen">
+              <canvas id="playingCanvas"></canvas>
+              <div class="video-overlay">
+                <div class="video-overlay-dot"></div>
+                <span>POSE ESTIMATOR SIMULATOR</span>
+              </div>
+              <div class="video-hud">
+                <div class="hud-metrics" id="playing-hud-text">
+                  STATUS: WAITING FOR CAPTURE<br>
+                  KEYPOINTS: 0 ACTIVE
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Capture Steps Controller -->
+          <div class="capture-steps">
+            <div class="step-card" id="step-relax" onclick="selectStep('relax')">
+              <div class="step-icon"><i data-lucide="wind"></i></div>
+              <strong style="font-size: 0.9rem;">1. 演奏前放鬆姿勢</strong>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-relax">未錄製</span>
+              <div class="cva-step-controls" onclick="event.stopPropagation()">
+                <button class="btn btn-outline btn-interactive cva-btn-start" id="cva-btn-relax"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
+                  onclick="startCvaRecording('relax', event)">
+                  <i data-lucide="video"></i> 開始偵測
+                </button>
+                <button class="btn btn-primary cva-btn-stop" id="cva-stop-relax"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
+                  onclick="stopCvaRecording('relax', event)">
+                  <i data-lucide="square"></i> 停止錄製
+                </button>
+                <div class="cva-live-badge" id="cva-live-relax" style="display:none;">
+                  <span class="cva-live-dot"></span>
+                  <span id="cva-angle-relax">-- °</span>
+                  <span id="cva-frames-relax" style="font-size:0.7rem; opacity:0.7;">0 幀</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-card" id="step-prepare" onclick="selectStep('prepare')">
+              <div class="step-icon"><i data-lucide="user-check"></i></div>
+              <strong style="font-size: 0.9rem;">2. 準備演奏的姿勢</strong>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-prepare">未錄製</span>
+              <div class="cva-step-controls" onclick="event.stopPropagation()">
+                <button class="btn btn-outline btn-interactive cva-btn-start" id="cva-btn-prepare"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
+                  onclick="startCvaRecording('prepare', event)">
+                  <i data-lucide="video"></i> 開始偵測
+                </button>
+                <button class="btn btn-primary cva-btn-stop" id="cva-stop-prepare"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
+                  onclick="stopCvaRecording('prepare', event)">
+                  <i data-lucide="square"></i> 停止錄製
+                </button>
+                <div class="cva-live-badge" id="cva-live-prepare" style="display:none;">
+                  <span class="cva-live-dot"></span>
+                  <span id="cva-angle-prepare">-- °</span>
+                  <span id="cva-frames-prepare" style="font-size:0.7rem; opacity:0.7;">0 幀</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-card" id="step-playing" onclick="selectStep('playing')">
+              <div class="step-icon"><i data-lucide="music-4"></i></div>
+              <strong style="font-size: 0.9rem;">3. 演奏中的動作</strong>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-playing">未錄製</span>
+              <div class="cva-step-controls" onclick="event.stopPropagation()">
+                <button class="btn btn-outline btn-interactive cva-btn-start" id="cva-btn-playing"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
+                  onclick="startCvaRecording('playing', event)">
+                  <i data-lucide="video"></i> 開始偵測
+                </button>
+                <button class="btn btn-primary cva-btn-stop" id="cva-stop-playing"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
+                  onclick="stopCvaRecording('playing', event)">
+                  <i data-lucide="square"></i> 停止錄製
+                </button>
+                <div class="cva-live-badge" id="cva-live-playing" style="display:none;">
+                  <span class="cva-live-dot"></span>
+                  <span id="cva-angle-playing">-- °</span>
+                  <span id="cva-frames-playing" style="font-size:0.7rem; opacity:0.7;">0 幀</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Webcam panel for CVA detection (shared, shown when any stage is recording) -->
+          <div id="cva-webcam-panel" style="display:none; margin-top: 0.75rem;">
+            <div class="card" style="padding: 0.75rem; position:relative;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                <span style="font-size:0.8rem; font-weight:600; color:var(--color-danger); display:flex; align-items:center; gap:0.4rem;">
+                  <span class="cva-live-dot"></span> CVA 即時偵測中
+                  <span id="cva-current-stage-label" style="color:var(--text-secondary);"></span>
+                </span>
+                <span style="font-size:0.75rem; color:var(--text-secondary);">標準 CVA &gt; 50° 為正常</span>
+              </div>
+              <div style="position:relative; border-radius: 8px; overflow:hidden; background:#1a1a1a;">
+                <video id="cva-video" style="width:100%; display:block; transform:scaleX(-1);" autoplay playsinline muted></video>
+                <canvas id="cva-overlay-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
+                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-family:monospace;" id="cva-live-overlay-angle">CVA: --°</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Current Info or Status -->
+        <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; text-align: center;" id="playing-waiting-panel">
+          <i data-lucide="camera" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 1rem; width: 64px; height: 64px;"></i>
+          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">等待資料錄製</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 250px; margin: 0 auto 1.5rem auto;">請依序點選左側三個狀態的「點擊擷取」按鈕，完成後系統將為您生成姿勢分析儀表板。</p>
+          <button class="btn btn-outline" onclick="loadSampleData('playing')">
+            <i data-lucide="sparkles"></i> 載入模擬示範數據
+          </button>
+        </div>
+
+        <!-- Right: Dashboard of results (hidden initially) -->
+        <div class="card" style="display: none;" id="playing-results-panel">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="line-chart"></i> 評估結果分析
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Health Score Ring -->
+            <div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center;">
+              <div class="score-badge-large optimal" id="playing-score-badge">
+                <span class="score-value" id="playing-score-val">92</span>
+                <span class="score-label">健康度評分</span>
+              </div>
+              <div style="text-align: left;">
+                <h3 id="playing-rating-text" style="color: var(--text-primary);">姿態表現：優良</h3>
+                <p id="playing-result-desc" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 200px; margin-top: 0.25rem;">您的整體肩頸、手肘角度皆符合健康工學範圍，請繼續保持。</p>
+              </div>
+            </div>
+
+            <!-- Joint detail list -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem;">關鍵關節點位數值 (演奏中狀態)</h4>
+              
+              <div class="metric-row">
+                <div class="metric-info">
+                  <span class="metric-name">頸椎前傾角度</span>
+                  <span class="metric-value" id="val-neck">12° (標準 < 15°)</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="bar-neck" style="width: 85%"></div>
+                </div>
+              </div>
+
+              <div class="metric-row">
+                <div class="metric-info">
+                  <span class="metric-name">雙肩傾斜度</span>
+                  <span class="metric-value" id="val-shoulder-tilt">2.5° (標準 < 5°)</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="bar-shoulder-tilt" style="width: 90%"></div>
+                </div>
+              </div>
+
+              <div class="metric-row">
+                <div class="metric-info">
+                  <span class="metric-name">左右肩對稱程度 (Shoulder Symmetry)</span>
+                  <span class="metric-value" id="val-shoulder-sym">98% (標準 > 90%)</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="bar-shoulder-sym" style="width: 98%"></div>
+                </div>
+              </div>
+
+              <div class="metric-row">
+                <div class="metric-info">
+                  <span class="metric-name">左手肘夾角</span>
+                  <span class="metric-value" id="val-left-elbow">85°</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="bar-left-elbow" style="width: 75%"></div>
+                </div>
+              </div>
+
+              <div class="metric-row">
+                <div class="metric-info">
+                  <span class="metric-name">右手肘夾角</span>
+                  <span class="metric-value" id="val-right-elbow">95°</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="bar-right-elbow" style="width: 80%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Abnormal Postures Placeholder -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;" id="playing-anomalies-section">
+              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--color-danger);"></i>
+                動態動作異常姿勢分析 (預留辨識插槽)
+              </h4>
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;" id="playing-anomalies-list">
+                <!-- Populated dynamically by app.js -->
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="btn btn-outline" onclick="resetPlayingCapture()">重新錄製</button>
+              <button class="btn btn-primary" onclick="savePlayingRecord()">
+                <i data-lucide="save"></i> 儲存此評估
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail analysis dashboard section (Full width charts, shown when results exist) -->
+      <div class="grid-2" id="playing-charts-grid" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="trending-up"></i> 三狀態關節夾角折線圖
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="playingRadarChart"></canvas>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 0.5rem;">
+            折線圖顯示三個不同動作姿態（放鬆、準備、演奏）在頸椎、雙肩、雙肘及手腕的關節夾角變化趨勢。
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="activity"></i> 左右肩部對稱折線圖 (Shoulder Symmetry)
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="playingSymmetryChart"></canvas>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 0.5rem;">
+            對比三個狀態下左右肩膀水平線高度差與受力對稱百分比（100% 代表完全對稱與平衡）。
+          </p>
+        </div>
+
+        <!-- CVA Chart: full-width spanning 2 cols -->
+        <div class="card" style="grid-column: 1 / -1;" id="cva-chart-card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="scan-face"></i> CVA 頭部前傾角度 — 逐幀折線圖（三階段）
+            </div>
+            <div style="display:flex; gap:1rem; font-size:0.8rem; align-items:center;">
+              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:3px;background:#A1B0AD;display:inline-block;border-radius:2px;"></span>放鬆</span>
+              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:3px;background:#8D6B61;display:inline-block;border-radius:2px;"></span>準備</span>
+              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:3px;background:#C39289;display:inline-block;border-radius:2px;"></span>演奏中</span>
+              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:2px;background:rgba(195,146,137,0.5);display:inline-block;border-radius:2px;border-top: 2px dashed #C39289;"></span>警戒線 60°</span>
+            </div>
+          </div>
+          <div id="cva-chart-container" style="height: 240px; position:relative;">
+            <canvas id="cvaTrendChart"></canvas>
+          </div>
+          <div id="cva-stats-row" style="display:flex; gap:1.5rem; margin-top:0.75rem; flex-wrap:wrap;">
+            <!-- populated by JS -->
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top:0.5rem;">
+            CVA（頸椎角，Craniovertebral Angle）為耳朵與肩膀水平夾角，角度越小代表頭部越前傾。標準值 &gt; 50°，&lt; 60° 時以紅色色帶標示警戒區間。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. STATIC ASSESSMENT SECTION -->
+    <section id="section-static">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>靜態動作評估</h1>
+          <p>進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點</p>
+        </div>
+        <div class="user-badge">
+          <div class="user-badge-avatar" id="static-avatar">?</div>
+          <span id="static-username">訪客</span>
+        </div>
+      </div>
+
+      <!-- Selection of Diagnostics -->
+      <div>
+        <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.75rem;">1. 選擇檢測診斷項目</h3>
+        <div class="diag-selector-grid">
+          <div class="diag-option active" id="diag-uneven-shoulders" onclick="selectDiag('uneven-shoulders')">
+            <div class="diag-option-title">高低肩檢測</div>
+            <div class="diag-option-desc">診斷左右肩膀水平線之高度偏差，檢視脊椎側彎或肌肉不平衡風險。</div>
+          </div>
+          <div class="diag-option" id="diag-forward-head" onclick="selectDiag('forward-head')">
+            <div class="diag-option-title">頭部前傾檢測</div>
+            <div class="diag-option-desc">檢測頸椎與耳垂之鉛垂夾角，判斷是否有俗稱「烏龜頸」的長頸族體態。</div>
+          </div>
+          <div class="diag-option" id="diag-arm-raise" onclick="selectDiag('arm-raise')">
+            <div class="diag-option-title">抬手檢測</div>
+            <div class="diag-option-desc">檢測雙手高舉過頭時，肩膀與手臂的伸展夾角與關節活動度，評估五十肩風險。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-main-side">
+        <!-- Camera Simulator frame -->
+        <div class="capture-container">
+          <div class="card" style="padding: 1rem;">
+            <div class="video-screen">
+              <canvas id="staticCanvas"></canvas>
+              <div class="video-overlay">
+                <div class="video-overlay-dot"></div>
+                <span id="static-overlay-title">高低肩檢測模擬中</span>
+              </div>
+              <div class="video-hud">
+                <div class="hud-metrics" id="static-hud-text">
+                  STATUS: WAITING TO DIAGNOSE<br>
+                  DIAGNOSTIC: UNEVEN SHOULDERS
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+              <button class="btn btn-primary" style="flex: 1;" id="btn-start-static" onclick="startStaticDiagnosis()">
+                <i data-lucide="play"></i> 開始診斷
+              </button>
+              <button class="btn btn-outline" id="btn-reset-static" onclick="resetStaticDiagnosis()" disabled>
+                重新診斷
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Diagnostic Output Dashboard -->
+        <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; text-align: center;" id="static-waiting-panel">
+          <i data-lucide="scan-face" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 1rem; width: 64px; height: 64px;"></i>
+          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">等待診斷分析</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 250px; margin: 0 auto 1.5rem auto;">請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。</p>
+          <button class="btn btn-outline" onclick="loadSampleData('static')">
+            <i data-lucide="sparkles"></i> 載入模擬示範數據
+          </button>
+        </div>
+
+        <!-- Right: Diagnostic Dashboard of results (hidden initially) -->
+        <div class="card" style="display: none;" id="static-results-panel">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="clipboard-check"></i> 診斷結果報告
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Health Score Ring -->
+            <div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center;">
+              <div class="score-badge-large" id="static-score-badge">
+                <span class="score-value" id="static-score-val">90</span>
+                <span class="score-label" id="static-score-label">對稱分數</span>
+              </div>
+              <div style="text-align: left;">
+                <h3 id="static-rating-text" style="color: var(--text-primary);">評定：正常</h3>
+                <p id="static-result-desc" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 200px; margin-top: 0.25rem;">您的肩膀高度對稱，未發現明顯傾斜，請保持良好坐姿與站姿。</p>
+              </div>
+            </div>
+
+            <!-- Diagnostic Details -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem;" id="static-details-title">檢測指標數值</h4>
+              
+              <div class="metric-row" id="static-metric-row-1">
+                <div class="metric-info">
+                  <span class="metric-name" id="static-m1-name">雙肩水平高度差</span>
+                  <span class="metric-value" id="static-m1-val">0.3 cm (偏差 < 1.0 cm)</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="static-m1-bar" style="width: 95%"></div>
+                </div>
+              </div>
+
+              <div class="metric-row" id="static-metric-row-2">
+                <div class="metric-info">
+                  <span class="metric-name" id="static-m2-name">左右肩關節角度</span>
+                  <span class="metric-value" id="static-m2-val">左右對稱良好</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar-fill success" id="static-m2-bar" style="width: 98%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Therapeutic Advice -->
+            <div style="background-color: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 1rem; border-left: 4px solid var(--color-interactive);">
+              <h4 style="font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.25rem;">
+                <i data-lucide="info" style="width: 16px; height: 16px;"></i> 物理治療建議
+              </h4>
+              <p id="static-advice-text" style="font-size: 0.8rem; color: var(--text-dark); margin-top: 0.25rem; line-height: 1.4;">
+                日常練習前可進行 5 分鐘肩頸拉伸，拉伸斜方肌。演奏小提琴每 45 分鐘建議休息 10 分鐘，並做水平轉頭動作放鬆頸部。
+              </p>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="btn btn-primary" onclick="saveStaticRecord()">
+                <i data-lucide="save"></i> 儲存此檢測
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. HISTORY SECTION -->
+    <section id="section-history">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>使用者歷史紀錄</h1>
+          <p>查閱、篩選過往錄製的演奏姿態數據與靜態動作診斷紀錄</p>
+        </div>
+      </div>
+
+      <!-- Filters panel -->
+      <div class="card" style="padding: 1.25rem;">
+        <div class="filter-bar">
+          <div class="form-group filter-search" style="margin-bottom: 0;">
+            <label for="search-name" style="margin-bottom: 0.25rem;">搜尋演奏者</label>
+            <input type="text" id="search-name" class="form-control" placeholder="輸入姓名或關鍵字" oninput="filterHistory()">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+            <label for="filter-instrument" style="margin-bottom: 0.25rem;">依樂器篩選</label>
+            <select id="filter-instrument" class="form-control" onchange="filterHistory()">
+              <option value="All">全部樂器</option>
+              <option value="小提琴">小提琴</option>
+              <option value="大提琴">大提琴</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+            <label for="filter-type" style="margin-bottom: 0.25rem;">依檢測類型</label>
+            <select id="filter-type" class="form-control" onchange="filterHistory()">
+              <option value="All">全部類型</option>
+              <option value="playing">演奏評估</option>
+              <option value="static">靜態評估</option>
+            </select>
+          </div>
+
+          <div style="margin-top: 1.2rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-outline" onclick="exportHistoryData()">
+              <i data-lucide="download"></i> 匯出資料
+            </button>
+            <button class="btn btn-outline" style="position: relative;">
+              <i data-lucide="upload"></i> 匯入
+              <input type="file" id="import-file" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="importHistoryData(event)">
+            </button>
+            <button class="btn btn-outline" style="color: var(--color-danger); border-color: var(--color-danger);" onclick="clearAllHistory()">
+              <i data-lucide="trash-2"></i> 清空
+            </button>
+            <button class="btn btn-primary" id="btn-compare-records" onclick="showComparisonModal()" style="display: none; background-color: var(--color-interactive);">
+              <i data-lucide="git-compare"></i> 比較所選紀錄 (<span id="selected-count">0</span>)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Table Card -->
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">
+                  <input type="checkbox" id="check-all-records" onchange="toggleSelectAll(this)" style="width: 16px; height: 16px; cursor: pointer;">
+                </th>
+                <th>評估時間</th>
+                <th>姓名 / 代號</th>
+                <th>樂器</th>
+                <th>評估類型</th>
+                <th>評估項目 / 得分</th>
+                <th>健康等級</th>
+                <th>操作項目</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+                  <i data-lucide="inbox" style="width: 48px; height: 48px; margin: 0 auto 0.5rem auto; opacity: 0.5; display: block;"></i>
+                  目前無歷史評估紀錄，請開始填寫基本資料並進行評估！
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Detailed Record Modal (For viewing historic dashboards) -->
+  <div id="detail-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(58, 53, 51, 0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="card" style="width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; background-color: var(--bg-primary); padding: 2rem; position: relative; border-radius: var(--border-radius-lg);">
+      <button class="btn btn-outline" style="position: absolute; top: 1.5rem; right: 1.5rem; padding: 0.5rem; border-radius: 50%;" onclick="closeDetailModal()">
+        <i data-lucide="x"></i>
+      </button>
+      
+      <div id="modal-content">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>
