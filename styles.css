@@ -884,3 +884,56 @@ tr:hover td {
   border-color: var(--color-success);
   color: var(--color-success);
 }
+
+/* ── Sidebar lang toggle & logout ─────────────────────────────── */
+.lang-toggle-bar-side {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  justify-content: center;
+}
+
+.lang-btn-side {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.lang-btn-side.active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.btn-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.75rem;
+}
+
+.btn-logout:hover {
+  background: rgba(195,146,137,0.1);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-logout i { width: 14px; height: 14px; }

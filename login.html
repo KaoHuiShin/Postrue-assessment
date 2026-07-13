@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" id="html-root">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="page_title">演奏者健康動作評估系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+  <!-- Language Toggle (top-right) -->
+  <div class="lang-toggle-bar">
+    <button class="lang-btn active" id="lang-zh" onclick="setLang('zh')">中文</button>
+    <span class="lang-divider">|</span>
+    <button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button>
+  </div>
+
+  <div class="login-page">
+    <!-- Left panel: branding -->
+    <div class="login-brand-panel">
+      <div class="brand-content">
+        <div class="brand-logo">
+          <i data-lucide="activity"></i>
+        </div>
+        <h1 class="brand-title" data-i18n="brand_title">演奏者健康<br>動作評估系統</h1>
+        <p class="brand-subtitle" data-i18n="brand_subtitle">追蹤並改善演奏姿態與肌肉骨骼健康</p>
+        <div class="brand-features">
+          <div class="brand-feature">
+            <i data-lucide="scan-face"></i>
+            <span data-i18n="feature_cva">CVA 頭部前傾即時偵測</span>
+          </div>
+          <div class="brand-feature">
+            <i data-lucide="activity"></i>
+            <span data-i18n="feature_posture">三階段演奏姿態評估</span>
+          </div>
+          <div class="brand-feature">
+            <i data-lucide="history"></i>
+            <span data-i18n="feature_history">個人化歷史紀錄追蹤</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel: auth form -->
+    <div class="login-form-panel">
+      <div class="login-card">
+
+        <!-- Tab switcher -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" data-i18n="tab_login">登入</button>
+          <button class="auth-tab" id="tab-register" onclick="switchTab('register')" data-i18n="tab_register">註冊</button>
+        </div>
+
+        <!-- ── LOGIN FORM ───────────────────────────────── -->
+        <div id="form-login" class="auth-form active">
+          <p class="form-desc" data-i18n="login_desc">請登入您的帳號以繼續使用評估系統</p>
+
+          <div class="form-group">
+            <label data-i18n="label_email">電子信箱</label>
+            <div class="input-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="login-email" placeholder="example@email.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label data-i18n="label_password">密碼</label>
+            <div class="input-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+              <button class="toggle-pw" onclick="togglePassword('login-password', this)" tabindex="-1">
+                <i data-lucide="eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-forgot">
+            <button class="link-btn" onclick="switchTab('forgot')" data-i18n="forgot_link">忘記密碼？</button>
+          </div>
+
+          <button class="btn-auth" onclick="handleLogin()" id="btn-login">
+            <i data-lucide="log-in"></i>
+            <span data-i18n="btn_login">登入</span>
+          </button>
+
+          <p class="form-switch">
+            <span data-i18n="no_account">還沒有帳號？</span>
+            <button class="link-btn" onclick="switchTab('register')" data-i18n="go_register">立即註冊</button>
+          </p>
+        </div>
+
+        <!-- ── REGISTER FORM ─────────────────────────────── -->
+        <div id="form-register" class="auth-form">
+          <p class="form-desc" data-i18n="register_desc">建立您的個人帳號，開始追蹤演奏健康</p>
+
+          <div class="form-group">
+            <label data-i18n="label_name">姓名 / 代號</label>
+            <div class="input-wrapper">
+              <i data-lucide="user"></i>
+              <input type="text" id="reg-name" data-i18n-placeholder="placeholder_name" placeholder="請輸入姓名或代號" autocomplete="name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label data-i18n="label_email">電子信箱</label>
+            <div class="input-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="reg-email" placeholder="example@email.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label data-i18n="label_password">密碼</label>
+            <div class="input-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="reg-password" data-i18n-placeholder="placeholder_pw" placeholder="至少 8 個字元" autocomplete="new-password">
+              <button class="toggle-pw" onclick="togglePassword('reg-password', this)" tabindex="-1">
+                <i data-lucide="eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label data-i18n="label_confirm_pw">確認密碼</label>
+            <div class="input-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="reg-confirm" data-i18n-placeholder="placeholder_confirm_pw" placeholder="再次輸入密碼" autocomplete="new-password">
+              <button class="toggle-pw" onclick="togglePassword('reg-confirm', this)" tabindex="-1">
+                <i data-lucide="eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-auth" onclick="handleRegister()" id="btn-register">
+            <i data-lucide="user-plus"></i>
+            <span data-i18n="btn_register">建立帳號</span>
+          </button>
+
+          <p class="form-switch">
+            <span data-i18n="have_account">已有帳號？</span>
+            <button class="link-btn" onclick="switchTab('login')" data-i18n="go_login">前往登入</button>
+          </p>
+        </div>
+
+        <!-- ── FORGOT PASSWORD FORM ──────────────────────── -->
+        <div id="form-forgot" class="auth-form">
+          <p class="form-desc" data-i18n="forgot_desc">輸入您的電子信箱，我們將寄送密碼重設連結</p>
+
+          <div class="form-group">
+            <label data-i18n="label_email">電子信箱</label>
+            <div class="input-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="forgot-email" placeholder="example@email.com" autocomplete="email">
+            </div>
+          </div>
+
+          <button class="btn-auth" onclick="handleForgotPassword()" id="btn-forgot">
+            <i data-lucide="send"></i>
+            <span data-i18n="btn_send_reset">寄送重設連結</span>
+          </button>
+
+          <!-- Success message (hidden by default) -->
+          <div id="forgot-success" class="success-msg" style="display:none;">
+            <i data-lucide="check-circle"></i>
+            <span data-i18n="forgot_sent">重設連結已寄出，請檢查您的信箱。</span>
+          </div>
+
+          <p class="form-switch">
+            <button class="link-btn" onclick="switchTab('login')">
+              <i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:middle;"></i>
+              <span data-i18n="back_to_login">返回登入</span>
+            </button>
+          </p>
+        </div>
+
+        <!-- Error message area -->
+        <div id="auth-error" class="error-msg" style="display:none;"></div>
+
+        <!-- Version -->
+        <p class="version-label">Version 1.0.0</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ── i18n strings ─────────────────────────────────────────────────
+const i18n = {
+  zh: {
+    page_title: '演奏者健康動作評估系統',
+    brand_title: '演奏者健康<br>動作評估系統',
+    brand_subtitle: '追蹤並改善演奏姿態與肌肉骨骼健康',
+    feature_cva: 'CVA 頭部前傾即時偵測',
+    feature_posture: '三階段演奏姿態評估',
+    feature_history: '個人化歷史紀錄追蹤',
+    tab_login: '登入',
+    tab_register: '註冊',
+    login_desc: '請登入您的帳號以繼續使用評估系統',
+    register_desc: '建立您的個人帳號，開始追蹤演奏健康',
+    forgot_desc: '輸入您的電子信箱，我們將寄送密碼重設連結',
+    label_email: '電子信箱',
+    label_password: '密碼',
+    label_name: '姓名 / 代號',
+    label_confirm_pw: '確認密碼',
+    placeholder_name: '請輸入姓名或代號',
+    placeholder_pw: '至少 8 個字元',
+    placeholder_confirm_pw: '再次輸入密碼',
+    forgot_link: '忘記密碼？',
+    btn_login: '登入',
+    btn_register: '建立帳號',
+    btn_send_reset: '寄送重設連結',
+    no_account: '還沒有帳號？',
+    go_register: '立即註冊',
+    have_account: '已有帳號？',
+    go_login: '前往登入',
+    back_to_login: '返回登入',
+    forgot_sent: '重設連結已寄出，請檢查您的信箱。',
+    err_fill_all: '請填寫所有欄位。',
+    err_pw_short: '密碼至少需要 8 個字元。',
+    err_pw_mismatch: '兩次輸入的密碼不一致。',
+    err_invalid_email: '請輸入有效的電子信箱。',
+    err_login_fail: '帳號或密碼錯誤，請再試一次。',
+    err_email_exists: '此信箱已被註冊，請直接登入。',
+    err_forgot_fill: '請輸入您的電子信箱。',
+  },
+  en: {
+    page_title: 'Performer Health Movement Assessment System',
+    brand_title: 'Performer Health<br>Assessment System',
+    brand_subtitle: 'Track and improve playing posture and musculoskeletal health',
+    feature_cva: 'Real-time CVA Forward Head Detection',
+    feature_posture: 'Three-Stage Playing Posture Assessment',
+    feature_history: 'Personalised History Tracking',
+    tab_login: 'Login',
+    tab_register: 'Register',
+    login_desc: 'Sign in to your account to continue using the assessment system',
+    register_desc: 'Create your personal account and start tracking your playing health',
+    forgot_desc: 'Enter your email address and we will send you a password reset link',
+    label_email: 'Email Address',
+    label_password: 'Password',
+    label_name: 'Name / ID',
+    label_confirm_pw: 'Confirm Password',
+    placeholder_name: 'Enter your name or ID',
+    placeholder_pw: 'At least 8 characters',
+    placeholder_confirm_pw: 'Re-enter password',
+    forgot_link: 'Forgot password?',
+    btn_login: 'Sign In',
+    btn_register: 'Create Account',
+    btn_send_reset: 'Send Reset Link',
+    no_account: "Don't have an account?",
+    go_register: 'Register now',
+    have_account: 'Already have an account?',
+    go_login: 'Sign in',
+    back_to_login: 'Back to login',
+    forgot_sent: 'Reset link sent. Please check your inbox.',
+    err_fill_all: 'Please fill in all fields.',
+    err_pw_short: 'Password must be at least 8 characters.',
+    err_pw_mismatch: 'Passwords do not match.',
+    err_invalid_email: 'Please enter a valid email address.',
+    err_login_fail: 'Incorrect email or password. Please try again.',
+    err_email_exists: 'This email is already registered. Please sign in.',
+    err_forgot_fill: 'Please enter your email address.',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'zh';
+
+function t(key) {
+  return i18n[currentLang][key] || key;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+
+  document.getElementById('html-root').lang = lang === 'zh' ? 'zh-Hant' : 'en';
+  document.getElementById('lang-zh').classList.toggle('active', lang === 'zh');
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang][key] !== undefined) {
+      el.innerHTML = i18n[lang][key];
+    }
+  });
+
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (i18n[lang][key]) el.placeholder = i18n[lang][key];
+  });
+
+  document.title = t('page_title');
+  hideError();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+
+  document.getElementById(`form-${tab}`).classList.add('active');
+  if (tab === 'login' || tab === 'register') {
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  }
+  hideError();
+  document.getElementById('forgot-success').style.display = 'none';
+}
+
+// ── Password visibility toggle ────────────────────────────────────
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.innerHTML = isHidden
+    ? '<i data-lucide="eye-off"></i>'
+    : '<i data-lucide="eye"></i>';
+  lucide.createIcons();
+}
+
+// ── Error / loading helpers ───────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'flex';
+}
+
+function hideError() {
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.style.opacity = loading ? '0.7' : '1';
+}
+
+// ── Validation helpers ────────────────────────────────────────────
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// ── AUTH HANDLERS ─────────────────────────────────────────────────
+// These functions are designed to be easily replaced with Firebase calls later.
+// Currently implements mock login for UI testing.
+
+async function handleLogin() {
+  hideError();
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!email || !password) { showError(t('err_fill_all')); return; }
+  if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
+
+  setLoading('btn-login', true);
+
+  try {
+    // ── FIREBASE PLACEHOLDER ──────────────────────────────────────
+    // Replace the mock below with:
+    // await firebase.auth().signInWithEmailAndPassword(email, password);
+    // window.location.href = 'index.html';
+    // ─────────────────────────────────────────────────────────────
+    await mockDelay(800);
+    // Mock: any email/password works for now
+    localStorage.setItem('mock_user', JSON.stringify({ email, name: email.split('@')[0] }));
+    localStorage.setItem('lang', currentLang);
+    window.location.href = 'index.html';
+
+  } catch (err) {
+    showError(t('err_login_fail'));
+  } finally {
+    setLoading('btn-login', false);
+  }
+}
+
+async function handleRegister() {
+  hideError();
+  const name     = document.getElementById('reg-name').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm  = document.getElementById('reg-confirm').value;
+
+  if (!name || !email || !password || !confirm) { showError(t('err_fill_all')); return; }
+  if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
+  if (password.length < 8) { showError(t('err_pw_short')); return; }
+  if (password !== confirm) { showError(t('err_pw_mismatch')); return; }
+
+  setLoading('btn-register', true);
+
+  try {
+    // ── FIREBASE PLACEHOLDER ──────────────────────────────────────
+    // Replace the mock below with:
+    // const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    // await cred.user.updateProfile({ displayName: name });
+    // window.location.href = 'index.html';
+    // ─────────────────────────────────────────────────────────────
+    await mockDelay(800);
+    localStorage.setItem('mock_user', JSON.stringify({ email, name }));
+    localStorage.setItem('lang', currentLang);
+    window.location.href = 'index.html';
+
+  } catch (err) {
+    showError(t('err_email_exists'));
+  } finally {
+    setLoading('btn-register', false);
+  }
+}
+
+async function handleForgotPassword() {
+  hideError();
+  const email = document.getElementById('forgot-email').value.trim();
+
+  if (!email) { showError(t('err_forgot_fill')); return; }
+  if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
+
+  setLoading('btn-forgot', true);
+
+  try {
+    // ── FIREBASE PLACEHOLDER ──────────────────────────────────────
+    // Replace the mock below with:
+    // await firebase.auth().sendPasswordResetEmail(email);
+    // ─────────────────────────────────────────────────────────────
+    await mockDelay(800);
+    document.getElementById('forgot-success').style.display = 'flex';
+
+  } catch (err) {
+    showError(t('err_invalid_email'));
+  } finally {
+    setLoading('btn-forgot', false);
+  }
+}
+
+// ── Mock helper ───────────────────────────────────────────────────
+function mockDelay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // If already logged in, go straight to app
+  if (localStorage.getItem('mock_user')) {
+    window.location.href = 'index.html';
+    return;
+  }
+  setLang(currentLang);
+  lucide.createIcons();
+
+  // Allow Enter key to submit
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const active = document.querySelector('.auth-form.active');
+    if (!active) return;
+    const id = active.id;
+    if (id === 'form-login')    handleLogin();
+    if (id === 'form-register') handleRegister();
+    if (id === 'form-forgot')   handleForgotPassword();
+  });
+});
+</script>
+</body>
+</html>

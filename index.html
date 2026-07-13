@@ -61,7 +61,17 @@
     </ul>
 
     <div class="nav-footer">
-      <p>演奏者健康動作評估系統</p>
+      <!-- Language toggle -->
+      <div class="lang-toggle-bar-side">
+        <button class="lang-btn-side active" id="nav-lang-zh" onclick="setLang('zh')">中文</button>
+        <span style="color:var(--border-color);font-size:0.8rem;">|</span>
+        <button class="lang-btn-side" id="nav-lang-en" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">
+        <i data-lucide="log-out"></i>
+        <span id="nav-logout-label">登出</span>
+      </button>
+      <p id="nav-footer-label">演奏者健康動作評估系統</p>
       <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.7;">Version 1.0.0</p>
     </div>
   </aside>
@@ -223,11 +233,34 @@
         <div class="capture-container">
           <div class="card" style="padding: 1rem;">
             <div class="video-screen">
-              <canvas id="playingCanvas"></canvas>
-              <div class="video-overlay">
-                <div class="video-overlay-dot"></div>
-                <span>POSE ESTIMATOR SIMULATOR</span>
+              <!-- Skeleton simulator canvas (shown when webcam is off) -->
+              <canvas id="playingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+
+              <!-- Live webcam feed (shown when CVA recording is active) -->
+              <video id="cva-video" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:none;transform:scaleX(-1);" autoplay playsinline muted></video>
+
+              <!-- Skeleton / landmark overlay drawn on top of webcam -->
+              <canvas id="cva-overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);display:none;pointer-events:none;"></canvas>
+
+              <!-- Calibration countdown overlay -->
+              <div id="cva-calibration-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:10;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;">
+                <div style="font-size:0.85rem;color:#C6CCC0;letter-spacing:0.1em;font-family:monospace;">CALIBRATING — HOLD STILL</div>
+                <div id="cva-calib-countdown" style="font-size:3.5rem;font-weight:700;color:#fff;font-family:monospace;line-height:1;">3</div>
+                <div style="font-size:0.75rem;color:#A1B0AD;">正在記錄您的基準姿勢…</div>
               </div>
+
+              <!-- Top-left badge: changes between SIMULATOR / CALIBRATING / RECORDING -->
+              <div class="video-overlay" id="video-status-badge">
+                <div class="video-overlay-dot" id="video-overlay-dot-el"></div>
+                <span id="video-status-text">POSE ESTIMATOR SIMULATOR</span>
+              </div>
+
+              <!-- Top-right: live CVA angle (only while recording) -->
+              <div id="cva-live-overlay-angle" style="display:none;position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.65);color:#fff;padding:4px 12px;border-radius:20px;font-size:0.85rem;font-family:monospace;z-index:5;">CVA Δ: --°</div>
+
+              <!-- Bottom-right: calibration reference badge -->
+              <div id="cva-ref-badge" style="display:none;position:absolute;bottom:0.75rem;right:0.75rem;background:rgba(0,0,0,0.55);color:#C6CCC0;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-family:monospace;z-index:5;">基準: --°</div>
+
               <div class="video-hud">
                 <div class="hud-metrics" id="playing-hud-text">
                   STATUS: WAITING FOR CAPTURE<br>
@@ -244,19 +277,33 @@
               <strong style="font-size: 0.9rem;">1. 演奏前放鬆姿勢</strong>
               <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-relax">未錄製</span>
               <div class="cva-step-controls" onclick="event.stopPropagation()">
-                <button class="btn btn-outline btn-interactive cva-btn-start" id="cva-btn-relax"
+
+                <!-- ① 啟動攝影機 (初始狀態) -->
+                <button class="btn btn-outline btn-interactive" id="cva-btn-relax"
                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
-                  onclick="startCvaRecording('relax', event)">
-                  <i data-lucide="video"></i> 開始偵測
+                  onclick="openCamera('relax', event)">
+                  <i data-lucide="video"></i> 啟動攝影機
                 </button>
-                <button class="btn btn-primary cva-btn-stop" id="cva-stop-relax"
+
+                <!-- ② 校準歸零 (攝影機開啟後顯示) -->
+                <button class="btn btn-outline" id="cva-calib-btn-relax"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none; border-color: var(--color-warning); color: var(--color-warning);"
+                  onclick="runCalibration('relax', event)">
+                  <i data-lucide="crosshair"></i> 校準歸零
+                </button>
+                <div id="cva-calib-status-relax" style="display:none; font-size:0.72rem; color:var(--text-secondary); text-align:center;"></div>
+
+                <!-- ③ 開始錄製 / 停止錄製 (校準後解鎖) -->
+                <button class="btn btn-primary" id="cva-rec-btn-relax"
                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
-                  onclick="stopCvaRecording('relax', event)">
-                  <i data-lucide="square"></i> 停止錄製
+                  onclick="toggleRecording('relax', event)">
+                  <i data-lucide="circle"></i> 開始錄製
                 </button>
+
+                <!-- 即時角度 badge (錄製中) -->
                 <div class="cva-live-badge" id="cva-live-relax" style="display:none;">
                   <span class="cva-live-dot"></span>
-                  <span id="cva-angle-relax">-- °</span>
+                  <span id="cva-angle-relax">Δ --°</span>
                   <span id="cva-frames-relax" style="font-size:0.7rem; opacity:0.7;">0 幀</span>
                 </div>
               </div>
@@ -267,19 +314,29 @@
               <strong style="font-size: 0.9rem;">2. 準備演奏的姿勢</strong>
               <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-prepare">未錄製</span>
               <div class="cva-step-controls" onclick="event.stopPropagation()">
-                <button class="btn btn-outline btn-interactive cva-btn-start" id="cva-btn-prepare"
+
+                <button class="btn btn-outline btn-interactive" id="cva-btn-prepare"
                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
-                  onclick="startCvaRecording('prepare', event)">
-                  <i data-lucide="video"></i> 開始偵測
+                  onclick="openCamera('prepare', event)">
+                  <i data-lucide="video"></i> 啟動攝影機
                 </button>
-                <button class="btn btn-primary cva-btn-stop" id="cva-stop-prepare"
+
+                <button class="btn btn-outline" id="cva-calib-btn-prepare"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none; border-color: var(--color-warning); color: var(--color-warning);"
+                  onclick="runCalibration('prepare', event)">
+                  <i data-lucide="crosshair"></i> 校準歸零
+                </button>
+                <div id="cva-calib-status-prepare" style="display:none; font-size:0.72rem; color:var(--text-secondary); text-align:center;"></div>
+
+                <button class="btn btn-primary" id="cva-rec-btn-prepare"
                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
-                  onclick="stopCvaRecording('prepare', event)">
-                  <i data-lucide="square"></i> 停止錄製
+                  onclick="toggleRecording('prepare', event)">
+                  <i data-lucide="circle"></i> 開始錄製
                 </button>
+
                 <div class="cva-live-badge" id="cva-live-prepare" style="display:none;">
                   <span class="cva-live-dot"></span>
-                  <span id="cva-angle-prepare">-- °</span>
+                  <span id="cva-angle-prepare">Δ --°</span>
                   <span id="cva-frames-prepare" style="font-size:0.7rem; opacity:0.7;">0 幀</span>
                 </div>
               </div>
@@ -290,42 +347,35 @@
               <strong style="font-size: 0.9rem;">3. 演奏中的動作</strong>
               <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-playing">未錄製</span>
               <div class="cva-step-controls" onclick="event.stopPropagation()">
-                <button class="btn btn-outline btn-interactive cva-btn-start" id="cva-btn-playing"
+
+                <button class="btn btn-outline btn-interactive" id="cva-btn-playing"
                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
-                  onclick="startCvaRecording('playing', event)">
-                  <i data-lucide="video"></i> 開始偵測
+                  onclick="openCamera('playing', event)">
+                  <i data-lucide="video"></i> 啟動攝影機
                 </button>
-                <button class="btn btn-primary cva-btn-stop" id="cva-stop-playing"
+
+                <button class="btn btn-outline" id="cva-calib-btn-playing"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none; border-color: var(--color-warning); color: var(--color-warning);"
+                  onclick="runCalibration('playing', event)">
+                  <i data-lucide="crosshair"></i> 校準歸零
+                </button>
+                <div id="cva-calib-status-playing" style="display:none; font-size:0.72rem; color:var(--text-secondary); text-align:center;"></div>
+
+                <button class="btn btn-primary" id="cva-rec-btn-playing"
                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
-                  onclick="stopCvaRecording('playing', event)">
-                  <i data-lucide="square"></i> 停止錄製
+                  onclick="toggleRecording('playing', event)">
+                  <i data-lucide="circle"></i> 開始錄製
                 </button>
+
                 <div class="cva-live-badge" id="cva-live-playing" style="display:none;">
                   <span class="cva-live-dot"></span>
-                  <span id="cva-angle-playing">-- °</span>
+                  <span id="cva-angle-playing">Δ --°</span>
                   <span id="cva-frames-playing" style="font-size:0.7rem; opacity:0.7;">0 幀</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Webcam panel for CVA detection (shared, shown when any stage is recording) -->
-          <div id="cva-webcam-panel" style="display:none; margin-top: 0.75rem;">
-            <div class="card" style="padding: 0.75rem; position:relative;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                <span style="font-size:0.8rem; font-weight:600; color:var(--color-danger); display:flex; align-items:center; gap:0.4rem;">
-                  <span class="cva-live-dot"></span> CVA 即時偵測中
-                  <span id="cva-current-stage-label" style="color:var(--text-secondary);"></span>
-                </span>
-                <span style="font-size:0.75rem; color:var(--text-secondary);">標準 CVA &gt; 50° 為正常</span>
-              </div>
-              <div style="position:relative; border-radius: 8px; overflow:hidden; background:#1a1a1a;">
-                <video id="cva-video" style="width:100%; display:block; transform:scaleX(-1);" autoplay playsinline muted></video>
-                <canvas id="cva-overlay-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
-                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); color:#fff; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-family:monospace;" id="cva-live-overlay-angle">CVA: --°</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Right: Current Info or Status -->
@@ -486,7 +536,7 @@
             <!-- populated by JS -->
           </div>
           <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top:0.5rem;">
-            CVA（頸椎角，Craniovertebral Angle）為耳朵與肩膀水平夾角，角度越小代表頭部越前傾。標準值 &gt; 50°，&lt; 60° 時以紅色色帶標示警戒區間。
+            CVA Δ（頸椎角變化量）為相對於您校準基準姿勢的角度偏移。<strong>負值</strong>代表頭部比基準更前傾，<strong>正值</strong>代表更後仰。Δ &lt; −10° 的區間以紅色色帶標示。
           </p>
         </div>
       </div>

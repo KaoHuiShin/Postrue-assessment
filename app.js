@@ -1,3 +1,119 @@
+// ── i18n ─────────────────────────────────────────────────────────
+const APP_I18N = {
+  zh: {
+    nav_dashboard: '儀表板總覽', nav_profile: '個資填寫',
+    nav_playing: '演奏動作評估', nav_static: '靜態動作評估',
+    nav_history: '使用者歷史紀錄', nav_logout: '登出',
+    nav_footer: '演奏者健康動作評估系統',
+    page_dashboard_title: '儀表板總覽',
+    page_dashboard_sub: '歡迎使用演奏者動作評估系統，追蹤並改善演奏姿態與健康',
+    page_profile_title: '個資填寫',
+    page_playing_title: '演奏動作評估',
+    page_static_title: '靜態動作評估',
+    page_history_title: '使用者歷史紀錄',
+    guest: '訪客',
+  },
+  en: {
+    nav_dashboard: 'Dashboard', nav_profile: 'Personal Info',
+    nav_playing: 'Playing Assessment', nav_static: 'Static Assessment',
+    nav_history: 'History Records', nav_logout: 'Logout',
+    nav_footer: 'Performer Health Assessment System',
+    page_dashboard_title: 'Dashboard',
+    page_dashboard_sub: 'Welcome — track and improve your playing posture and health',
+    page_profile_title: 'Personal Information',
+    page_playing_title: 'Playing Movement Assessment',
+    page_static_title: 'Static Movement Assessment',
+    page_history_title: 'History Records',
+    guest: 'Guest',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'zh';
+
+function tApp(key) {
+  return APP_I18N[currentLang][key] || key;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+
+  // Update lang buttons
+  const zhBtn = document.getElementById('nav-lang-zh');
+  const enBtn = document.getElementById('nav-lang-en');
+  if (zhBtn) zhBtn.classList.toggle('active', lang === 'zh');
+  if (enBtn) enBtn.classList.toggle('active', lang === 'en');
+
+  // Update nav labels
+  const navMap = {
+    'nav-dashboard': 'nav_dashboard',
+    'nav-profile':   'nav_profile',
+    'nav-playing':   'nav_playing',
+    'nav-static':    'nav_static',
+    'nav-history':   'nav_history',
+  };
+  Object.entries(navMap).forEach(([id, key]) => {
+    const el = document.querySelector(`#${id} span`);
+    if (el) el.textContent = tApp(key);
+  });
+
+  // Logout label
+  const logoutLabel = document.getElementById('nav-logout-label');
+  if (logoutLabel) logoutLabel.textContent = tApp('nav_logout');
+
+  // Footer label
+  const footerLabel = document.getElementById('nav-footer-label');
+  if (footerLabel) footerLabel.textContent = tApp('nav_footer');
+
+  // Page headers
+  const headerMap = [
+    ['section-dashboard', 'page_dashboard_title', 'page_dashboard_sub'],
+    ['section-profile',   'page_profile_title',   null],
+    ['section-playing',   'page_playing_title',   null],
+    ['section-static',    'page_static_title',    null],
+    ['section-history',   'page_history_title',   null],
+  ];
+  headerMap.forEach(([sectionId, titleKey, subKey]) => {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    const h1 = section.querySelector('.page-title h1');
+    if (h1) h1.textContent = tApp(titleKey);
+    if (subKey) {
+      const p = section.querySelector('.page-title p');
+      if (p) p.textContent = tApp(subKey);
+    }
+  });
+
+  // Guest label
+  const guestEls = document.querySelectorAll('[id$="-username"], #header-username');
+  guestEls.forEach(el => {
+    if (el.textContent === '訪客' || el.textContent === 'Guest') {
+      el.textContent = tApp('guest');
+    }
+  });
+}
+
+// ── Auth guard ───────────────────────────────────────────────────
+// Redirects to login.html if not logged in.
+// When Firebase is connected, replace the mock_user check with:
+//   firebase.auth().onAuthStateChanged(user => { if (!user) redirect; })
+function checkAuth() {
+  const user = localStorage.getItem('mock_user');
+  if (!user) {
+    window.location.href = 'login.html';
+    return null;
+  }
+  return JSON.parse(user);
+}
+
+function handleLogout() {
+  // ── FIREBASE PLACEHOLDER ─────────────────────────────────────
+  // Replace with: firebase.auth().signOut().then(() => window.location.href = 'login.html');
+  // ─────────────────────────────────────────────────────────────
+  localStorage.removeItem('mock_user');
+  window.location.href = 'login.html';
+}
+
 // Application State Management
 let currentProfile = null;
 let playingRecords = {
@@ -30,7 +146,10 @@ let cvaState = {
   stream: null,        // Raw MediaStream (for cleanup)
   activeStage: null,   // 'relax' | 'prepare' | 'playing' | null
   isRecording: false,
-  frameBuffers: {      // Per-stage raw angle arrays (equivalent to data_cache[])
+  isCalibrating: false,     // true during the 3-second calibration window
+  referenceAngle: null,     // Baseline CVA captured during calibration (like Python's reference_head)
+  calibFrames: [],          // Angles collected during calibration window
+  frameBuffers: {           // Per-stage raw *delta* angle arrays
     relax: [],
     prepare: [],
     playing: []
@@ -40,15 +159,31 @@ let cvaState = {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+  // Auth guard — redirect to login if not logged in
+  const user = checkAuth();
+  if (!user) return;
+
+  // Apply saved language
+  setLang(currentLang);
+
+  // Show logged-in user name in nav / avatars
+  const displayName = user.name || user.email || tApp('guest');
+  document.querySelectorAll('#header-username, #playing-username, #static-username').forEach(el => {
+    el.textContent = displayName;
+  });
+  document.querySelectorAll('#header-avatar, #playing-avatar, #static-avatar').forEach(el => {
+    el.textContent = displayName.charAt(0).toUpperCase();
+  });
+
   // Initialize Lucide Icons
   lucide.createIcons();
-  
+
   // Load profile and history from localStorage
   loadProfileFromStorage();
   updateHistoryTable();
   updateDashboardStats();
   renderDashboardTrendChart();
-  
+
   // Start canvas animations
   initCanvasSimulators();
 });
@@ -673,20 +808,13 @@ function drawStaticSkeleton() {
 // (JS port of fhp_monitor.py + process_fhp_data.py + visualize_fhp.py)
 // ----------------------------------------------------
 
-// Landmark indices — same as Python: LEFT_EAR=7, RIGHT_EAR=8, LEFT_SHLD=11, RIGHT_SHLD=12
 const CVA_IDX = { LEFT_EAR: 7, RIGHT_EAR: 8, LEFT_SHLD: 11, RIGHT_SHLD: 12 };
-const CVA_THRESHOLD = 60; // degrees — matches visualize_fhp.py threshold
+const CVA_THRESHOLD = 60;
 
-/** Midpoint of two landmarks (equivalent to calculate_midpoint in Python) */
 function cvaMidpoint(a, b) {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
-/**
- * Calculate CVA angle from landmarks.
- * Formula: arctan2(|y_head - y_shld|, |x_head - x_shld|) * 180/π
- * Identical to process_fhp_data.py calc_angle formula.
- */
 function calcCVA(landmarks) {
   const head = cvaMidpoint(landmarks[CVA_IDX.LEFT_EAR], landmarks[CVA_IDX.RIGHT_EAR]);
   const shld = cvaMidpoint(landmarks[CVA_IDX.LEFT_SHLD], landmarks[CVA_IDX.RIGHT_SHLD]);
@@ -695,94 +823,110 @@ function calcCVA(landmarks) {
   return Math.atan2(yDiff, xDiff) * (180 / Math.PI);
 }
 
-/** Draw landmark overlay on the canvas (mirrors cv2.circle + cv2.line in Python) */
-function drawCvaOverlay(canvas, landmarks, angle) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
+function syncOverlaySize(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width  = rect.width;
+    canvas.height = rect.height;
+  }
+}
 
+function drawCvaOverlay(canvas, landmarks, rawAngle, delta) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
   const head = cvaMidpoint(landmarks[CVA_IDX.LEFT_EAR], landmarks[CVA_IDX.RIGHT_EAR]);
   const shld = cvaMidpoint(landmarks[CVA_IDX.LEFT_SHLD], landmarks[CVA_IDX.RIGHT_SHLD]);
-
   const hx = head.x * w, hy = head.y * h;
   const sx = shld.x * w, sy = shld.y * h;
 
-  // Line between head and shoulder midpoints (white, like Python cv2.line)
-  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(sx, sy); ctx.stroke();
 
-  // Head dot (green = good) / red dot (warning)
-  const isWarning = angle < CVA_THRESHOLD;
+  ctx.strokeStyle = 'rgba(161,176,173,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(sx - 70, sy); ctx.lineTo(sx + 70, sy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const isWarning = Math.abs(delta) > 10;
   ctx.fillStyle = isWarning ? '#C39289' : '#C6CCC0';
   ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.stroke();
 
-  // Shoulder dot (blue in Python → warm brown in our palette)
   ctx.fillStyle = '#8D6B61';
   ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
 
-  // Horizontal reference line from shoulder
-  ctx.strokeStyle = 'rgba(161,176,173,0.6)';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath(); ctx.moveTo(sx - 60, sy); ctx.lineTo(sx + 60, sy); ctx.stroke();
-  ctx.setLineDash([]);
+  const mx = (hx + sx) / 2, my = (hy + sy) / 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath(); ctx.roundRect(mx + 6, my - 11, 90, 20, 4); ctx.fill();
+  ctx.fillStyle = isWarning ? '#C39289' : '#C6CCC0';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText(`${rawAngle.toFixed(1)}° raw`, mx + 10, my + 3);
 }
 
-/** Initialise MediaPipe Pose (called lazily on first startCvaRecording) */
 async function initCvaPose() {
   if (cvaState.modelReady) return true;
-
-  // Check MediaPipe is loaded
   if (typeof Pose === 'undefined') {
     showToast('MediaPipe 模型載入中，請稍後再試…', 'warning');
     return false;
   }
-
   const pose = new Pose({
     locateFile: (file) =>
       `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`
   });
-
   pose.setOptions({
-    modelComplexity: 1,           // matches model_complexity=1 in Python
+    modelComplexity: 1,
     smoothLandmarks: true,
-    enableSegmentation: false,    // matches enable_segmentation=False
-    minDetectionConfidence: 0.5,  // matches min_detection_confidence=0.5
-    minTrackingConfidence: 0.5    // matches min_tracking_confidence=0.5
+    enableSegmentation: false,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
   });
 
   pose.onResults((results) => {
-    if (!cvaState.isRecording || !cvaState.activeStage) return;
+    if (!cvaState.activeStage) return;
     if (!results.poseLandmarks) return;
+    const rawAngle = calcCVA(results.poseLandmarks);
+    if (isNaN(rawAngle)) return;
 
-    const angle = calcCVA(results.poseLandmarks);
-    if (isNaN(angle)) return;
-
-    // Store frame (equivalent to data_cache.append() in Python)
-    const stage = cvaState.activeStage;
-    cvaState.frameBuffers[stage].push(angle);
-
-    // Update live UI
-    const frameCount = cvaState.frameBuffers[stage].length;
-    const angleEl = document.getElementById(`cva-angle-${stage}`);
-    const framesEl = document.getElementById(`cva-frames-${stage}`);
-    const overlayEl = document.getElementById('cva-live-overlay-angle');
-    if (angleEl) angleEl.textContent = `${angle.toFixed(1)}°`;
-    if (framesEl) framesEl.textContent = `${frameCount} 幀`;
-    if (overlayEl) {
-      overlayEl.textContent = `CVA: ${angle.toFixed(1)}°`;
-      overlayEl.style.color = angle < CVA_THRESHOLD ? '#C39289' : '#C6CCC0';
-    }
-
-    // Draw skeleton overlay on video canvas
+    // Always draw overlay while camera is open
     const overlayCanvas = document.getElementById('cva-overlay-canvas');
     if (overlayCanvas) {
-      overlayCanvas.width = overlayCanvas.offsetWidth;
-      overlayCanvas.height = overlayCanvas.offsetHeight;
-      drawCvaOverlay(overlayCanvas, results.poseLandmarks, angle);
+      syncOverlaySize(overlayCanvas);
+      const delta = cvaState.referenceAngle !== null ? rawAngle - cvaState.referenceAngle : 0;
+      drawCvaOverlay(overlayCanvas, results.poseLandmarks, rawAngle, delta);
     }
+
+    // ── Calibration sampling ─────────────────────────────────
+    if (cvaState.isCalibrating) {
+      cvaState.calibFrames.push(rawAngle);
+      return;
+    }
+
+    // ── Active recording ─────────────────────────────────────
+    if (!cvaState.isRecording) return;
+    if (cvaState.referenceAngle === null) return;
+
+    const delta = rawAngle - cvaState.referenceAngle;
+    const stage = cvaState.activeStage;
+    cvaState.frameBuffers[stage].push(delta);
+    const frameCount = cvaState.frameBuffers[stage].length;
+
+    const angleEl  = document.getElementById(`cva-angle-${stage}`);
+    const framesEl = document.getElementById(`cva-frames-${stage}`);
+    if (angleEl)  angleEl.textContent  = `Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}°`;
+    if (framesEl) framesEl.textContent = `${frameCount} 幀`;
+
+    const overlayAngleEl = document.getElementById('cva-live-overlay-angle');
+    if (overlayAngleEl) {
+      overlayAngleEl.textContent = `CVA Δ: ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}°`;
+      overlayAngleEl.style.color = Math.abs(delta) > 10 ? '#C39289' : '#C6CCC0';
+    }
+
+    document.getElementById('playing-hud-text').innerHTML =
+      `STATUS: RECORDING CVA [${stage.toUpperCase()}]<br>` +
+      `DELTA: ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}° | FRAME: ${frameCount}`;
   });
 
   await pose.initialize();
@@ -791,140 +935,273 @@ async function initCvaPose() {
   return true;
 }
 
-/** Start CVA recording for a given stage — replaces captureState() */
-async function startCvaRecording(stage, event) {
+// ── ① 啟動攝影機 ──────────────────────────────────────────────────
+async function openCamera(stage, event) {
   if (event) event.stopPropagation();
-
   if (!currentProfile) {
     showToast('請先填寫個資再開始偵測！', 'warning');
     switchSection('profile');
     return;
   }
 
-  // If another stage is recording, stop it first
-  if (cvaState.isRecording && cvaState.activeStage && cvaState.activeStage !== stage) {
-    await stopCvaRecording(cvaState.activeStage);
+  // 若另一個 stage 正在使用，先關閉
+  if (cvaState.activeStage && cvaState.activeStage !== stage) {
+    closeCamera(cvaState.activeStage);
   }
 
-  // Clear previous data for this stage
-  cvaState.frameBuffers[stage] = [];
-
-  // Init model if needed
-  const btn = document.getElementById(`cva-btn-${stage}`);
-  if (btn) { btn.disabled = true; btn.textContent = '載入模型…'; }
+  const openBtn = document.getElementById(`cva-btn-${stage}`);
+  if (openBtn) { openBtn.disabled = true; openBtn.innerHTML = '載入中…'; }
 
   const ready = await initCvaPose();
   if (!ready) {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="video"></i> 開始偵測'; lucide.createIcons(); }
+    if (openBtn) { openBtn.disabled = false; openBtn.innerHTML = '<i data-lucide="video"></i> 啟動攝影機'; lucide.createIcons(); }
     return;
   }
 
-  // Request webcam
   try {
     cvaState.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-  } catch (err) {
+  } catch {
     showToast('無法存取攝影機，請確認瀏覽器權限。', 'danger');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="video"></i> 開始偵測'; lucide.createIcons(); }
+    if (openBtn) { openBtn.disabled = false; openBtn.innerHTML = '<i data-lucide="video"></i> 啟動攝影機'; lucide.createIcons(); }
     return;
   }
 
+  // 嵌入黑色框
   const video = document.getElementById('cva-video');
+  const overlayCanvas = document.getElementById('cva-overlay-canvas');
+  const simCanvas = document.getElementById('playingCanvas');
   video.srcObject = cvaState.stream;
+  video.style.display = 'block';
+  overlayCanvas.style.display = 'block';
+  simCanvas.style.display = 'none';
+  document.getElementById('cva-live-overlay-angle').style.display = 'block';
+  document.getElementById('cva-ref-badge').style.display = 'block';
+  document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
+  document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
 
-  // Show webcam panel
-  document.getElementById('cva-webcam-panel').style.display = 'block';
-  document.getElementById('cva-current-stage-label').textContent =
-    `— ${getStateChineseName(stage)}`;
+  cvaState.activeStage = stage;
+  cvaState.isCalibrating = false;
+  cvaState.isRecording = false;
+  cvaState.frameBuffers[stage] = [];
 
-  // Wire MediaPipe Camera utility (handles frame loop, like cap.read() in Python)
   cvaState.camera = new Camera(video, {
     onFrame: async () => {
-      if (cvaState.pose && cvaState.isRecording) {
-        await cvaState.pose.send({ image: video });
-      }
+      if (cvaState.pose) await cvaState.pose.send({ image: video });
     },
-    width: 640,
-    height: 480
+    width: 640, height: 480
   });
   cvaState.camera.start();
 
-  cvaState.isRecording = true;
-  cvaState.activeStage = stage;
-
-  // Update UI
   selectStep(stage);
-  document.getElementById(`cva-btn-${stage}`).style.display = 'none';
-  document.getElementById(`cva-stop-${stage}`).style.display = 'inline-flex';
-  document.getElementById(`cva-live-${stage}`).style.display = 'flex';
-  document.getElementById(`label-${stage}`).textContent = '偵測中…';
+
+  // 顯示校準按鈕
+  if (openBtn) openBtn.style.display = 'none';
+  const calibBtn    = document.getElementById(`cva-calib-btn-${stage}`);
+  const calibStatus = document.getElementById(`cva-calib-status-${stage}`);
+  const recBtn      = document.getElementById(`cva-rec-btn-${stage}`);
+  calibBtn.style.display = 'inline-flex';
+
+  // 若已有基準值（重開攝影機的情況），顯示並解鎖錄製
+  if (cvaState.referenceAngle !== null) {
+    document.getElementById('cva-ref-badge').textContent = `基準: ${cvaState.referenceAngle.toFixed(1)}°`;
+    calibStatus.style.display = 'block';
+    calibStatus.textContent = `基準: ${cvaState.referenceAngle.toFixed(1)}° (可重新校準)`;
+    recBtn.style.display = 'inline-flex';
+    recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製';
+  } else {
+    document.getElementById('cva-ref-badge').textContent = '基準: 未校準';
+    calibStatus.style.display = 'none';
+    recBtn.style.display = 'none';
+  }
 
   lucide.createIcons();
-  showToast(`「${getStateChineseName(stage)}」CVA 偵測開始！`, 'info');
+  document.getElementById('playing-hud-text').innerHTML =
+    `STATUS: CAMERA READY [${stage.toUpperCase()}]<br>請按「校準歸零」後再錄製`;
 }
 
-/** Stop CVA recording, compute summary, mark stage as captured */
-async function stopCvaRecording(stage, event) {
+// ── ② 校準歸零（手動觸發，收集 1.5 秒取平均）────────────────────
+async function runCalibration(stage, event) {
   if (event) event.stopPropagation();
-  if (!cvaState.isRecording || cvaState.activeStage !== stage) return;
-
-  cvaState.isRecording = false;
-  cvaState.activeStage = null;
-
-  // Stop camera & release webcam stream
-  if (cvaState.camera) { cvaState.camera.stop(); cvaState.camera = null; }
-  if (cvaState.stream) {
-    cvaState.stream.getTracks().forEach(t => t.stop());
-    cvaState.stream = null;
+  if (cvaState.activeStage !== stage || !cvaState.camera) return;
+  if (cvaState.isRecording) {
+    showToast('請先停止錄製再重新校準。', 'warning');
+    return;
   }
-  document.getElementById('cva-webcam-panel').style.display = 'none';
 
-  const frames = cvaState.frameBuffers[stage];
+  const calibBtn    = document.getElementById(`cva-calib-btn-${stage}`);
+  const calibStatus = document.getElementById(`cva-calib-status-${stage}`);
+  const recBtn      = document.getElementById(`cva-rec-btn-${stage}`);
 
-  if (frames.length < 5) {
-    showToast('偵測到的幀數太少，請重新嘗試。', 'warning');
-    document.getElementById(`cva-btn-${stage}`).style.display = 'inline-flex';
-    document.getElementById(`cva-stop-${stage}`).style.display = 'none';
-    document.getElementById(`cva-live-${stage}`).style.display = 'none';
-    document.getElementById(`label-${stage}`).textContent = '未錄製';
+  calibBtn.disabled = true;
+  calibBtn.innerHTML = '<i data-lucide="loader"></i> 取樣中…';
+  if (recBtn) recBtn.style.display = 'none';
+  calibStatus.style.display = 'block';
+  calibStatus.textContent = '正在取樣基準姿勢…（請保持不動）';
+
+  document.getElementById('video-status-text').textContent = 'CALIBRATING…';
+  document.getElementById('video-overlay-dot-el').style.background = '#E1AA8D';
+  document.getElementById('playing-hud-text').innerHTML =
+    'STATUS: CALIBRATING…<br>HOLD YOUR NEUTRAL POSTURE STILL';
+
+  cvaState.calibFrames = [];
+  cvaState.isCalibrating = true;
+  await new Promise(r => setTimeout(r, 1500));
+  cvaState.isCalibrating = false;
+
+  if (cvaState.calibFrames.length === 0) {
+    showToast('未偵測到姿勢，請確認攝影機視角並重試。', 'danger');
+    calibBtn.disabled = false;
+    calibBtn.innerHTML = '<i data-lucide="crosshair"></i> 校準歸零';
+    calibStatus.textContent = '校準失敗，請重試';
     lucide.createIcons();
     return;
   }
 
-  // Compute summary stats (equivalent to visualize_fhp.py statistics block)
-  const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
-  const min = Math.min(...frames);
-  const max = Math.max(...frames);
-  const aboveThresholdCount = frames.filter(a => a < CVA_THRESHOLD).length;
-  const abovePct = ((aboveThresholdCount / frames.length) * 100).toFixed(1);
+  cvaState.referenceAngle =
+    cvaState.calibFrames.reduce((a, b) => a + b, 0) / cvaState.calibFrames.length;
 
-  // Inject CVA data into the existing playingRecords structure
-  // (Augments the mock pose data when it exists, or creates a placeholder)
-  if (!playingRecords[stage]) {
-    playingRecords[stage] = generateMockPoseData(stage, currentProfile?.instrument || '小提琴');
-  }
-  playingRecords[stage].cva = {
-    frames,               // raw per-frame angles — equivalent to data_cache
-    avg: parseFloat(avg.toFixed(2)),
-    min: parseFloat(min.toFixed(2)),
-    max: parseFloat(max.toFixed(2)),
-    abovePct: parseFloat(abovePct),
-    frameCount: frames.length
-  };
-  // Also sync neckAngle with measured CVA avg (overrides mock value)
-  playingRecords[stage].neckAngle = parseFloat((90 - avg).toFixed(2));
+  const refText = `基準: ${cvaState.referenceAngle.toFixed(1)}° (${cvaState.calibFrames.length} 幀)`;
+  calibStatus.textContent = `✓ ${refText}`;
+  document.getElementById('cva-ref-badge').textContent = refText;
+  document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
+  document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
+  document.getElementById('playing-hud-text').innerHTML =
+    `STATUS: CALIBRATED ✓<br>基準 ${cvaState.referenceAngle.toFixed(1)}° — 可開始錄製`;
 
-  // Update step UI to captured state
-  document.getElementById(`cva-btn-${stage}`).style.display = 'inline-flex';
-  document.getElementById(`cva-btn-${stage}`).innerHTML = '<i data-lucide="refresh-cw"></i> 重新偵測';
-  document.getElementById(`cva-stop-${stage}`).style.display = 'none';
-  document.getElementById(`cva-live-${stage}`).style.display = 'none';
-  document.getElementById(`label-${stage}`).textContent = `已完成 ✓ (${frames.length} 幀, avg ${avg.toFixed(1)}°)`;
-  document.getElementById(`step-${stage}`).classList.add('captured');
+  calibBtn.disabled = false;
+  calibBtn.innerHTML = '<i data-lucide="crosshair"></i> 重新校準';
+  recBtn.style.display = 'inline-flex';
+  recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製';
+  recBtn.style.background = '';
+  recBtn.style.borderColor = '';
+
   lucide.createIcons();
-
-  showToast(`「${getStateChineseName(stage)}」錄製完成！共 ${frames.length} 幀，平均 CVA ${avg.toFixed(1)}°`, 'success');
-  checkAndRenderPlayingDashboard();
+  showToast(`校準完成！基準角度 ${cvaState.referenceAngle.toFixed(1)}°，可開始錄製。`, 'success');
 }
+
+// ── ③ 開始 / 停止錄製切換 ────────────────────────────────────────
+function toggleRecording(stage, event) {
+  if (event) event.stopPropagation();
+  if (cvaState.activeStage !== stage) return;
+
+  if (!cvaState.isRecording) {
+    // 開始錄製
+    if (cvaState.referenceAngle === null) {
+      showToast('請先完成「校準歸零」再錄製！', 'warning');
+      return;
+    }
+    cvaState.frameBuffers[stage] = [];
+    cvaState.isRecording = true;
+
+    const recBtn = document.getElementById(`cva-rec-btn-${stage}`);
+    recBtn.innerHTML = '<i data-lucide="square"></i> 停止錄製';
+    recBtn.style.background = 'var(--color-danger)';
+    recBtn.style.borderColor = 'var(--color-danger)';
+
+    document.getElementById(`cva-calib-btn-${stage}`).disabled = true;
+    document.getElementById(`cva-live-${stage}`).style.display = 'flex';
+    document.getElementById(`label-${stage}`).textContent = '錄製中…';
+    document.getElementById('video-status-text').textContent = `● REC [${stage.toUpperCase()}]`;
+    document.getElementById('video-overlay-dot-el').style.background = '#C39289';
+
+    lucide.createIcons();
+    showToast(`「${getStateChineseName(stage)}」開始錄製！`, 'info');
+
+  } else {
+    // 停止錄製
+    cvaState.isRecording = false;
+    const frames = cvaState.frameBuffers[stage];
+    const recBtn = document.getElementById(`cva-rec-btn-${stage}`);
+    document.getElementById(`cva-calib-btn-${stage}`).disabled = false;
+    document.getElementById(`cva-live-${stage}`).style.display = 'none';
+
+    if (frames.length < 5) {
+      showToast('幀數太少，請重新錄製。', 'warning');
+      recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製';
+      recBtn.style.background = '';
+      recBtn.style.borderColor = '';
+      document.getElementById(`label-${stage}`).textContent = '未錄製';
+      document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
+      document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
+      lucide.createIcons();
+      return;
+    }
+
+    const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
+    const min = Math.min(...frames);
+    const max = Math.max(...frames);
+    const alertCount = frames.filter(d => d < -10).length;
+    const alertPct   = ((alertCount / frames.length) * 100).toFixed(1);
+
+    if (!playingRecords[stage]) {
+      playingRecords[stage] = generateMockPoseData(stage, currentProfile?.instrument || '小提琴');
+    }
+    playingRecords[stage].cva = {
+      frames,
+      referenceAngle: parseFloat(cvaState.referenceAngle?.toFixed(2) ?? 0),
+      avg: parseFloat(avg.toFixed(2)),
+      min: parseFloat(min.toFixed(2)),
+      max: parseFloat(max.toFixed(2)),
+      abovePct: parseFloat(alertPct),
+      frameCount: frames.length
+    };
+    playingRecords[stage].neckAngle = parseFloat(Math.max(0, -avg + 12).toFixed(2));
+
+    recBtn.innerHTML = '<i data-lucide="refresh-cw"></i> 重新錄製';
+    recBtn.style.background = '';
+    recBtn.style.borderColor = '';
+    document.getElementById(`label-${stage}`).textContent =
+      `已完成 ✓ (${frames.length} 幀, avg Δ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}°)`;
+    document.getElementById(`step-${stage}`).classList.add('captured');
+    document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
+    document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
+    document.getElementById('playing-hud-text').innerHTML =
+      `STATUS: RECORDED ✓ [${stage.toUpperCase()}]<br>FRAMES: ${frames.length} | AVG Δ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}°`;
+
+    lucide.createIcons();
+    showToast(
+      `「${getStateChineseName(stage)}」錄製完成！${frames.length} 幀，平均 Δ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}°`,
+      'success'
+    );
+    checkAndRenderPlayingDashboard();
+  }
+}
+
+// ── 關閉攝影機（不清除已存資料）────────────────────────────────────
+function closeCamera(stage) {
+  cvaState.isRecording   = false;
+  cvaState.isCalibrating = false;
+  cvaState.activeStage   = null;
+  if (cvaState.camera) { cvaState.camera.stop(); cvaState.camera = null; }
+  if (cvaState.stream)  { cvaState.stream.getTracks().forEach(t => t.stop()); cvaState.stream = null; }
+
+  const video = document.getElementById('cva-video');
+  const overlayCanvas = document.getElementById('cva-overlay-canvas');
+  const simCanvas = document.getElementById('playingCanvas');
+  if (video) { video.style.display = 'none'; video.srcObject = null; }
+  if (overlayCanvas) overlayCanvas.style.display = 'none';
+  if (simCanvas) simCanvas.style.display = 'block';
+  const liveAngle = document.getElementById('cva-live-overlay-angle');
+  const refBadge  = document.getElementById('cva-ref-badge');
+  const calibOv   = document.getElementById('cva-calibration-overlay');
+  if (liveAngle) liveAngle.style.display = 'none';
+  if (refBadge)  refBadge.style.display  = 'none';
+  if (calibOv)   calibOv.style.display   = 'none';
+  const statusText = document.getElementById('video-status-text');
+  const statusDot  = document.getElementById('video-overlay-dot-el');
+  if (statusText) statusText.textContent = 'POSE ESTIMATOR SIMULATOR';
+  if (statusDot)  statusDot.style.background = '';
+  startPlayingCanvas();
+}
+
+// ── 向後相容 ──────────────────────────────────────────────────────
+function startCvaRecording(stage, event) { return openCamera(stage, event); }
+async function stopCvaRecording(stage, event) {
+  if (event) event.stopPropagation();
+  if (cvaState.isRecording) toggleRecording(stage);
+  closeCamera(stage);
+}
+
 
 // ----------------------------------------------------
 // 4-B. CAPTURING / DIAGNOSING (SIMULATED DATA GENERATION)
@@ -1214,12 +1491,30 @@ function updateMetricBar(id, val, unit, threshold, lesserIsBetter) {
 
 function resetPlayingCapture() {
   // Stop any active CVA recording
-  if (cvaState.isRecording) {
+  if (cvaState.isRecording || cvaState.isCalibrating) {
     cvaState.isRecording = false;
+    cvaState.isCalibrating = false;
     cvaState.activeStage = null;
     if (cvaState.camera) { cvaState.camera.stop(); cvaState.camera = null; }
     if (cvaState.stream) { cvaState.stream.getTracks().forEach(t => t.stop()); cvaState.stream = null; }
-    document.getElementById('cva-webcam-panel').style.display = 'none';
+
+    // Restore black frame
+    const video = document.getElementById('cva-video');
+    const overlayCanvas = document.getElementById('cva-overlay-canvas');
+    const simCanvas = document.getElementById('playingCanvas');
+    if (video) { video.style.display = 'none'; video.srcObject = null; }
+    if (overlayCanvas) overlayCanvas.style.display = 'none';
+    if (simCanvas) simCanvas.style.display = 'block';
+    const liveAngle = document.getElementById('cva-live-overlay-angle');
+    const refBadge  = document.getElementById('cva-ref-badge');
+    const calibOv   = document.getElementById('cva-calibration-overlay');
+    if (liveAngle) liveAngle.style.display = 'none';
+    if (refBadge)  refBadge.style.display  = 'none';
+    if (calibOv)   calibOv.style.display   = 'none';
+    const statusText = document.getElementById('video-status-text');
+    const statusDot  = document.getElementById('video-overlay-dot-el');
+    if (statusText) statusText.textContent = 'POSE ESTIMATOR SIMULATOR';
+    if (statusDot)  statusDot.style.background = '';
   }
   // Reset CVA frame buffers
   cvaState.frameBuffers = { relax: [], prepare: [], playing: [] };
@@ -1235,13 +1530,21 @@ function resetPlayingCapture() {
   
   ['relax', 'prepare', 'playing'].forEach(stage => {
     document.getElementById(`label-${stage}`).textContent = '未錄製';
-    const startBtn = document.getElementById(`cva-btn-${stage}`);
-    const stopBtn  = document.getElementById(`cva-stop-${stage}`);
-    const liveBadge = document.getElementById(`cva-live-${stage}`);
-    if (startBtn) { startBtn.style.display = 'inline-flex'; startBtn.disabled = false; startBtn.innerHTML = '<i data-lucide="video"></i> 開始偵測'; }
-    if (stopBtn)  stopBtn.style.display = 'none';
-    if (liveBadge) liveBadge.style.display = 'none';
+
+    const openBtn    = document.getElementById(`cva-btn-${stage}`);
+    const calibBtn   = document.getElementById(`cva-calib-btn-${stage}`);
+    const calibStatus = document.getElementById(`cva-calib-status-${stage}`);
+    const recBtn     = document.getElementById(`cva-rec-btn-${stage}`);
+    const liveBadge  = document.getElementById(`cva-live-${stage}`);
+
+    if (openBtn)    { openBtn.style.display = 'inline-flex'; openBtn.disabled = false; openBtn.innerHTML = '<i data-lucide="video"></i> 啟動攝影機'; }
+    if (calibBtn)   { calibBtn.style.display = 'none'; calibBtn.disabled = false; calibBtn.innerHTML = '<i data-lucide="crosshair"></i> 校準歸零'; }
+    if (calibStatus) calibStatus.style.display = 'none';
+    if (recBtn)     { recBtn.style.display = 'none'; recBtn.style.background = ''; recBtn.style.borderColor = ''; recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製'; }
+    if (liveBadge)  liveBadge.style.display = 'none';
   });
+  // Also reset referenceAngle so next session starts fresh
+  cvaState.referenceAngle = null;
   lucide.createIcons();
 
   document.getElementById('playing-waiting-panel').style.display = 'flex';
@@ -1439,24 +1742,24 @@ function renderCvaChart() {
     playData.push(i >= prepEnd ? (pl?.frames[pli++ - prepEnd] ?? null) : null);
   }
 
-  // Background plugin to draw red bands for CVA < threshold (port of axvspan in Python)
+  // Background plugin to draw red bands for delta < -10° (forward lean)
   const warningBandPlugin = {
     id: 'cvaWarningBands',
     beforeDraw(chart) {
-      const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-      if (!x) return;
+      const { ctx, chartArea: { top, bottom }, scales: { x, y } } = chart;
+      if (!x || !y) return;
       ctx.save();
       const allFrames = [
-        ...(r?.frames || []).map((a, i) => ({ i, a })),
-        ...(p?.frames || []).map((a, i) => ({ i: i + relaxEnd, a })),
-        ...(pl?.frames || []).map((a, i) => ({ i: i + prepEnd, a })),
+        ...(r?.frames || []).map((d, i) => ({ i, d })),
+        ...(p?.frames || []).map((d, i) => ({ i: i + relaxEnd, d })),
+        ...(pl?.frames || []).map((d, i) => ({ i: i + prepEnd, d })),
       ];
       let inBand = false, bandStart = 0;
       ctx.fillStyle = 'rgba(195,146,137,0.18)';
-      allFrames.forEach(({ i, a }) => {
+      allFrames.forEach(({ i, d }) => {
         const xPos = x.getPixelForValue(i);
-        if (a < CVA_THRESHOLD && !inBand) { bandStart = xPos; inBand = true; }
-        else if (a >= CVA_THRESHOLD && inBand) {
+        if (d < -10 && !inBand) { bandStart = xPos; inBand = true; }
+        else if (d >= -10 && inBand) {
           ctx.fillRect(bandStart, top, xPos - bandStart, bottom - top); inBand = false;
         }
       });
@@ -1464,12 +1767,18 @@ function renderCvaChart() {
         const lastX = x.getPixelForValue(total - 1);
         ctx.fillRect(bandStart, top, lastX - bandStart, bottom - top);
       }
-      // Threshold dashed line at CVA_THRESHOLD
-      const yPos = chart.scales.y.getPixelForValue(CVA_THRESHOLD);
+      // Threshold dashed line at -10°
+      const yPos = chart.scales.y.getPixelForValue(-10);
       ctx.strokeStyle = 'rgba(195,146,137,0.7)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([6, 4]);
       ctx.beginPath(); ctx.moveTo(chart.chartArea.left, yPos); ctx.lineTo(chart.chartArea.right, yPos); ctx.stroke();
+      // Zero reference line
+      const y0 = chart.scales.y.getPixelForValue(0);
+      ctx.strokeStyle = 'rgba(161,176,173,0.5)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(chart.chartArea.left, y0); ctx.lineTo(chart.chartArea.right, y0); ctx.stroke();
       ctx.setLineDash([]);
       ctx.restore();
     }
@@ -1520,10 +1829,10 @@ function renderCvaChart() {
       animation: { duration: 600 },
       scales: {
         y: {
-          min: 20,
-          max: 90,
+          min: -40,
+          max: 40,
           grid: { color: 'rgba(130,137,141,0.1)' },
-          ticks: { color: '#82898D', callback: v => `${v}°` }
+          ticks: { color: '#82898D', callback: v => `${v > 0 ? '+' : ''}${v}°` }
         },
         x: {
           grid: { display: false },
@@ -1540,8 +1849,8 @@ function renderCvaChart() {
         legend: { labels: { color: '#3A3533', font: { family: 'Noto Sans TC', size: 11 }, boxWidth: 16 } },
         tooltip: {
           callbacks: {
-            label: ctx => `CVA: ${ctx.raw?.toFixed(1)}°`,
-            afterLabel: ctx => ctx.raw < CVA_THRESHOLD ? '⚠ 低於警戒線' : ''
+            label: ctx => `CVA Δ: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw?.toFixed(1)}°`,
+            afterLabel: ctx => ctx.raw < -10 ? '⚠ 前傾超過警戒' : ''
           }
         }
       }
@@ -1565,10 +1874,11 @@ function renderCvaChart() {
     statsRow.innerHTML = stages
       .filter(s => s.cva)
       .map(s => {
-        const warn = s.cva.abovePct > 0 ? `⚠ ${s.cva.abovePct}% 低於警戒` : '✓ 全程正常';
+        const warn = s.cva.abovePct > 0 ? `⚠ ${s.cva.abovePct}% 超過警戒` : '✓ 無顯著前傾';
+        const sign = s.cva.avg >= 0 ? '+' : '';
         return makeChip(
-          `${s.label} — 平均 CVA`,
-          `${s.cva.avg.toFixed(1)}°`,
+          `${s.label} — 平均 CVA Δ`,
+          `${sign}${s.cva.avg.toFixed(1)}°`,
           warn,
           s.cva.abovePct > 0 ? '#C39289' : '#C6CCC0'
         );
