@@ -176,8 +176,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = await checkAuth();
   if (!user) return;
 
-  // Auth confirmed — show the page
-  document.body.style.visibility = 'visible';
+  // Auth confirmed — fade out loading screen and show app
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen) {
+    loadingScreen.style.opacity = '0';
+    setTimeout(() => { loadingScreen.style.display = 'none'; }, 400);
+  }
 
   // Apply saved language
   setLang(currentLang);

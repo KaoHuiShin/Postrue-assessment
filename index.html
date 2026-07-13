@@ -18,7 +18,72 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js" crossorigin="anonymous"></script>
 </head>
-<body style="visibility:hidden;">
+<body>
+
+  <!-- Loading Screen (shown until auth check completes) -->
+  <div id="loading-screen" style="
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg-primary);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1.5rem;
+    transition: opacity 0.4s ease;
+  ">
+    <!-- Animated ECG icon -->
+    <div style="position:relative; width:72px; height:72px;">
+      <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:72px;height:72px;">
+        <rect width="72" height="72" rx="16" fill="#8D6B61" fill-opacity="0.12"/>
+        <!-- ECG line animation -->
+        <polyline id="ecg-line"
+          points="8,36 20,36 24,20 28,52 34,28 38,44 42,36 64,36"
+          stroke="#8D6B61" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+          fill="none"
+          stroke-dasharray="120"
+          stroke-dashoffset="120"
+          style="animation: ecgDraw 1.2s ease-in-out infinite alternate;">
+        </polyline>
+        <!-- Pulse dot -->
+        <circle cx="42" cy="36" r="3.5" fill="#C39289" style="animation: pulseDot 1.2s ease-in-out infinite alternate;"/>
+      </svg>
+    </div>
+
+    <div style="text-align:center;">
+      <div style="font-size:1rem; font-weight:600; color:var(--text-primary); letter-spacing:0.01em;">
+        演奏者健康動作評估系統
+      </div>
+      <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.3rem;">
+        Performer Health Assessment System
+      </div>
+    </div>
+
+    <!-- Loading dots -->
+    <div style="display:flex; gap:6px; align-items:center;">
+      <span class="loading-dot" style="animation-delay:0s;"></span>
+      <span class="loading-dot" style="animation-delay:0.2s;"></span>
+      <span class="loading-dot" style="animation-delay:0.4s;"></span>
+    </div>
+  </div>
+
+  <style>
+    @keyframes ecgDraw {
+      0%   { stroke-dashoffset: 120; opacity: 0.4; }
+      100% { stroke-dashoffset: 0;   opacity: 1; }
+    }
+    @keyframes pulseDot {
+      0%   { r: 2; opacity: 0.4; }
+      100% { r: 4; opacity: 1; }
+    }
+    .loading-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--color-accent, #8D6B61);
+      display: inline-block;
+      animation: dotBounce 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes dotBounce {
+      0%   { opacity: 0.25; transform: translateY(0); }
+      100% { opacity: 1;    transform: translateY(-5px); }
+    }
+  </style>
 
   <!-- Sidebar Navigation -->
   <aside>
