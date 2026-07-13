@@ -191,11 +191,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize Lucide Icons
   lucide.createIcons();
 
-  // Load profile and history from localStorage
-  loadProfileFromStorage();
-  updateHistoryTable();
-  updateDashboardStats();
-  renderDashboardTrendChart();
+  // Load profile and history from Firestore
+  await loadProfileFromStorage();
+  await refreshHistory();
 
   // Start canvas animations
   initCanvasSimulators();
@@ -274,11 +272,19 @@ function switchSection(sectionId) {
 // ----------------------------------------------------
 // 2. PROFILE MANAGEMENT
 // ----------------------------------------------------
-function loadProfileFromStorage() {
-  const stored = localStorage.getItem('musician_profile');
-  if (stored) {
-    currentProfile = JSON.parse(stored);
-    updateProfileUI();
+async function loadProfileFromStorage() {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists && doc.data().profile) {
+      currentProfile = doc.data().profile;
+      updateProfileUI();
+    }
+  } catch (err) {
+    // Fallback to localStorage
+    const stored = localStorage.getItem('musician_profile');
+    if (stored) { currentProfile = JSON.parse(stored); updateProfileUI(); }
   }
 }
 
@@ -306,7 +312,7 @@ function updateProfileUI() {
   }
 }
 
-function saveProfile(event) {
+async function saveProfile(event) {
   event.preventDefault();
   
   const username = document.getElementById('username').value.trim();
@@ -316,6 +322,19 @@ function saveProfile(event) {
   const instrument = document.getElementById('instrument').value;
   
   currentProfile = { username, gender, age, height, instrument };
+
+  // Save to Firestore (and localStorage as fallback)
+  try {
+    const user = auth.currentUser;
+    if (user) {
+      await db.collection('users').doc(user.uid).set(
+        { profile: currentProfile, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+    }
+  } catch (err) {
+    console.error('Firestore 個資寫入失敗：', err);
+  }
   localStorage.setItem('musician_profile', JSON.stringify(currentProfile));
   
   updateProfileUI();
@@ -2119,7 +2138,7 @@ function resetStaticDiagnosis() {
 // ----------------------------------------------------
 // 7. DATA PERSISTENCE & HISTORY LIST
 // ----------------------------------------------------
-function savePlayingRecord() {
+async function savePlayingRecord() {
   if (!currentProfile) return;
   if (!playingRecords.relax || !playingRecords.prepare || !playingRecords.playing) return;
   
@@ -2160,16 +2179,15 @@ function savePlayingRecord() {
     }
   };
   
-  const records = getHistoryFromStorage();
-  records.unshift(newRecord);
-  saveHistoryToStorage(records);
-  
+  await addRecordToFirestore(newRecord);
+
   showToast('演奏動作評估資料已成功儲存至歷史紀錄！', 'success');
   resetPlayingCapture();
+  await refreshHistory();
   setTimeout(() => { switchSection('history'); }, 500);
 }
 
-function saveStaticRecord() {
+async function saveStaticRecord() {
   if (!currentProfile || !currentStaticResult) return;
   
   const newRecord = {
@@ -2187,28 +2205,75 @@ function saveStaticRecord() {
     }
   };
   
-  const records = getHistoryFromStorage();
-  records.unshift(newRecord);
-  saveHistoryToStorage(records);
-  
+  await addRecordToFirestore(newRecord);
+
   showToast('靜態動作診斷紀錄已成功儲存！', 'success');
-  
   resetStaticDiagnosis();
-  
-  setTimeout(() => {
-    switchSection('history');
-  }, 500);
+  await refreshHistory();
+  setTimeout(() => { switchSection('history'); }, 500);
 }
 
-function getHistoryFromStorage() {
-  const data = localStorage.getItem('musician_records');
-  return data ? JSON.parse(data) : [];
+// ── Firestore 歷史紀錄存取 ────────────────────────────────────────
+// 每位使用者的紀錄存在 Firestore：
+// collection: users/{uid}/records/{recordId}
+
+async function getHistoryFromStorage() {
+  try {
+    const user = auth.currentUser;
+    if (!user) return [];
+    const snapshot = await db
+      .collection('users').doc(user.uid)
+      .collection('records')
+      .orderBy('createdAt', 'desc')
+      .get();
+    return snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+  } catch (err) {
+    console.error('Firestore 讀取失敗，改用 localStorage：', err);
+    const data = localStorage.getItem('musician_records');
+    return data ? JSON.parse(data) : [];
+  }
 }
 
-function saveHistoryToStorage(records) {
-  localStorage.setItem('musician_records', JSON.stringify(records));
-  updateHistoryTable();
-  updateDashboardStats();
+async function saveHistoryToStorage(records) {
+  // saveHistoryToStorage 在舊架構是整包覆蓋，
+  // Firestore 改用 addRecord / deleteRecord 單筆操作，
+  // 這裡保留作為相容層（匯入時批次寫入用）
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+    const batch = db.batch();
+    const colRef = db.collection('users').doc(user.uid).collection('records');
+    records.forEach(record => {
+      const ref = record.firestoreId ? colRef.doc(record.firestoreId) : colRef.doc();
+      batch.set(ref, { ...record, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+    await batch.commit();
+  } catch (err) {
+    console.error('Firestore 寫入失敗：', err);
+  }
+  await refreshHistory();
+}
+
+async function addRecordToFirestore(record) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await db.collection('users').doc(user.uid)
+    .collection('records')
+    .add({ ...record, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+async function deleteRecordFromFirestore(firestoreId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await db.collection('users').doc(user.uid)
+    .collection('records').doc(firestoreId).delete();
+}
+
+async function refreshHistory() {
+  const records = await getHistoryFromStorage();
+  updateHistoryTable(records);
+  updateDashboardStats(records);
+  renderDashboardTrendChart(records);
 }
 
 function updateHistoryTable(filteredRecords = null) {
@@ -2238,18 +2303,18 @@ function updateHistoryTable(filteredRecords = null) {
   
   records.forEach(r => {
     const row = document.createElement('tr');
-    
+    const rid = r.firestoreId || r.id;  // Firestore doc ID
+
     // Status Badge
     let lvlClass = 'badge-success';
-    if (r.level === '注意') lvlClass = 'badge-warning';
-    if (r.level === '警示') lvlClass = 'badge-danger';
-    
-    // Project type label
+    if (r.level === '注意' || r.level === 'Caution') lvlClass = 'badge-warning';
+    if (r.level === '警示' || r.level === 'Alert')   lvlClass = 'badge-danger';
+
     const typeLabel = r.type === 'playing' ? '演奏動作' : '靜態檢測';
-    
+
     row.innerHTML = `
       <td style="text-align: center; vertical-align: middle;">
-        <input type="checkbox" class="record-checkbox" data-id="${r.id}" onchange="toggleRecordSelection(${r.id}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
+        <input type="checkbox" class="record-checkbox" data-id="${rid}" onchange="toggleRecordSelection('${rid}', this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
       </td>
       <td>${r.timestamp}</td>
       <td><strong>${r.username}</strong></td>
@@ -2261,27 +2326,27 @@ function updateHistoryTable(filteredRecords = null) {
       </td>
       <td><span class="badge ${lvlClass}">${r.level}</span></td>
       <td class="actions-cell">
-        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="viewHistoryDetail(${r.id})">
+        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="viewHistoryDetail('${rid}')">
           <i data-lucide="eye" style="width: 14px; height: 14px;"></i> 檢視
         </button>
-        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; color:var(--color-danger); border-color:rgba(195,146,137,0.4);" onclick="deleteHistoryRecord(${r.id})">
+        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; color:var(--color-danger); border-color:rgba(195,146,137,0.4);" onclick="deleteHistoryRecord('${rid}')">
           <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
         </button>
       </td>
     `;
-    
+
     tbody.appendChild(row);
   });
   
   lucide.createIcons();
 }
 
-function filterHistory() {
+async function filterHistory() {
   const searchVal = document.getElementById('search-name').value.toLowerCase().trim();
   const instVal = document.getElementById('filter-instrument').value;
   const typeVal = document.getElementById('filter-type').value;
-  
-  const allRecords = getHistoryFromStorage();
+
+  const allRecords = await getHistoryFromStorage();
   
   const filtered = allRecords.filter(r => {
     const matchesSearch = r.username.toLowerCase().includes(searchVal) || r.projectName.toLowerCase().includes(searchVal);
@@ -2293,28 +2358,42 @@ function filterHistory() {
   updateHistoryTable(filtered);
 }
 
-function deleteHistoryRecord(id) {
+async function deleteHistoryRecord(firestoreId) {
   if (confirm('確定要刪除這筆評估紀錄嗎？')) {
-    const records = getHistoryFromStorage();
-    const updated = records.filter(r => r.id !== id);
-    saveHistoryToStorage(updated);
-    showToast('紀錄已成功刪除。', 'info');
+    try {
+      await deleteRecordFromFirestore(firestoreId);
+      showToast('紀錄已成功刪除。', 'info');
+      await refreshHistory();
+    } catch (err) {
+      showToast('刪除失敗，請稍後再試。', 'danger');
+    }
   }
 }
 
-function clearAllHistory() {
+async function clearAllHistory() {
   if (confirm('⚠️ 警告：確定要清空所有的歷史評估紀錄嗎？此動作無法復原！')) {
-    saveHistoryToStorage([]);
-    showToast('歷史紀錄已全部清空。', 'warning');
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const snapshot = await db.collection('users').doc(user.uid)
+        .collection('records').get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      showToast('歷史紀錄已全部清空。', 'warning');
+      await refreshHistory();
+    } catch (err) {
+      showToast('清空失敗，請稍後再試。', 'danger');
+    }
   }
 }
 
 // ----------------------------------------------------
 // 8. DETAIL VIEW MODAL
 // ----------------------------------------------------
-function viewHistoryDetail(id) {
-  const records = getHistoryFromStorage();
-  const r = records.find(item => item.id === id);
+async function viewHistoryDetail(firestoreId) {
+  const records = await getHistoryFromStorage();
+  const r = records.find(item => (item.firestoreId || item.id) == firestoreId);
   if (!r) return;
   
   const modal = document.getElementById('detail-modal');
