@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="login.css">
 </head>
 <body>
@@ -342,9 +345,20 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// ── Firebase init ─────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyD8oyp3qrsZ0lF6a4n20-TVzDCJLvpuelw",
+  authDomain: "posture-assessment.firebaseapp.com",
+  projectId: "posture-assessment",
+  storageBucket: "posture-assessment.firebasestorage.app",
+  messagingSenderId: "354726206119",
+  appId: "1:354726206119:web:b78eb4f044236caeafd982",
+  measurementId: "G-X26QMQHVVR"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
 // ── AUTH HANDLERS ─────────────────────────────────────────────────
-// These functions are designed to be easily replaced with Firebase calls later.
-// Currently implements mock login for UI testing.
 
 async function handleLogin() {
   hideError();
@@ -355,19 +369,10 @@ async function handleLogin() {
   if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
 
   setLoading('btn-login', true);
-
   try {
-    // ── FIREBASE PLACEHOLDER ──────────────────────────────────────
-    // Replace the mock below with:
-    // await firebase.auth().signInWithEmailAndPassword(email, password);
-    // window.location.href = 'index.html';
-    // ─────────────────────────────────────────────────────────────
-    await mockDelay(800);
-    // Mock: any email/password works for now
-    localStorage.setItem('mock_user', JSON.stringify({ email, name: email.split('@')[0] }));
+    await auth.signInWithEmailAndPassword(email, password);
     localStorage.setItem('lang', currentLang);
     window.location.href = 'index.html';
-
   } catch (err) {
     showError(t('err_login_fail'));
   } finally {
@@ -384,25 +389,21 @@ async function handleRegister() {
 
   if (!name || !email || !password || !confirm) { showError(t('err_fill_all')); return; }
   if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
-  if (password.length < 8) { showError(t('err_pw_short')); return; }
-  if (password !== confirm) { showError(t('err_pw_mismatch')); return; }
+  if (password.length < 8)  { showError(t('err_pw_short')); return; }
+  if (password !== confirm)  { showError(t('err_pw_mismatch')); return; }
 
   setLoading('btn-register', true);
-
   try {
-    // ── FIREBASE PLACEHOLDER ──────────────────────────────────────
-    // Replace the mock below with:
-    // const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    // await cred.user.updateProfile({ displayName: name });
-    // window.location.href = 'index.html';
-    // ─────────────────────────────────────────────────────────────
-    await mockDelay(800);
-    localStorage.setItem('mock_user', JSON.stringify({ email, name }));
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await cred.user.updateProfile({ displayName: name });
     localStorage.setItem('lang', currentLang);
     window.location.href = 'index.html';
-
   } catch (err) {
-    showError(t('err_email_exists'));
+    if (err.code === 'auth/email-already-in-use') {
+      showError(t('err_email_exists'));
+    } else {
+      showError(err.message);
+    }
   } finally {
     setLoading('btn-register', false);
   }
@@ -416,15 +417,9 @@ async function handleForgotPassword() {
   if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
 
   setLoading('btn-forgot', true);
-
   try {
-    // ── FIREBASE PLACEHOLDER ──────────────────────────────────────
-    // Replace the mock below with:
-    // await firebase.auth().sendPasswordResetEmail(email);
-    // ─────────────────────────────────────────────────────────────
-    await mockDelay(800);
+    await auth.sendPasswordResetEmail(email);
     document.getElementById('forgot-success').style.display = 'flex';
-
   } catch (err) {
     showError(t('err_invalid_email'));
   } finally {
@@ -432,20 +427,22 @@ async function handleForgotPassword() {
   }
 }
 
-// ── Mock helper ───────────────────────────────────────────────────
+// ── Mock helper (no longer needed but kept for safety) ────────────
 function mockDelay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
 // ── Init ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // If already logged in, go straight to app
-  if (localStorage.getItem('mock_user')) {
-    window.location.href = 'index.html';
-    return;
-  }
-  setLang(currentLang);
-  lucide.createIcons();
+  // If already logged in via Firebase, go straight to app
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      window.location.href = 'index.html';
+      return;
+    }
+    setLang(currentLang);
+    lucide.createIcons();
+  });
 
   // Allow Enter key to submit
   document.addEventListener('keydown', e => {

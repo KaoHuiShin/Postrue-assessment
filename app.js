@@ -93,25 +93,38 @@ function setLang(lang) {
   });
 }
 
+// ── Firebase init ─────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyD8oyp3qrsZ0lF6a4n20-TVzDCJLvpuelw",
+  authDomain: "posture-assessment.firebaseapp.com",
+  projectId: "posture-assessment",
+  storageBucket: "posture-assessment.firebasestorage.app",
+  messagingSenderId: "354726206119",
+  appId: "1:354726206119:web:b78eb4f044236caeafd982",
+  measurementId: "G-X26QMQHVVR"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
 // ── Auth guard ───────────────────────────────────────────────────
-// Redirects to login.html if not logged in.
-// When Firebase is connected, replace the mock_user check with:
-//   firebase.auth().onAuthStateChanged(user => { if (!user) redirect; })
 function checkAuth() {
-  const user = localStorage.getItem('mock_user');
-  if (!user) {
-    window.location.href = 'login.html';
-    return null;
-  }
-  return JSON.parse(user);
+  return new Promise(resolve => {
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'login.html';
+        resolve(null);
+      } else {
+        resolve(user);
+      }
+    });
+  });
 }
 
 function handleLogout() {
-  // ── FIREBASE PLACEHOLDER ─────────────────────────────────────
-  // Replace with: firebase.auth().signOut().then(() => window.location.href = 'login.html');
-  // ─────────────────────────────────────────────────────────────
-  localStorage.removeItem('mock_user');
-  window.location.href = 'login.html';
+  auth.signOut().then(() => {
+    window.location.href = 'login.html';
+  });
 }
 
 // Application State Management
@@ -158,16 +171,16 @@ let cvaState = {
 };
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Auth guard — redirect to login if not logged in
-  const user = checkAuth();
+  const user = await checkAuth();
   if (!user) return;
 
   // Apply saved language
   setLang(currentLang);
 
   // Show logged-in user name in nav / avatars
-  const displayName = user.name || user.email || tApp('guest');
+  const displayName = user.displayName || user.email || tApp('guest');
   document.querySelectorAll('#header-username, #playing-username, #static-username').forEach(el => {
     el.textContent = displayName;
   });
