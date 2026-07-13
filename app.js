@@ -176,6 +176,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = await checkAuth();
   if (!user) return;
 
+  // Auth confirmed — show the page
+  document.body.style.visibility = 'visible';
+
   // Apply saved language
   setLang(currentLang);
 
