@@ -152,18 +152,20 @@ let staticCanvasAnimId = null;
 let selectedRecordIds = new Set();
 
 // ── CVA Detection State ──────────────────────────────────────────
-// Mirrors Python: is_recording, data_cache[], LEFT_EAR=7, RIGHT_EAR=8, LEFT_SHLD=11, RIGHT_SHLD=12
 let cvaState = {
-  pose: null,          // MediaPipe Pose instance
-  camera: null,        // MediaPipe Camera instance
-  stream: null,        // Raw MediaStream (for cleanup)
-  activeStage: null,   // 'relax' | 'prepare' | 'playing' | null
+  pose: null,
+  camera: null,
+  stream: null,
+  activeStage: null,
   isRecording: false,
-  isCalibrating: false,     // true during the 3-second calibration window
-  referenceAngle: null,     // Baseline CVA captured during calibration (like Python's reference_head)
-  calibFrames: [],          // Angles collected during calibration window
-  frameBuffers: {           // Per-stage raw *delta* angle arrays
-    relax: [],
+  isCalibrating: false,
+  referenceAngle: null,    // CVA baseline (delta reference)
+  refShoulderTilt: null,   // Shoulder tilt baseline
+  calibFrames: [],         // CVA angles during calibration
+  calibShoulderFrames: [], // Shoulder tilt angles during calibration
+  frameBuffers: {
+    // Each entry: { cva, shoulderTilt, leftElbow, rightElbow }
+    relax:   [],
     prepare: [],
     playing: []
   },
@@ -862,6 +864,43 @@ function calcCVA(landmarks) {
   return Math.atan2(yDiff, xDiff) * (180 / Math.PI);
 }
 
+/**
+ * Shoulder tilt: angle of the line connecting both shoulders to horizontal.
+ * Based on Rodríguez-Gude et al. / Piatek et al. — horizontal angle of shoulders.
+ * Formula: arctan2(|L_shld.y - R_shld.y|, |L_shld.x - R_shld.x|) × (180/π)
+ * Ideal = 0° (level shoulders). Higher value = greater tilt (uneven shoulders).
+ */
+function calcShoulderTilt(landmarks) {
+  const ls = landmarks[11]; // LEFT_SHOULDER
+  const rs = landmarks[12]; // RIGHT_SHOULDER
+  return Math.atan2(Math.abs(ls.y - rs.y), Math.abs(ls.x - rs.x)) * (180 / Math.PI);
+}
+
+/**
+ * Elbow angle: 3-point joint angle at elbow (shoulder–elbow–wrist).
+ * Based on Yagisan et al. (2009) — acromion, lateral epicondyle, ulnar styloid.
+ * MediaPipe approximation: shoulder(11/12), elbow(13/14), wrist(15/16).
+ * Formula: arccos(dot(A,B) / (|A|×|B|)) × (180/π) where A = shoulder–elbow, B = wrist–elbow
+ */
+function calcElbowAngle(shoulder, elbow, wrist) {
+  const ax = shoulder.x - elbow.x, ay = shoulder.y - elbow.y;
+  const bx = wrist.x   - elbow.x, by = wrist.y   - elbow.y;
+  const dot = ax * bx + ay * by;
+  const magA = Math.sqrt(ax * ax + ay * ay);
+  const magB = Math.sqrt(bx * bx + by * by);
+  if (magA === 0 || magB === 0) return NaN;
+  return Math.acos(Math.min(1, Math.max(-1, dot / (magA * magB)))) * (180 / Math.PI);
+}
+
+/** Compute all three parameters from a single frame of landmarks */
+function calcAllParams(landmarks) {
+  const cva          = calcCVA(landmarks);
+  const shoulderTilt = calcShoulderTilt(landmarks);
+  const leftElbow    = calcElbowAngle(landmarks[11], landmarks[13], landmarks[15]);
+  const rightElbow   = calcElbowAngle(landmarks[12], landmarks[14], landmarks[16]);
+  return { cva, shoulderTilt, leftElbow, rightElbow };
+}
+
 function syncOverlaySize(canvas) {
   const rect = canvas.getBoundingClientRect();
   if (canvas.width !== rect.width || canvas.height !== rect.height) {
@@ -874,14 +913,19 @@ function drawCvaOverlay(canvas, landmarks, rawAngle, delta) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  const head = cvaMidpoint(landmarks[CVA_IDX.LEFT_EAR], landmarks[CVA_IDX.RIGHT_EAR]);
-  const shld = cvaMidpoint(landmarks[CVA_IDX.LEFT_SHLD], landmarks[CVA_IDX.RIGHT_SHLD]);
+
+  const lm = landmarks;
+  const head = cvaMidpoint(lm[CVA_IDX.LEFT_EAR], lm[CVA_IDX.RIGHT_EAR]);
+  const shld = cvaMidpoint(lm[CVA_IDX.LEFT_SHLD], lm[CVA_IDX.RIGHT_SHLD]);
+
+  // ── CVA line (ear mid → shoulder mid) ──────────────────────
   const hx = head.x * w, hy = head.y * h;
   const sx = shld.x * w, sy = shld.y * h;
 
   ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(sx, sy); ctx.stroke();
 
+  // Horizontal reference at shoulder
   ctx.strokeStyle = 'rgba(161,176,173,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(sx - 70, sy); ctx.lineTo(sx + 70, sy); ctx.stroke();
   ctx.setLineDash([]);
@@ -897,12 +941,68 @@ function drawCvaOverlay(canvas, landmarks, rawAngle, delta) {
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
 
+  // CVA label
   const mx = (hx + sx) / 2, my = (hy + sy) / 2;
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.beginPath(); ctx.roundRect(mx + 6, my - 11, 90, 20, 4); ctx.fill();
   ctx.fillStyle = isWarning ? '#C39289' : '#C6CCC0';
-  ctx.font = 'bold 12px monospace';
-  ctx.fillText(`${rawAngle.toFixed(1)}° raw`, mx + 10, my + 3);
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText(`CVA ${rawAngle.toFixed(1)}°`, mx + 10, my + 3);
+
+  // ── Shoulder tilt line (L_shoulder → R_shoulder) ───────────
+  const ls = lm[11], rs = lm[12];
+  const lsx = ls.x * w, lsy = ls.y * h;
+  const rsx = rs.x * w, rsy = rs.y * h;
+  const shTilt = calcShoulderTilt(lm);
+  const shColor = shTilt > 5 ? '#E1AA8D' : '#C6CCC0';
+
+  ctx.strokeStyle = shColor; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(lsx, lsy); ctx.lineTo(rsx, rsy); ctx.stroke();
+
+  [{ x: lsx, y: lsy }, { x: rsx, y: rsy }].forEach(p => {
+    ctx.fillStyle = shColor;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.stroke();
+  });
+
+  // Shoulder tilt label
+  const smx = (lsx + rsx) / 2, smy = (lsy + rsy) / 2 - 14;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath(); ctx.roundRect(smx - 40, smy - 11, 80, 18, 4); ctx.fill();
+  ctx.fillStyle = shColor; ctx.font = 'bold 10px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`肩膀 ${shTilt.toFixed(1)}°`, smx, smy + 2);
+  ctx.textAlign = 'left';
+
+  // ── Elbow angles ────────────────────────────────────────────
+  [
+    { sh: lm[11], el: lm[13], wr: lm[15], label: 'L' },
+    { sh: lm[12], el: lm[14], wr: lm[16], label: 'R' }
+  ].forEach(({ sh, el, wr, label }) => {
+    const ex = el.x * w, ey = el.y * h;
+    const angle = calcElbowAngle(sh, el, wr);
+    if (isNaN(angle)) return;
+
+    const elColor = (angle < 70 || angle > 160) ? '#E1AA8D' : '#A1B0AD';
+
+    // Arm lines
+    ctx.strokeStyle = elColor; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sh.x * w, sh.y * h); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(wr.x * w, wr.y * h); ctx.stroke();
+
+    // Elbow dot
+    ctx.fillStyle = elColor;
+    ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.stroke();
+
+    // Label
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.roundRect(ex + 6, ey - 10, 64, 16, 3); ctx.fill();
+    ctx.fillStyle = elColor; ctx.font = 'bold 10px monospace';
+    ctx.fillText(`${label} ${angle.toFixed(0)}°`, ex + 9, ey + 2);
+  });
 }
 
 async function initCvaPose() {
@@ -926,20 +1026,22 @@ async function initCvaPose() {
   pose.onResults((results) => {
     if (!cvaState.activeStage) return;
     if (!results.poseLandmarks) return;
-    const rawAngle = calcCVA(results.poseLandmarks);
-    if (isNaN(rawAngle)) return;
+
+    const params = calcAllParams(results.poseLandmarks);
+    if (isNaN(params.cva)) return;
 
     // Always draw overlay while camera is open
     const overlayCanvas = document.getElementById('cva-overlay-canvas');
     if (overlayCanvas) {
       syncOverlaySize(overlayCanvas);
-      const delta = cvaState.referenceAngle !== null ? rawAngle - cvaState.referenceAngle : 0;
-      drawCvaOverlay(overlayCanvas, results.poseLandmarks, rawAngle, delta);
+      const delta = cvaState.referenceAngle !== null ? params.cva - cvaState.referenceAngle : 0;
+      drawCvaOverlay(overlayCanvas, results.poseLandmarks, params.cva, delta);
     }
 
     // ── Calibration sampling ─────────────────────────────────
     if (cvaState.isCalibrating) {
-      cvaState.calibFrames.push(rawAngle);
+      cvaState.calibFrames.push(params.cva);
+      cvaState.calibShoulderFrames.push(params.shoulderTilt);
       return;
     }
 
@@ -947,25 +1049,39 @@ async function initCvaPose() {
     if (!cvaState.isRecording) return;
     if (cvaState.referenceAngle === null) return;
 
-    const delta = rawAngle - cvaState.referenceAngle;
+    const cvaDelta = params.cva - cvaState.referenceAngle;
+    const shDelta  = cvaState.refShoulderTilt !== null
+      ? params.shoulderTilt - cvaState.refShoulderTilt
+      : params.shoulderTilt;
+
     const stage = cvaState.activeStage;
-    cvaState.frameBuffers[stage].push(delta);
+    cvaState.frameBuffers[stage].push({
+      cva:          cvaDelta,
+      shoulderTilt: shDelta,
+      leftElbow:    params.leftElbow,
+      rightElbow:   params.rightElbow
+    });
     const frameCount = cvaState.frameBuffers[stage].length;
 
+    // Update live badge (CVA delta as primary indicator)
     const angleEl  = document.getElementById(`cva-angle-${stage}`);
     const framesEl = document.getElementById(`cva-frames-${stage}`);
-    if (angleEl)  angleEl.textContent  = `Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}°`;
+    if (angleEl)  angleEl.textContent  = `CVA Δ ${cvaDelta >= 0 ? '+' : ''}${cvaDelta.toFixed(1)}°`;
     if (framesEl) framesEl.textContent = `${frameCount} 幀`;
 
+    // Update in-frame overlay
     const overlayAngleEl = document.getElementById('cva-live-overlay-angle');
     if (overlayAngleEl) {
-      overlayAngleEl.textContent = `CVA Δ: ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}°`;
-      overlayAngleEl.style.color = Math.abs(delta) > 10 ? '#C39289' : '#C6CCC0';
+      overlayAngleEl.textContent =
+        `CVA Δ${cvaDelta >= 0 ? '+' : ''}${cvaDelta.toFixed(1)}°  肩${params.shoulderTilt.toFixed(1)}°`;
+      overlayAngleEl.style.color = Math.abs(cvaDelta) > 10 ? '#C39289' : '#C6CCC0';
     }
 
     document.getElementById('playing-hud-text').innerHTML =
-      `STATUS: RECORDING CVA [${stage.toUpperCase()}]<br>` +
-      `DELTA: ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}° | FRAME: ${frameCount}`;
+      `STATUS: RECORDING [${stage.toUpperCase()}] | FRAME: ${frameCount}<br>` +
+      `CVA Δ${cvaDelta >= 0 ? '+' : ''}${cvaDelta.toFixed(1)}° | 肩 ${params.shoulderTilt.toFixed(1)}° | ` +
+      `L肘 ${isNaN(params.leftElbow) ? '--' : params.leftElbow.toFixed(0)}° | ` +
+      `R肘 ${isNaN(params.rightElbow) ? '--' : params.rightElbow.toFixed(0)}°`;
   });
 
   await pose.initialize();
@@ -1083,6 +1199,7 @@ async function runCalibration(stage, event) {
     'STATUS: CALIBRATING…<br>HOLD YOUR NEUTRAL POSTURE STILL';
 
   cvaState.calibFrames = [];
+  cvaState.calibShoulderFrames = [];
   cvaState.isCalibrating = true;
   await new Promise(r => setTimeout(r, 1500));
   cvaState.isCalibrating = false;
@@ -1096,8 +1213,9 @@ async function runCalibration(stage, event) {
     return;
   }
 
-  cvaState.referenceAngle =
-    cvaState.calibFrames.reduce((a, b) => a + b, 0) / cvaState.calibFrames.length;
+  const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+  cvaState.referenceAngle  = avg(cvaState.calibFrames);
+  cvaState.refShoulderTilt = avg(cvaState.calibShoulderFrames);
 
   const refText = `基準: ${cvaState.referenceAngle.toFixed(1)}° (${cvaState.calibFrames.length} 幀)`;
   calibStatus.textContent = `✓ ${refText}`;
@@ -1166,40 +1284,79 @@ function toggleRecording(stage, event) {
       return;
     }
 
-    const avg = frames.reduce((a, b) => a + b, 0) / frames.length;
-    const min = Math.min(...frames);
-    const max = Math.max(...frames);
-    const alertCount = frames.filter(d => d < -10).length;
-    const alertPct   = ((alertCount / frames.length) * 100).toFixed(1);
+    // ── Compute per-parameter summaries ────────────────────────
+    const avg     = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+    const minVal  = arr => Math.min(...arr);
+    const maxVal  = arr => Math.max(...arr);
+
+    const cvaFrames   = frames.map(f => f.cva);
+    const shFrames    = frames.map(f => f.shoulderTilt);
+    const leFrames    = frames.map(f => f.leftElbow).filter(v => !isNaN(v));
+    const reFrames    = frames.map(f => f.rightElbow).filter(v => !isNaN(v));
+
+    const cvaSummary = {
+      frames:    cvaFrames,
+      referenceAngle: parseFloat(cvaState.referenceAngle?.toFixed(2) ?? 0),
+      avg:       parseFloat(avg(cvaFrames).toFixed(2)),
+      min:       parseFloat(minVal(cvaFrames).toFixed(2)),
+      max:       parseFloat(maxVal(cvaFrames).toFixed(2)),
+      abovePct:  parseFloat(((cvaFrames.filter(d => d < -10).length / cvaFrames.length) * 100).toFixed(1)),
+      frameCount: cvaFrames.length
+    };
+
+    const shoulderSummary = {
+      frames:    shFrames,
+      referenceAngle: parseFloat(cvaState.refShoulderTilt?.toFixed(2) ?? 0),
+      avg:       parseFloat(avg(shFrames).toFixed(2)),
+      min:       parseFloat(minVal(shFrames).toFixed(2)),
+      max:       parseFloat(maxVal(shFrames).toFixed(2)),
+      abovePct:  parseFloat(((shFrames.filter(d => Math.abs(d) > 3).length / shFrames.length) * 100).toFixed(1)),
+      frameCount: shFrames.length
+    };
+
+    const elbowSummary = {
+      leftFrames:  leFrames,
+      rightFrames: reFrames,
+      leftAvg:     leFrames.length ? parseFloat(avg(leFrames).toFixed(1)) : null,
+      rightAvg:    reFrames.length ? parseFloat(avg(reFrames).toFixed(1)) : null,
+      leftMin:     leFrames.length ? parseFloat(minVal(leFrames).toFixed(1)) : null,
+      rightMin:    reFrames.length ? parseFloat(minVal(reFrames).toFixed(1)) : null,
+      leftMax:     leFrames.length ? parseFloat(maxVal(leFrames).toFixed(1)) : null,
+      rightMax:    reFrames.length ? parseFloat(maxVal(reFrames).toFixed(1)) : null,
+      frameCount:  frames.length
+    };
 
     if (!playingRecords[stage]) {
       playingRecords[stage] = generateMockPoseData(stage, currentProfile?.instrument || '小提琴');
     }
-    playingRecords[stage].cva = {
-      frames,
-      referenceAngle: parseFloat(cvaState.referenceAngle?.toFixed(2) ?? 0),
-      avg: parseFloat(avg.toFixed(2)),
-      min: parseFloat(min.toFixed(2)),
-      max: parseFloat(max.toFixed(2)),
-      abovePct: parseFloat(alertPct),
-      frameCount: frames.length
-    };
-    playingRecords[stage].neckAngle = parseFloat(Math.max(0, -avg + 12).toFixed(2));
+    // Store real measurements (override mock values)
+    playingRecords[stage].cva          = cvaSummary;
+    playingRecords[stage].shoulderData = shoulderSummary;
+    playingRecords[stage].elbowData    = elbowSummary;
+    // Sync individual fields used by existing dashboard logic
+    playingRecords[stage].neckAngle        = parseFloat(Math.max(0, -cvaSummary.avg + 12).toFixed(2));
+    playingRecords[stage].shoulderTilt     = parseFloat(Math.abs(shoulderSummary.avg).toFixed(2));
+    if (elbowSummary.leftAvg  !== null) playingRecords[stage].leftElbow  = elbowSummary.leftAvg;
+    if (elbowSummary.rightAvg !== null) playingRecords[stage].rightElbow = elbowSummary.rightAvg;
 
     recBtn.innerHTML = '<i data-lucide="refresh-cw"></i> 重新錄製';
     recBtn.style.background = '';
     recBtn.style.borderColor = '';
     document.getElementById(`label-${stage}`).textContent =
-      `已完成 ✓ (${frames.length} 幀, avg Δ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}°)`;
+      `已完成 ✓ (${frames.length} 幀)`;
     document.getElementById(`step-${stage}`).classList.add('captured');
     document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
     document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
     document.getElementById('playing-hud-text').innerHTML =
-      `STATUS: RECORDED ✓ [${stage.toUpperCase()}]<br>FRAMES: ${frames.length} | AVG Δ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}°`;
+      `STATUS: RECORDED ✓ [${stage.toUpperCase()}]<br>` +
+      `CVA Δ${cvaSummary.avg >= 0 ? '+' : ''}${cvaSummary.avg.toFixed(1)}° | ` +
+      `肩 ${shoulderSummary.avg.toFixed(1)}° | ` +
+      `L肘 ${elbowSummary.leftAvg ?? '--'}° R肘 ${elbowSummary.rightAvg ?? '--'}°`;
 
     lucide.createIcons();
     showToast(
-      `「${getStateChineseName(stage)}」錄製完成！${frames.length} 幀，平均 Δ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}°`,
+      `「${getStateChineseName(stage)}」錄製完成！CVA Δ${cvaSummary.avg >= 0 ? '+' : ''}${cvaSummary.avg.toFixed(1)}°，` +
+      `肩膀傾斜 ${shoulderSummary.avg.toFixed(1)}°`,
       'success'
     );
     checkAndRenderPlayingDashboard();
@@ -1555,8 +1712,12 @@ function resetPlayingCapture() {
     if (statusText) statusText.textContent = 'POSE ESTIMATOR SIMULATOR';
     if (statusDot)  statusDot.style.background = '';
   }
-  // Reset CVA frame buffers
-  cvaState.frameBuffers = { relax: [], prepare: [], playing: [] };
+  // Reset CVA frame buffers and baselines
+  cvaState.frameBuffers        = { relax: [], prepare: [], playing: [] };
+  cvaState.referenceAngle      = null;
+  cvaState.refShoulderTilt     = null;
+  cvaState.calibFrames         = [];
+  cvaState.calibShoulderFrames = [];
 
   playingRecords = { relax: null, prepare: null, playing: null };
   selectedPlayingStep = 'relax';
@@ -1582,8 +1743,6 @@ function resetPlayingCapture() {
     if (recBtn)     { recBtn.style.display = 'none'; recBtn.style.background = ''; recBtn.style.borderColor = ''; recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製'; }
     if (liveBadge)  liveBadge.style.display = 'none';
   });
-  // Also reset referenceAngle so next session starts fresh
-  cvaState.referenceAngle = null;
   lucide.createIcons();
 
   document.getElementById('playing-waiting-panel').style.display = 'flex';
