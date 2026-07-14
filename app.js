@@ -1,30 +1,196 @@
 // ── i18n ─────────────────────────────────────────────────────────
 const APP_I18N = {
   zh: {
+    brand_name: '演奏者健康動作評估系統',
+    brand_title_html: '演奏者健康<br>動作評估系統',
     nav_dashboard: '儀表板總覽', nav_profile: '個資填寫',
     nav_playing: '演奏動作評估', nav_static: '靜態動作評估',
     nav_history: '使用者歷史紀錄', nav_logout: '登出',
-    nav_footer: '演奏者健康動作評估系統',
-    page_dashboard_title: '儀表板總覽',
-    page_dashboard_sub: '歡迎使用演奏者動作評估系統，追蹤並改善演奏姿態與健康',
-    page_profile_title: '個資填寫',
-    page_playing_title: '演奏動作評估',
-    page_static_title: '靜態動作評估',
-    page_history_title: '使用者歷史紀錄',
     guest: '訪客',
+    // Dashboard
+    dash_sub: '歡迎使用演奏者動作評估系統，追蹤並改善演奏姿態與健康',
+    dash_cta_title: '開始您的健康動作評估',
+    dash_cta_desc: '本系統可記錄您在演奏前、中、後的身體姿態，或是診斷常見的靜態動作（如高低肩、頭部前傾與抬手姿勢）。請先填寫基本個資，隨後點選左側評估功能開始檢測。',
+    dash_fill_profile: '填寫基本資料',
+    stat_total: '總評估次數', stat_score: '最近評估得分',
+    stat_instrument: '演奏樂器', stat_none: '無',
+    dash_trend: '歷史評估趨勢', dash_tips: '健康建議提示',
+    dash_no_tips: '暫無足夠的評估紀錄。請至少完成一次動作評估以獲得個人化的健康改善建議。',
+    // Profile
+    profile_sub: '請輸入演奏者的基本資料，以便系統建立專屬的姿勢評估報告',
+    profile_form_title: '演奏者基本資料表單',
+    label_name: '姓名 / 代號', label_gender: '性別',
+    label_age: '年齡', label_height: '身高 (cm)', label_instrument: '演奏樂器',
+    ph_name: '請輸入姓名', ph_gender: '請選擇性別',
+    ph_age: '請輸入年齡', ph_height: '請輸入身高', ph_instrument: '請選擇樂器',
+    opt_male: '男', opt_female: '女', opt_other_gender: '其他 / 不便透露',
+    opt_violin: '小提琴 (Violin)', opt_cello: '大提琴 (Cello)',
+    btn_reset: '重設', btn_save_profile: '儲存並開始評估',
+    // Playing
+    playing_sub: '記錄三個不同演奏狀態下的關節點位數值，生成當次姿態評估儀表板',
+    calib_recording: '正在記錄您的基準姿勢…',
+    stage_relax: '1. 演奏前放鬆姿勢',
+    stage_prepare: '2. 準備演奏的姿勢',
+    stage_playing: '3. 演奏中的動作',
+    frames_unit: '幀',
+    playing_waiting_title: '等待資料錄製',
+    btn_load_sample: '載入模擬示範數據',
+    playing_results_title: '評估結果分析',
+    score_label: '健康度評分',
+    playing_rating_default: '姿態表現：優良',
+    metrics_title: '關鍵關節點位數值 (演奏中狀態)',
+    metric_neck: '頸椎前傾角度', metric_shoulder: '雙肩傾斜度',
+    metric_symmetry: '左右肩對稱程度 (Shoulder Symmetry)',
+    metric_left_elbow: '左手肘夾角', metric_right_elbow: '右手肘夾角',
+    anomaly_slot: '動態動作異常姿勢分析 (預留辨識插槽)',
+    btn_re_record: '重新錄製', btn_save_assessment: '儲存此評估',
+    chart_joint_title: '三狀態關節夾角折線圖',
+    chart_sym_title: '左右肩部對稱折線圖 (Shoulder Symmetry)',
+    chart_cva_title: 'CVA 頭部前傾角度 — 逐幀折線圖（三階段）',
+    // Static
+    static_sub: '進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點',
+    static_select_title: '1. 選擇檢測診斷項目',
+    diag_uneven: '高低肩檢測',
+    diag_uneven_desc: '診斷左右肩膀水平線之高度偏差，檢視脊椎側彎或肌肉不平衡風險。',
+    diag_fhp: '頭部前傾檢測',
+    diag_fhp_desc: '檢測頸椎與耳垂之鉛垂夾角，判斷是否有俗稱「烏龜頸」的長頸族體態。',
+    diag_arm: '抬手檢測',
+    diag_arm_desc: '檢測雙手高舉過頭時，肩膀與手臂的伸展夾角與關節活動度，評估五十肩風險。',
+    btn_start_diag: '開始診斷', btn_reset_diag: '重新診斷',
+    static_waiting_title: '等待診斷分析',
+    diag_result_title: '診斷結果報告',
+    diag_sym_score: '對稱分數', diag_rating_default: '評定：正常',
+    diag_metrics_title: '檢測指標數值',
+    diag_m1: '雙肩水平高度差', diag_m2: '左右肩關節角度',
+    diag_pt_advice: '物理治療建議', btn_save_diag: '儲存此檢測',
+    // History
+    history_sub: '查閱、篩選過往錄製的演奏姿態數據與靜態動作診斷紀錄',
+    history_search: '搜尋演奏者', history_filter_inst: '依樂器篩選',
+    history_filter_type: '依檢測類型',
+    ph_search: '輸入姓名或關鍵字',
+    opt_all_inst: '全部樂器', opt_violin_short: '小提琴', opt_cello_short: '大提琴',
+    opt_all_type: '全部類型', opt_playing_type: '演奏評估', opt_static_type: '靜態評估',
+    btn_export: '匯出資料', btn_import: '匯入', btn_clear: '清空',
+    th_time: '評估時間', th_name: '姓名 / 代號', th_instrument: '樂器',
+    th_type: '評估類型', th_item: '評估項目 / 得分',
+    th_level: '健康等級', th_actions: '操作項目',
+    // Extra
+    not_recorded: '未錄製',
+    btn_open_camera: '啟動攝影機',
+    btn_calibrate: '校準歸零',
+    btn_start_rec: '開始錄製',
+    baseline_label: '基準',
+    playing_waiting_desc: '請依序啟動攝影機並完成三個階段的錄製，系統將自動生成姿勢分析儀表板。',
+    static_waiting_desc: '請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。',
+    chart_joint_desc: '折線圖顯示三個不同動作姿態（放鬆、準備、演奏）在頸椎、雙肩、雙肘及手腕的關節夾角變化趨勢。',
+    chart_sym_desc: '對比三個狀態下左右肩膀水平線高度差與受力對稱百分比（100% 代表完全對稱與平衡）。',
+    history_empty: '目前無歷史評估紀錄，請開始填寫基本資料並進行評估！',
+    btn_compare: '比較所選紀錄',
+    diag_m1_unit: '偏差 < 1.0 cm', diag_m2_default: '左右對稱良好',
+    diag_pt_text: '日常練習前可進行 5 分鐘肩頸拉伸，拉伸斜方肌。演奏小提琴每 45 分鐘建議休息 10 分鐘，並做水平轉頭動作放鬆頸部。',
+    playing_result_default: '您的整體肩頸、手肘角度皆符合健康工學範圍，請繼續保持。',
+    diag_result_default: '您的肩膀高度對稱，未發現明顯傾斜，請保持良好坐姿與站姿。',
+    norm_neck: '標準 < 15°', norm_shoulder: '標準 < 5°', norm_sym: '標準 > 90%',
+    stage_relax_short: '放鬆', stage_prepare_short: '準備', stage_playing_short: '演奏中',
+    threshold_label: '警戒線 60°',
+    cva_desc: 'CVA Δ（頸椎角變化量）為相對於您校準基準姿勢的角度偏移。<strong>負值</strong>代表頭部比基準更前傾，<strong>正值</strong>代表更後仰。Δ &lt; −10° 的區間以紅色色帶標示。',
+    diag_sim_uneven: '高低肩檢測模擬中',
   },
   en: {
+    brand_name: 'Performer Health Assessment System',
+    brand_title_html: 'Performer Health<br>Assessment System',
     nav_dashboard: 'Dashboard', nav_profile: 'Personal Info',
     nav_playing: 'Playing Assessment', nav_static: 'Static Assessment',
     nav_history: 'History Records', nav_logout: 'Logout',
-    nav_footer: 'Performer Health Assessment System',
-    page_dashboard_title: 'Dashboard',
-    page_dashboard_sub: 'Welcome — track and improve your playing posture and health',
-    page_profile_title: 'Personal Information',
-    page_playing_title: 'Playing Movement Assessment',
-    page_static_title: 'Static Movement Assessment',
-    page_history_title: 'History Records',
     guest: 'Guest',
+    // Dashboard
+    dash_sub: 'Welcome — track and improve your playing posture and health',
+    dash_cta_title: 'Start Your Health Assessment',
+    dash_cta_desc: 'This system records your body posture before, during, and after playing, and diagnoses common static posture issues. Please fill in your basic information first, then select an assessment from the left sidebar.',
+    dash_fill_profile: 'Fill in Basic Info',
+    stat_total: 'Total Assessments', stat_score: 'Latest Score',
+    stat_instrument: 'Instrument', stat_none: 'None',
+    dash_trend: 'Assessment History Trend', dash_tips: 'Health Recommendations',
+    dash_no_tips: 'No sufficient records yet. Complete at least one assessment to receive personalised recommendations.',
+    // Profile
+    profile_sub: "Please enter the performer's basic information to build a personalised posture assessment report.",
+    profile_form_title: 'Performer Basic Info Form',
+    label_name: 'Name / ID', label_gender: 'Gender',
+    label_age: 'Age', label_height: 'Height (cm)', label_instrument: 'Instrument',
+    ph_name: 'Enter name or ID', ph_gender: 'Select gender',
+    ph_age: 'Enter age', ph_height: 'Enter height', ph_instrument: 'Select instrument',
+    opt_male: 'Male', opt_female: 'Female', opt_other_gender: 'Other / Prefer not to say',
+    opt_violin: 'Violin', opt_cello: 'Cello',
+    btn_reset: 'Reset', btn_save_profile: 'Save & Start Assessment',
+    // Playing
+    playing_sub: 'Record joint values across three playing states to generate a posture assessment dashboard.',
+    calib_recording: 'Recording your baseline posture…',
+    stage_relax: '1. Pre-playing Relaxed Posture',
+    stage_prepare: '2. Ready-to-Play Posture',
+    stage_playing: '3. During-playing Motion',
+    frames_unit: 'frames',
+    playing_waiting_title: 'Waiting for Recording',
+    btn_load_sample: 'Load Sample Data',
+    playing_results_title: 'Assessment Results',
+    score_label: 'Health Score',
+    playing_rating_default: 'Posture: Excellent',
+    metrics_title: 'Key Joint Values (During Playing)',
+    metric_neck: 'Neck Forward Tilt', metric_shoulder: 'Shoulder Tilt',
+    metric_symmetry: 'Shoulder Symmetry',
+    metric_left_elbow: 'Left Elbow Angle', metric_right_elbow: 'Right Elbow Angle',
+    anomaly_slot: 'Dynamic Posture Anomaly Analysis (placeholder)',
+    btn_re_record: 'Reset Recording', btn_save_assessment: 'Save Assessment',
+    chart_joint_title: 'Three-State Joint Angle Chart',
+    chart_sym_title: 'Shoulder Symmetry Chart',
+    chart_cva_title: 'CVA Forward Head Angle — Per-Frame Chart (3 Stages)',
+    // Static
+    static_sub: 'Perform image-based detection and diagnosis of common static postures.',
+    static_select_title: '1. Select Diagnostic Test',
+    diag_uneven: 'Uneven Shoulders',
+    diag_uneven_desc: 'Diagnose horizontal height deviation between shoulders; assess scoliosis or muscle imbalance risk.',
+    diag_fhp: 'Forward Head Posture',
+    diag_fhp_desc: 'Measure the angle between the cervical spine and earlobe to assess forward head posture ("tech neck").',
+    diag_arm: 'Arm Raise Test',
+    diag_arm_desc: 'Assess shoulder and arm extension angles during overhead raise to evaluate frozen shoulder risk.',
+    btn_start_diag: 'Start Diagnosis', btn_reset_diag: 'Reset Diagnosis',
+    static_waiting_title: 'Awaiting Diagnosis',
+    diag_result_title: 'Diagnostic Report',
+    diag_sym_score: 'Symmetry Score', diag_rating_default: 'Rating: Normal',
+    diag_metrics_title: 'Diagnostic Metrics',
+    diag_m1: 'Shoulder Height Difference', diag_m2: 'Shoulder Joint Angles',
+    diag_pt_advice: 'Physical Therapy Advice', btn_save_diag: 'Save Diagnosis',
+    // History
+    history_sub: 'Browse and filter past playing posture data and static movement diagnosis records.',
+    history_search: 'Search Performer', history_filter_inst: 'Filter by Instrument',
+    history_filter_type: 'Filter by Type',
+    ph_search: 'Enter name or keyword',
+    opt_all_inst: 'All Instruments', opt_violin_short: 'Violin', opt_cello_short: 'Cello',
+    opt_all_type: 'All Types', opt_playing_type: 'Playing Assessment', opt_static_type: 'Static Assessment',
+    btn_export: 'Export Data', btn_import: 'Import', btn_clear: 'Clear All',
+    th_time: 'Date / Time', th_name: 'Name / ID', th_instrument: 'Instrument',
+    th_type: 'Type', th_item: 'Assessment / Score',
+    th_level: 'Health Level', th_actions: 'Actions',
+    // Extra
+    not_recorded: 'Not recorded',
+    btn_open_camera: 'Start Camera',
+    btn_calibrate: 'Calibrate Zero',
+    btn_start_rec: 'Start Recording',
+    baseline_label: 'Baseline',
+    playing_waiting_desc: 'Activate the camera and complete all three recording stages. The system will automatically generate a posture analysis dashboard.',
+    static_waiting_desc: 'Select a diagnostic item on the left, then click "Start Diagnosis" to begin analysis.',
+    chart_joint_desc: 'Line chart showing joint angle trends across three posture states (relax, prepare, playing).',
+    chart_sym_desc: 'Comparison of left-right shoulder symmetry percentage across the three states (100% = fully symmetric).',
+    history_empty: 'No history records yet. Please fill in your basic information and complete an assessment.',
+    btn_compare: 'Compare Selected',
+    diag_m1_unit: 'deviation < 1.0 cm', diag_m2_default: 'Good bilateral symmetry',
+    diag_pt_text: 'Perform 5 minutes of neck and shoulder stretching before daily practice. For violin players, rest for 10 minutes every 45 minutes and do horizontal head rotations to relax the neck.',
+    playing_result_default: 'Your overall shoulder, neck, and elbow angles are within healthy ergonomic ranges. Keep it up.',
+    diag_result_default: 'Your shoulder height is symmetric. No significant tilt detected. Maintain good posture.',
+    norm_neck: 'norm < 15°', norm_shoulder: 'norm < 5°', norm_sym: 'norm > 90%',
+    stage_relax_short: 'Relax', stage_prepare_short: 'Prepare', stage_playing_short: 'Playing',
+    threshold_label: 'Threshold 60°',
+    cva_desc: 'CVA Δ is the angular deviation from your calibrated baseline. <strong>Negative values</strong> indicate more forward head lean; <strong>positive values</strong> indicate more upright. Δ &lt; −10° regions are highlighted in red.',
+    diag_sim_uneven: 'Uneven Shoulders — Simulating',
   }
 };
 
@@ -37,60 +203,30 @@ function tApp(key) {
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
+  document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
 
-  // Update lang buttons
+  // Update lang toggle buttons
   const zhBtn = document.getElementById('nav-lang-zh');
   const enBtn = document.getElementById('nav-lang-en');
   if (zhBtn) zhBtn.classList.toggle('active', lang === 'zh');
   if (enBtn) enBtn.classList.toggle('active', lang === 'en');
 
-  // Update nav labels
-  const navMap = {
-    'nav-dashboard': 'nav_dashboard',
-    'nav-profile':   'nav_profile',
-    'nav-playing':   'nav_playing',
-    'nav-static':    'nav_static',
-    'nav-history':   'nav_history',
-  };
-  Object.entries(navMap).forEach(([id, key]) => {
-    const el = document.querySelector(`#${id} span`);
-    if (el) el.textContent = tApp(key);
+  const dict = APP_I18N[lang];
+
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
   });
 
-  // Logout label
-  const logoutLabel = document.getElementById('nav-logout-label');
-  if (logoutLabel) logoutLabel.textContent = tApp('nav_logout');
-
-  // Footer label
-  const footerLabel = document.getElementById('nav-footer-label');
-  if (footerLabel) footerLabel.textContent = tApp('nav_footer');
-
-  // Page headers
-  const headerMap = [
-    ['section-dashboard', 'page_dashboard_title', 'page_dashboard_sub'],
-    ['section-profile',   'page_profile_title',   null],
-    ['section-playing',   'page_playing_title',   null],
-    ['section-static',    'page_static_title',    null],
-    ['section-history',   'page_history_title',   null],
-  ];
-  headerMap.forEach(([sectionId, titleKey, subKey]) => {
-    const section = document.getElementById(sectionId);
-    if (!section) return;
-    const h1 = section.querySelector('.page-title h1');
-    if (h1) h1.textContent = tApp(titleKey);
-    if (subKey) {
-      const p = section.querySelector('.page-title p');
-      if (p) p.textContent = tApp(subKey);
-    }
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (dict[key]) el.placeholder = dict[key];
   });
 
-  // Guest label
-  const guestEls = document.querySelectorAll('[id$="-username"], #header-username');
-  guestEls.forEach(el => {
-    if (el.textContent === '訪客' || el.textContent === 'Guest') {
-      el.textContent = tApp('guest');
-    }
-  });
+  // Update page title
+  document.title = dict['brand_name'] || document.title;
 }
 
 // ── Firebase init ─────────────────────────────────────────────────
