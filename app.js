@@ -3070,7 +3070,7 @@ function updateDashboardStats() {
   if (currentProfile) {
     document.getElementById('stat-instrument').textContent = currentProfile.instrument;
   } else {
-    document.getElementById('stat-instrument').textContent = '無';
+    document.getElementById('stat-instrument').textContent = tApp('stat_none');
   }
   
   // Render recommendations tips
