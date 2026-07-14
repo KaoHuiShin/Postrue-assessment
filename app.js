@@ -227,6 +227,9 @@ function setLang(lang) {
 
   // Update page title
   document.title = dict['brand_name'] || document.title;
+
+  // Re-render any JS-injected text that depends on current language
+  updateDashboardStats();
 }
 
 // ── Firebase init ─────────────────────────────────────────────────
