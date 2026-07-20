@@ -1,10 +1,10 @@
 // ── i18n ─────────────────────────────────────────────────────────
 const APP_I18N = {
   zh: {
-    brand_name: '演奏者健康動作評估系統',
-    brand_title_html: '演奏者健康<br>動作評估系統',
+    brand_name: '演奏者智能照護系統',
+    brand_title_html: '演奏者智能<br>照護系統',
     nav_dashboard: '儀表板總覽', nav_profile: '個資填寫',
-    nav_playing: '演奏動作評估', nav_static: '靜態動作評估',
+    nav_playing: '演奏動作評估', nav_standard: '標準動作辨識',
     nav_history: '使用者歷史紀錄', nav_logout: '登出',
     guest: '訪客',
     // Dashboard
@@ -47,9 +47,9 @@ const APP_I18N = {
     chart_joint_title: '三狀態關節夾角折線圖',
     chart_sym_title: '左右肩部對稱折線圖 (Shoulder Symmetry)',
     chart_cva_title: 'CVA 頭部前傾角度 — 逐幀折線圖（三階段）',
-    // Static
-    static_sub: '進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點',
-    static_select_title: '1. 選擇檢測診斷項目',
+    // Standard
+    standard_sub: '進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點',
+    standard_select_title: '1. 選擇檢測診斷項目',
     diag_uneven: '高低肩檢測',
     diag_uneven_desc: '診斷左右肩膀水平線之高度偏差，檢視脊椎側彎或肌肉不平衡風險。',
     diag_fhp: '頭部前傾檢測',
@@ -57,7 +57,7 @@ const APP_I18N = {
     diag_arm: '抬手檢測',
     diag_arm_desc: '檢測雙手高舉過頭時，肩膀與手臂的伸展夾角與關節活動度，評估五十肩風險。',
     btn_start_diag: '開始診斷', btn_reset_diag: '重新診斷',
-    static_waiting_title: '等待診斷分析',
+    standard_waiting_title: '等待診斷分析',
     diag_result_title: '診斷結果報告',
     diag_sym_score: '對稱分數', diag_rating_default: '評定：正常',
     diag_metrics_title: '檢測指標數值',
@@ -69,7 +69,7 @@ const APP_I18N = {
     history_filter_type: '依檢測類型',
     ph_search: '輸入姓名或關鍵字',
     opt_all_inst: '全部樂器', opt_violin_short: '小提琴', opt_cello_short: '大提琴',
-    opt_all_type: '全部類型', opt_playing_type: '演奏評估', opt_static_type: '靜態評估',
+    opt_all_type: '全部類型', opt_playing_type: '演奏評估', opt_standard_type: '標準評估',
     btn_export: '匯出資料', btn_import: '匯入', btn_clear: '清空',
     th_time: '評估時間', th_name: '姓名 / 代號', th_instrument: '樂器',
     th_type: '評估類型', th_item: '評估項目 / 得分',
@@ -81,7 +81,7 @@ const APP_I18N = {
     btn_start_rec: '開始錄製',
     baseline_label: '基準',
     playing_waiting_desc: '請依序啟動攝影機並完成三個階段的錄製，系統將自動生成姿勢分析儀表板。',
-    static_waiting_desc: '請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。',
+    standard_waiting_desc: '請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。',
     chart_joint_desc: '折線圖顯示三個不同動作姿態（放鬆、準備、演奏）在頸椎、雙肩、雙肘及手腕的關節夾角變化趨勢。',
     chart_sym_desc: '對比三個狀態下左右肩膀水平線高度差與受力對稱百分比（100% 代表完全對稱與平衡）。',
     history_empty: '目前無歷史評估紀錄，請開始填寫基本資料並進行評估！',
@@ -97,10 +97,10 @@ const APP_I18N = {
     diag_sim_uneven: '高低肩檢測模擬中',
   },
   en: {
-    brand_name: 'Performer Health Assessment System',
-    brand_title_html: 'Performer Health<br>Assessment System',
+    brand_name: 'Performer Intelligent Care System',
+    brand_title_html: 'Performer Intelligent<br>Care System',
     nav_dashboard: 'Dashboard', nav_profile: 'Personal Info',
-    nav_playing: 'Playing Assessment', nav_static: 'Static Assessment',
+    nav_playing: 'Playing Assessment', nav_standard: 'Standard Movement Recognition',
     nav_history: 'History Records', nav_logout: 'Logout',
     guest: 'Guest',
     // Dashboard
@@ -143,9 +143,9 @@ const APP_I18N = {
     chart_joint_title: 'Three-State Joint Angle Chart',
     chart_sym_title: 'Shoulder Symmetry Chart',
     chart_cva_title: 'CVA Forward Head Angle — Per-Frame Chart (3 Stages)',
-    // Static
-    static_sub: 'Perform image-based detection and diagnosis of common static postures.',
-    static_select_title: '1. Select Diagnostic Test',
+    // Standard
+    standard_sub: 'Perform image-based detection and diagnosis of common static postures.',
+    standard_select_title: '1. Select Diagnostic Test',
     diag_uneven: 'Uneven Shoulders',
     diag_uneven_desc: 'Diagnose horizontal height deviation between shoulders; assess scoliosis or muscle imbalance risk.',
     diag_fhp: 'Forward Head Posture',
@@ -153,7 +153,7 @@ const APP_I18N = {
     diag_arm: 'Arm Raise Test',
     diag_arm_desc: 'Assess shoulder and arm extension angles during overhead raise to evaluate frozen shoulder risk.',
     btn_start_diag: 'Start Diagnosis', btn_reset_diag: 'Reset Diagnosis',
-    static_waiting_title: 'Awaiting Diagnosis',
+    standard_waiting_title: 'Awaiting Diagnosis',
     diag_result_title: 'Diagnostic Report',
     diag_sym_score: 'Symmetry Score', diag_rating_default: 'Rating: Normal',
     diag_metrics_title: 'Diagnostic Metrics',
@@ -165,7 +165,7 @@ const APP_I18N = {
     history_filter_type: 'Filter by Type',
     ph_search: 'Enter name or keyword',
     opt_all_inst: 'All Instruments', opt_violin_short: 'Violin', opt_cello_short: 'Cello',
-    opt_all_type: 'All Types', opt_playing_type: 'Playing Assessment', opt_static_type: 'Static Assessment',
+    opt_all_type: 'All Types', opt_playing_type: 'Playing Assessment', opt_standard_type: 'Standard Movement Recognition',
     btn_export: 'Export Data', btn_import: 'Import', btn_clear: 'Clear All',
     th_time: 'Date / Time', th_name: 'Name / ID', th_instrument: 'Instrument',
     th_type: 'Type', th_item: 'Assessment / Score',
@@ -177,7 +177,7 @@ const APP_I18N = {
     btn_start_rec: 'Start Recording',
     baseline_label: 'Baseline',
     playing_waiting_desc: 'Activate the camera and complete all three recording stages. The system will automatically generate a posture analysis dashboard.',
-    static_waiting_desc: 'Select a diagnostic item on the left, then click "Start Diagnosis" to begin analysis.',
+    standard_waiting_desc: 'Select a diagnostic item on the left, then click "Start Diagnosis" to begin analysis.',
     chart_joint_desc: 'Line chart showing joint angle trends across three posture states (relax, prepare, playing).',
     chart_sym_desc: 'Comparison of left-right shoulder symmetry percentage across the three states (100% = fully symmetric).',
     history_empty: 'No history records yet. Please fill in your basic information and complete an assessment.',
@@ -275,7 +275,7 @@ let playingRecords = {
 };
 let selectedPlayingStep = 'relax'; // 'relax' | 'prepare' | 'playing'
 let selectedDiagnostic = 'uneven-shoulders'; // 'uneven-shoulders' | 'forward-head' | 'arm-raise'
-let isDiagnosingStatic = false;
+let isDiagnosingStandard = false;
 
 // Chart references
 let dashboardTrendChartRef = null;
@@ -285,7 +285,7 @@ let cvaTrendChartRef = null;
 
 // Canvas Animation variables
 let playingCanvasAnimId = null;
-let staticCanvasAnimId = null;
+let standardCanvasAnimId = null;
 
 // Multi-record Selection State
 let selectedRecordIds = new Set();
@@ -329,10 +329,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Show logged-in user name in nav / avatars
   const displayName = user.displayName || user.email || tApp('guest');
-  document.querySelectorAll('#header-username, #playing-username, #static-username').forEach(el => {
+  document.querySelectorAll('#header-username, #playing-username, #standard-username').forEach(el => {
     el.textContent = displayName;
   });
-  document.querySelectorAll('#header-avatar, #playing-avatar, #static-avatar').forEach(el => {
+  document.querySelectorAll('#header-avatar, #playing-avatar, #standard-avatar').forEach(el => {
     el.textContent = displayName.charAt(0).toUpperCase();
   });
 
@@ -399,13 +399,13 @@ function switchSection(sectionId) {
   // Stop/Start animations based on active view
   if (sectionId === 'playing') {
     startPlayingCanvas();
-    stopStaticCanvas();
-  } else if (sectionId === 'static') {
-    startStaticCanvas();
+    stopStandardCanvas();
+  } else if (sectionId === 'standard') {
+    startStandardCanvas();
     stopPlayingCanvas();
   } else {
     stopPlayingCanvas();
-    stopStaticCanvas();
+    stopStandardCanvas();
   }
   
   // Refresh charts if needed
@@ -448,8 +448,8 @@ function updateProfileUI() {
     document.getElementById('playing-username').textContent = `${currentProfile.username} - ${currentProfile.instrument}`;
     document.getElementById('playing-avatar').textContent = avatarChar;
     
-    document.getElementById('static-username').textContent = `${currentProfile.username} - ${currentProfile.instrument}`;
-    document.getElementById('static-avatar').textContent = avatarChar;
+    document.getElementById('standard-username').textContent = `${currentProfile.username} - ${currentProfile.instrument}`;
+    document.getElementById('standard-avatar').textContent = avatarChar;
     
     // Pre-fill form
     document.getElementById('username').value = currentProfile.username;
@@ -503,8 +503,8 @@ function resetProfileForm() {
   document.getElementById('header-avatar').textContent = '?';
   document.getElementById('playing-username').textContent = '訪客';
   document.getElementById('playing-avatar').textContent = '?';
-  document.getElementById('static-username').textContent = '訪客';
-  document.getElementById('static-avatar').textContent = '?';
+  document.getElementById('standard-username').textContent = '訪客';
+  document.getElementById('standard-avatar').textContent = '?';
   
   showToast('資料已重設。', 'info');
 }
@@ -513,22 +513,22 @@ function resetProfileForm() {
 // 3. CANVAS POSTURE SIMULATOR
 // ----------------------------------------------------
 let playingCanvas, playingCtx;
-let staticCanvas, staticCtx;
+let standardCanvas, standardCtx;
 let animFrameCount = 0;
 
 function initCanvasSimulators() {
   playingCanvas = document.getElementById('playingCanvas');
   playingCtx = playingCanvas.getContext('2d');
   
-  staticCanvas = document.getElementById('staticCanvas');
-  staticCtx = staticCanvas.getContext('2d');
+  standardCanvas = document.getElementById('standardCanvas');
+  standardCtx = standardCanvas.getContext('2d');
   
   resizeCanvas(playingCanvas);
-  resizeCanvas(staticCanvas);
+  resizeCanvas(standardCanvas);
   
   window.addEventListener('resize', () => {
     resizeCanvas(playingCanvas);
-    resizeCanvas(staticCanvas);
+    resizeCanvas(standardCanvas);
   });
 }
 
@@ -560,20 +560,20 @@ function stopPlayingCanvas() {
   }
 }
 
-function startStaticCanvas() {
-  if (!staticCanvasAnimId) {
+function startStandardCanvas() {
+  if (!standardCanvasAnimId) {
     const render = () => {
-      drawStaticSkeleton();
-      staticCanvasAnimId = requestAnimationFrame(render);
+      drawStandardSkeleton();
+      standardCanvasAnimId = requestAnimationFrame(render);
     };
     render();
   }
 }
 
-function stopStaticCanvas() {
-  if (staticCanvasAnimId) {
-    cancelAnimationFrame(staticCanvasAnimId);
-    staticCanvasAnimId = null;
+function stopStandardCanvas() {
+  if (standardCanvasAnimId) {
+    cancelAnimationFrame(standardCanvasAnimId);
+    standardCanvasAnimId = null;
   }
 }
 
@@ -800,13 +800,13 @@ function drawPlayingSkeleton() {
   ctx.fillText(`ELB_L: ${lElbowAngle}°`, lElbow.x - 30, lElbow.y + 20);
 }
 
-// ------------------- STATIC POSE SIMULATION -------------------
-function drawStaticSkeleton() {
-  const w = staticCanvas.width;
-  const h = staticCanvas.height;
+// ------------------- STANDARD POSE SIMULATION -------------------
+function drawStandardSkeleton() {
+  const w = standardCanvas.width;
+  const h = standardCanvas.height;
   if (w === 0 || h === 0) return;
   
-  const ctx = staticCtx;
+  const ctx = standardCtx;
   drawHudBackground(ctx, w, h);
   
   const t = animFrameCount * 0.03;
@@ -2223,6 +2223,8 @@ function renderCvaChart() {
       .join('');
   }
 }
+}
+
 function selectDiag(diagId) {
   selectedDiagnostic = diagId;
   
@@ -2233,8 +2235,8 @@ function selectDiag(diagId) {
   document.getElementById(`diag-${diagId}`).classList.add('active');
   
   // Change overlay title
-  const overlayTitle = document.getElementById('static-overlay-title');
-  const hudText = document.getElementById('static-hud-text');
+  const overlayTitle = document.getElementById('standard-overlay-title');
+  const hudText = document.getElementById('standard-hud-text');
   
   if (diagId === 'uneven-shoulders') {
     overlayTitle.textContent = '高低肩檢測模擬中';
@@ -2248,19 +2250,19 @@ function selectDiag(diagId) {
   }
 }
 
-function startStaticDiagnosis() {
+function startStandardDiagnosis() {
   if (!currentProfile) {
     showToast('請先完成個資填寫再進行診斷！', 'warning');
     switchSection('profile');
     return;
   }
   
-  isDiagnosingStatic = true;
-  document.getElementById('btn-start-static').disabled = true;
-  document.getElementById('btn-reset-static').disabled = true;
+  isDiagnosingStandard = true;
+  document.getElementById('btn-start-standard').disabled = true;
+  document.getElementById('btn-reset-standard').disabled = true;
   
   let countdown = 3;
-  const overlay = document.getElementById('static-hud-text');
+  const overlay = document.getElementById('standard-hud-text');
   
   const timer = setInterval(() => {
     overlay.innerHTML = `
@@ -2280,10 +2282,10 @@ function startStaticDiagnosis() {
       
       setTimeout(() => {
         // Complete diagnosis
-        renderStaticDiagnosticResult();
+        renderStandardDiagnosticResult();
         
-        document.getElementById('btn-start-static').disabled = false;
-        document.getElementById('btn-reset-static').disabled = false;
+        document.getElementById('btn-start-standard').disabled = false;
+        document.getElementById('btn-reset-standard').disabled = false;
         
         showToast('靜態姿勢診斷完成！', 'success');
       }, 1000);
@@ -2292,30 +2294,30 @@ function startStaticDiagnosis() {
 }
 
 // Global cached result for saving
-let currentStaticResult = null;
+let currentStandardResult = null;
 
-function renderStaticDiagnosticResult() {
-  const panelWait = document.getElementById('static-waiting-panel');
-  const panelRes = document.getElementById('static-results-panel');
+function renderStandardDiagnosticResult() {
+  const panelWait = document.getElementById('standard-waiting-panel');
+  const panelRes = document.getElementById('standard-results-panel');
   
   panelWait.style.display = 'none';
   panelRes.style.display = 'block';
   
-  const scoreVal = document.getElementById('static-score-val');
-  const scoreLabel = document.getElementById('static-score-label');
-  const ratingText = document.getElementById('static-rating-text');
-  const descText = document.getElementById('static-result-desc');
-  const badge = document.getElementById('static-score-badge');
-  const adviceText = document.getElementById('static-advice-text');
+  const scoreVal = document.getElementById('standard-score-val');
+  const scoreLabel = document.getElementById('standard-score-label');
+  const ratingText = document.getElementById('standard-rating-text');
+  const descText = document.getElementById('standard-result-desc');
+  const badge = document.getElementById('standard-score-badge');
+  const adviceText = document.getElementById('standard-advice-text');
   
-  const detailsTitle = document.getElementById('static-details-title');
-  const m1Name = document.getElementById('static-m1-name');
-  const m1Val = document.getElementById('static-m1-val');
-  const m1Bar = document.getElementById('static-m1-bar');
+  const detailsTitle = document.getElementById('standard-details-title');
+  const m1Name = document.getElementById('standard-m1-name');
+  const m1Val = document.getElementById('standard-m1-val');
+  const m1Bar = document.getElementById('standard-m1-bar');
   
-  const m2Name = document.getElementById('static-m2-name');
-  const m2Val = document.getElementById('static-m2-val');
-  const m2Bar = document.getElementById('static-m2-bar');
+  const m2Name = document.getElementById('standard-m2-name');
+  const m2Val = document.getElementById('standard-m2-val');
+  const m2Bar = document.getElementById('standard-m2-bar');
   
   // Set different values and text based on type
   badge.className = 'score-badge-large';
@@ -2347,7 +2349,7 @@ function renderStaticDiagnosticResult() {
     
     adviceText.textContent = '建議每日練習前進行 10 分鐘「落肩伸展操」，並避免長時間維持提琴姿勢。演奏大提琴時，確保大提琴琴身中央對齊胸骨，避免傾斜上半身遷就琴體。';
     
-    currentStaticResult = {
+    currentStandardResult = {
       score: symmetry,
       projectName: '高低肩檢測',
       level: '注意',
@@ -2378,7 +2380,7 @@ function renderStaticDiagnosticResult() {
     
     adviceText.textContent = '請調整譜架至與視線水平高度，避免低頭看譜。日常可進行「收下巴運動」（Chin Tucks）：保持視線水平，向後平行收縮下巴，每次停留 5 秒，重複 10 次以鍛鍊頸椎深層穩定肌群。';
     
-    currentStaticResult = {
+    currentStandardResult = {
       score: Math.round(score),
       projectName: '頭部前傾檢測',
       level: '警示',
@@ -2410,7 +2412,7 @@ function renderStaticDiagnosticResult() {
     
     adviceText.textContent = '右手持弓或拉琴長期處於內旋位置，應加強「肩關節外旋拉伸」。站立於牆邊，曲肘 90 度，手臂貼牆壁做水平外展，拉伸胸大肌與肩前側肌肉。每次拉伸 20 秒。';
     
-    currentStaticResult = {
+    currentStandardResult = {
       score: score,
       projectName: '抬手檢測',
       level: '注意',
@@ -2418,25 +2420,25 @@ function renderStaticDiagnosticResult() {
     };
   }
   
-  document.getElementById('static-hud-text').innerHTML = `
+  document.getElementById('standard-hud-text').innerHTML = `
     STATUS: ANALYSIS DONE<br>
     DIAGNOSTIC: ${selectedDiagnostic.toUpperCase()}<br>
     SCORE: ${scoreVal.textContent}
   `;
 }
 
-function resetStaticDiagnosis() {
-  document.getElementById('static-waiting-panel').style.display = 'flex';
-  document.getElementById('static-results-panel').style.display = 'none';
-  document.getElementById('btn-reset-static').disabled = true;
+function resetStandardDiagnosis() {
+  document.getElementById('standard-waiting-panel').style.display = 'flex';
+  document.getElementById('standard-results-panel').style.display = 'none';
+  document.getElementById('btn-reset-standard').disabled = true;
   
   const text = selectedDiagnostic === 'uneven-shoulders' ? 'UNEVEN SHOULDERS' : (selectedDiagnostic === 'forward-head' ? 'FORWARD HEAD' : 'ARM RAISE TEST');
-  document.getElementById('static-hud-text').innerHTML = `
+  document.getElementById('standard-hud-text').innerHTML = `
     STATUS: WAITING TO DIAGNOSE<br>
     DIAGNOSTIC: ${text}
   `;
   
-  currentStaticResult = null;
+  currentStandardResult = null;
   showToast('診斷已重置，可重新開始檢測。', 'info');
 }
 
@@ -2492,8 +2494,8 @@ async function savePlayingRecord() {
   setTimeout(() => { switchSection('history'); }, 500);
 }
 
-async function saveStaticRecord() {
-  if (!currentProfile || !currentStaticResult) return;
+async function saveStandardRecord() {
+  if (!currentProfile || !currentStandardResult) return;
   
   const newRecord = {
     id: Date.now(),
@@ -2501,11 +2503,11 @@ async function saveStaticRecord() {
     username: currentProfile.username,
     instrument: currentProfile.instrument,
     type: 'static',
-    projectName: currentStaticResult.projectName,
-    score: currentStaticResult.score,
-    level: currentStaticResult.level,
+    projectName: currentStandardResult.projectName,
+    score: currentStandardResult.score,
+    level: currentStandardResult.level,
     details: {
-      textSummary: currentStaticResult.details,
+      textSummary: currentStandardResult.details,
       diagnosticType: selectedDiagnostic
     }
   };
@@ -2513,7 +2515,7 @@ async function saveStaticRecord() {
   await addRecordToFirestore(newRecord);
 
   showToast('靜態動作診斷紀錄已成功儲存！', 'success');
-  resetStaticDiagnosis();
+  resetStandardDiagnosis();
   await refreshHistory();
   setTimeout(() => { switchSection('history'); }, 500);
 }
@@ -2581,6 +2583,13 @@ async function refreshHistory() {
   renderDashboardTrendChart(records);
 }
 
+function updateComparisonButton() {
+  const btn = document.getElementById('btn-compare-records');
+  const countEl = document.getElementById('selected-count');
+  if (countEl) countEl.textContent = selectedRecordIds.size;
+  if (btn) btn.style.display = selectedRecordIds.size >= 2 ? 'inline-flex' : 'none';
+}
+
 function updateHistoryTable(filteredRecords = null) {
   const records = filteredRecords || getHistoryFromStorage();
   const tbody = document.getElementById('history-table-body');
@@ -2615,7 +2624,7 @@ function updateHistoryTable(filteredRecords = null) {
     if (r.level === '注意' || r.level === 'Caution') lvlClass = 'badge-warning';
     if (r.level === '警示' || r.level === 'Alert')   lvlClass = 'badge-danger';
 
-    const typeLabel = r.type === 'playing' ? '演奏動作' : '靜態檢測';
+    const typeLabel = r.type === 'playing' ? '演奏動作' : '標準檢測';
 
     row.innerHTML = `
       <td style="text-align: center; vertical-align: middle;">
@@ -3053,8 +3062,8 @@ function importHistoryData(event) {
 // ----------------------------------------------------
 // 10. WELCOME DASHBOARD TREND CHART & STATS
 // ----------------------------------------------------
-function updateDashboardStats() {
-  const records = getHistoryFromStorage();
+async function updateDashboardStats() {
+  const records = await getHistoryFromStorage();
   
   // Count
   document.getElementById('stat-total-count').textContent = records.length;
@@ -3121,8 +3130,8 @@ function updateDashboardStats() {
   tipsEl.innerHTML = tipHtml;
 }
 
-function renderDashboardTrendChart() {
-  const records = getHistoryFromStorage();
+async function renderDashboardTrendChart() {
+  const records = await getHistoryFromStorage();
   const canvas = document.getElementById('dashboardTrendChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -3234,7 +3243,7 @@ function showComparisonModal() {
                 <td style="padding: 0.75rem;">${r.timestamp}</td>
                 <td style="padding: 0.75rem;"><strong>${r.username}</strong></td>
                 <td style="padding: 0.75rem;"><span class="badge badge-info" style="font-size: 0.7rem;">${r.instrument}</span></td>
-                <td style="padding: 0.75rem;">${r.type === 'playing' ? '演奏動作' : '靜態檢測'}</td>
+                <td style="padding: 0.75rem;">${r.type === 'playing' ? '演奏動作' : '標準檢測'}</td>
                 <td style="padding: 0.75rem;">${r.projectName}</td>
                 <td style="padding: 0.75rem;"><strong style="color: var(--text-primary);">${r.score}</strong></td>
                 <td style="padding: 0.75rem;"><span class="badge ${r.level === '良好' ? 'badge-success' : (r.level === '注意' ? 'badge-warning' : 'badge-danger')}" style="font-size: 0.7rem;">${r.level}</span></td>
@@ -3340,5 +3349,4 @@ function showComparisonModal() {
     lucide.createIcons();
   }, 100);
 
-}
 }

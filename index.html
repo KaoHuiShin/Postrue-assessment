@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="brand_name">演奏者健康動作評估系統</title>
+  <title data-i18n="brand_name">演奏者智能照護系統</title>
   <link rel="stylesheet" href="styles.css">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -49,10 +49,10 @@
 
     <div style="text-align:center;">
       <div style="font-size:1rem; font-weight:600; color:var(--text-primary); letter-spacing:0.01em;" data-i18n="brand_name">
-        <span data-i18n="brand_name">演奏者健康動作評估系統</span>
+        <span data-i18n="brand_name">演奏者智能照護系統</span>
       </div>
       <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.3rem;">
-        Performer Health Assessment System
+        Performer Intelligent Care System
       </div>
     </div>
 
@@ -92,7 +92,7 @@
         <i data-lucide="activity"></i>
       </div>
       <div class="brand-name">
-        <span data-i18n="brand_title_html">演奏者健康<br>動作評估系統</span>
+        <span data-i18n="brand_title_html">演奏者智能<br>照護系統</span>
       </div>
     </div>
     
@@ -116,9 +116,9 @@
         </a>
       </li>
       <li>
-        <a id="nav-static" class="nav-item" onclick="switchSection('static')">
+        <a id="nav-standard" class="nav-item" onclick="switchSection('standard')">
           <i data-lucide="body"></i>
-          <span data-i18n="nav_static">靜態動作評估</span>
+          <span data-i18n="nav_standard">標準動作辨識</span>
         </a>
       </li>
       <li>
@@ -140,7 +140,7 @@
         <i data-lucide="log-out"></i>
         <span id="nav-logout-label" data-i18n="nav_logout">登出</span>
       </button>
-      <p id="nav-footer-label" data-i18n="brand_name">演奏者健康動作評估系統</p>
+      <p id="nav-footer-label" data-i18n="brand_name">演奏者智能照護系統</p>
       <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.7;">Version 1.0.0</p>
     </div>
   </aside>
@@ -611,22 +611,22 @@
       </div>
     </section>
 
-    <!-- 4. STATIC ASSESSMENT SECTION -->
-    <section id="section-static">
+    <!-- 4. STANDARD MOVEMENT RECOGNITION SECTION -->
+    <section id="section-standard">
       <div class="page-header">
         <div class="page-title">
-          <h1 data-i18n="nav_static">靜態動作評估</h1>
-          <p data-i18n="static_sub">進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點</p>
+          <h1 data-i18n="nav_standard">標準動作辨識</h1>
+          <p data-i18n="standard_sub">進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點</p>
         </div>
         <div class="user-badge">
-          <div class="user-badge-avatar" id="static-avatar">?</div>
-          <span id="static-username" data-i18n="guest">訪客</span>
+          <div class="user-badge-avatar" id="standard-avatar">?</div>
+          <span id="standard-username" data-i18n="guest">訪客</span>
         </div>
       </div>
 
       <!-- Selection of Diagnostics -->
       <div>
-        <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.75rem;" data-i18n="static_select_title">1. 選擇檢測診斷項目</h3>
+        <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.75rem;" data-i18n="standard_select_title">1. 選擇檢測診斷項目</h3>
         <div class="diag-selector-grid">
           <div class="diag-option active" id="diag-uneven-shoulders" onclick="selectDiag('uneven-shoulders')">
             <div class="diag-option-title" data-i18n="diag_uneven">高低肩檢測</div>
@@ -648,23 +648,23 @@
         <div class="capture-container">
           <div class="card" style="padding: 1rem;">
             <div class="video-screen">
-              <canvas id="staticCanvas"></canvas>
+              <canvas id="standardCanvas"></canvas>
               <div class="video-overlay">
                 <div class="video-overlay-dot"></div>
-                <span id="static-overlay-title" data-i18n="diag_sim_uneven">高低肩檢測模擬中</span>
+                <span id="standard-overlay-title" data-i18n="diag_sim_uneven">高低肩檢測模擬中</span>
               </div>
               <div class="video-hud">
-                <div class="hud-metrics" id="static-hud-text">
+                <div class="hud-metrics" id="standard-hud-text">
                   STATUS: WAITING TO DIAGNOSE<br>
                   DIAGNOSTIC: UNEVEN SHOULDERS
                 </div>
               </div>
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-              <button class="btn btn-primary" style="flex: 1;" id="btn-start-static" onclick="startStaticDiagnosis()">
+              <button class="btn btn-primary" style="flex: 1;" id="btn-start-standard" onclick="startStandardDiagnosis()">
                 <i data-lucide="play"></i> <span data-i18n="btn_start_diag">開始診斷</span>
               </button>
-              <button class="btn btn-outline" id="btn-reset-static" onclick="resetStaticDiagnosis()" disabled>
+              <button class="btn btn-outline" id="btn-reset-standard" onclick="resetStandardDiagnosis()" disabled>
                 <span data-i18n="btn_reset_diag">重新診斷</span>
               </button>
             </div>
@@ -672,17 +672,17 @@
         </div>
 
         <!-- Right: Diagnostic Output Dashboard -->
-        <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; text-align: center;" id="static-waiting-panel">
+        <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; text-align: center;" id="standard-waiting-panel">
           <i data-lucide="scan-face" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 1rem; width: 64px; height: 64px;"></i>
-          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;" data-i18n="static_waiting_title">等待診斷分析</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 250px; margin: 0 auto 1.5rem auto;"><span data-i18n="static_waiting_desc">請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。</span></p>
-          <button class="btn btn-outline" onclick="loadSampleData('static')">
+          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;" data-i18n="standard_waiting_title">等待診斷分析</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 250px; margin: 0 auto 1.5rem auto;"><span data-i18n="standard_waiting_desc">請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。</span></p>
+          <button class="btn btn-outline" onclick="loadSampleData('standard')">
             <i data-lucide="sparkles"></i> <span data-i18n="btn_load_sample">載入模擬示範數據</span>
           </button>
         </div>
 
         <!-- Right: Diagnostic Dashboard of results (hidden initially) -->
-        <div class="card" style="display: none;" id="static-results-panel">
+        <div class="card" style="display: none;" id="standard-results-panel">
           <div class="card-header">
             <div class="card-title">
               <i data-lucide="clipboard-check"></i> <span data-i18n="diag_result_title">診斷結果報告</span>
@@ -692,37 +692,37 @@
           <div style="display: flex; flex-direction: column; gap: 1.5rem;">
             <!-- Health Score Ring -->
             <div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center;">
-              <div class="score-badge-large" id="static-score-badge">
-                <span class="score-value" id="static-score-val">90</span>
-                <span class="score-label" id="static-score-label" data-i18n="diag_sym_score">對稱分數</span>
+              <div class="score-badge-large" id="standard-score-badge">
+                <span class="score-value" id="standard-score-val">90</span>
+                <span class="score-label" id="standard-score-label" data-i18n="diag_sym_score">對稱分數</span>
               </div>
               <div style="text-align: left;">
-                <h3 id="static-rating-text" style="color: var(--text-primary);" data-i18n="diag_rating_default">評定：正常</h3>
-                <p id="static-result-desc" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 200px; margin-top: 0.25rem;"><span data-i18n="diag_result_default">您的肩膀高度對稱，未發現明顯傾斜，請保持良好坐姿與站姿。</span></p>
+                <h3 id="standard-rating-text" style="color: var(--text-primary);" data-i18n="diag_rating_default">評定：正常</h3>
+                <p id="standard-result-desc" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 200px; margin-top: 0.25rem;"><span data-i18n="diag_result_default">您的肩膀高度對稱，未發現明顯傾斜，請保持良好坐姿與站姿。</span></p>
               </div>
             </div>
 
             <!-- Diagnostic Details -->
             <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem;" id="static-details-title" data-i18n="diag_metrics_title">檢測指標數值</h4>
+              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem;" id="standard-details-title" data-i18n="diag_metrics_title">檢測指標數值</h4>
               
-              <div class="metric-row" id="static-metric-row-1">
+              <div class="metric-row" id="standard-metric-row-1">
                 <div class="metric-info">
-                  <span class="metric-name" id="static-m1-name" data-i18n="diag_m1">雙肩水平高度差</span>
-                  <span class="metric-value" id="static-m1-val">0.3 cm (<span data-i18n="diag_m1_unit">偏差 &lt; 1.0 cm</span>)</span>
+                  <span class="metric-name" id="standard-m1-name" data-i18n="diag_m1">雙肩水平高度差</span>
+                  <span class="metric-value" id="standard-m1-val">0.3 cm (<span data-i18n="diag_m1_unit">偏差 &lt; 1.0 cm</span>)</span>
                 </div>
                 <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="static-m1-bar" style="width: 95%"></div>
+                  <div class="metric-bar-fill success" id="standard-m1-bar" style="width: 95%"></div>
                 </div>
               </div>
 
-              <div class="metric-row" id="static-metric-row-2">
+              <div class="metric-row" id="standard-metric-row-2">
                 <div class="metric-info">
-                  <span class="metric-name" id="static-m2-name" data-i18n="diag_m2">左右肩關節角度</span>
-                  <span class="metric-value" id="static-m2-val" data-i18n="diag_m2_default">左右對稱良好</span>
+                  <span class="metric-name" id="standard-m2-name" data-i18n="diag_m2">左右肩關節角度</span>
+                  <span class="metric-value" id="standard-m2-val" data-i18n="diag_m2_default">左右對稱良好</span>
                 </div>
                 <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="static-m2-bar" style="width: 98%"></div>
+                  <div class="metric-bar-fill success" id="standard-m2-bar" style="width: 98%"></div>
                 </div>
               </div>
             </div>
@@ -732,14 +732,14 @@
               <h4 style="font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.25rem;">
                 <i data-lucide="info" style="width: 16px; height: 16px;"></i> <span data-i18n="diag_pt_advice">物理治療建議</span>
               </h4>
-              <p id="static-advice-text" style="font-size: 0.8rem; color: var(--text-dark); margin-top: 0.25rem; line-height: 1.4;">
+              <p id="standard-advice-text" style="font-size: 0.8rem; color: var(--text-dark); margin-top: 0.25rem; line-height: 1.4;">
                 <span data-i18n="diag_pt_text">日常練習前可進行 5 分鐘肩頸拉伸，拉伸斜方肌。演奏小提琴每 45 分鐘建議休息 10 分鐘，並做水平轉頭動作放鬆頸部。</span>
               </p>
             </div>
 
             <!-- Buttons -->
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <button class="btn btn-primary" onclick="saveStaticRecord()">
+              <button class="btn btn-primary" onclick="saveStandardRecord()">
                 <i data-lucide="save"></i> <span data-i18n="btn_save_diag">儲存此檢測</span>
               </button>
             </div>
@@ -779,7 +779,7 @@
             <select id="filter-type" class="form-control" onchange="filterHistory()">
               <option value="All" data-i18n="opt_all_type">全部類型</option>
               <option value="playing" data-i18n="opt_playing_type">演奏評估</option>
-              <option value="static" data-i18n="opt_static_type">靜態評估</option>
+              <option value="static" data-i18n="opt_standard_type">標準評估</option>
             </select>
           </div>
 
