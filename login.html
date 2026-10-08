@@ -10,11 +10,11 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <link rel="stylesheet" href="login.css">
 </head>
 <body>
 
-  <!-- Language Toggle (top-right) -->
   <div class="lang-toggle-bar">
     <button class="lang-btn active" id="lang-zh" onclick="setLang('zh')">中文</button>
     <span class="lang-divider">|</span>
@@ -22,44 +22,36 @@
   </div>
 
   <div class="login-page">
-    <!-- Left panel: branding -->
+    <!-- 左側品牌 -->
     <div class="login-brand-panel">
       <div class="brand-content">
-        <div class="brand-logo">
-          <i data-lucide="activity"></i>
-        </div>
-        <h1 class="brand-title" data-i18n="brand_title">演奏者智能<br>照護系統</h1>
-        <p class="brand-subtitle" data-i18n="brand_subtitle">追蹤並改善演奏姿態與肌肉骨骼健康</p>
+        <div class="brand-logo"><i data-lucide="activity"></i></div>
+        <h1 class="brand-title" data-i18n="brand_title">演奏者<br>智能照護系統</h1>
+        <p class="brand-subtitle" data-i18n="brand_subtitle">演奏者與照護端協作，追蹤演奏姿勢與肌肉骨骼健康</p>
         <div class="brand-features">
-          <div class="brand-feature">
-            <i data-lucide="scan-face"></i>
-            <span data-i18n="feature_cva">CVA 頭部前傾即時偵測</span>
-          </div>
-          <div class="brand-feature">
-            <i data-lucide="activity"></i>
-            <span data-i18n="feature_posture">三階段演奏姿態評估</span>
-          </div>
-          <div class="brand-feature">
-            <i data-lucide="history"></i>
-            <span data-i18n="feature_history">個人化歷史紀錄追蹤</span>
-          </div>
+          <div class="brand-feature"><i data-lucide="scan-face"></i><span data-i18n="feature_cva">姿勢即時偵測與警示</span></div>
+          <div class="brand-feature"><i data-lucide="timer"></i><span data-i18n="feature_posture">練習時間紀錄與提醒</span></div>
+          <div class="brand-feature"><i data-lucide="stethoscope"></i><span data-i18n="feature_history">授權照護端追蹤趨勢、給予建議</span></div>
         </div>
       </div>
     </div>
 
-    <!-- Right panel: auth form -->
-    <div class="login-form-panel">
+    <!-- 右側表單 -->
+    <div class="login-form-panel" id="form-panel">
       <div class="login-card">
 
-        <!-- Tab switcher -->
         <div class="auth-tabs">
           <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" data-i18n="tab_login">登入</button>
           <button class="auth-tab" id="tab-register" onclick="switchTab('register')" data-i18n="tab_register">註冊</button>
         </div>
 
-        <!-- ── LOGIN FORM ───────────────────────────────── -->
+        <!-- ── 登入 ───────────────────────────────────────── -->
         <div id="form-login" class="auth-form active">
-          <p class="form-desc" data-i18n="login_desc">請登入您的帳號以繼續使用評估系統</p>
+          <div id="register-success" class="success-msg" style="display:none;">
+            <i data-lucide="check-circle"></i>
+            <span data-i18n="register_done">註冊成功！請使用剛才的帳號密碼重新登入。</span>
+          </div>
+          <p class="form-desc" data-i18n="login_desc">請登入您的帳號；同時具有演奏者與照護端身分者，登入後可切換平台</p>
 
           <div class="form-group">
             <label data-i18n="label_email">電子信箱</label>
@@ -68,90 +60,255 @@
               <input type="email" id="login-email" placeholder="example@email.com" autocomplete="email">
             </div>
           </div>
-
           <div class="form-group">
             <label data-i18n="label_password">密碼</label>
             <div class="input-wrapper">
               <i data-lucide="lock"></i>
               <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
-              <button class="toggle-pw" onclick="togglePassword('login-password', this)" tabindex="-1">
-                <i data-lucide="eye"></i>
-              </button>
+              <button class="toggle-pw" type="button" onclick="togglePassword('login-password', this)" tabindex="-1"><i data-lucide="eye"></i></button>
             </div>
           </div>
-
           <div class="form-forgot">
-            <button class="link-btn" onclick="switchTab('forgot')" data-i18n="forgot_link">忘記密碼？</button>
+            <button class="link-btn" type="button" onclick="switchTab('forgot')" data-i18n="forgot_link">忘記密碼？</button>
           </div>
-
           <button class="btn-auth" onclick="handleLogin()" id="btn-login">
-            <i data-lucide="log-in"></i>
-            <span data-i18n="btn_login">登入</span>
+            <i data-lucide="log-in"></i><span data-i18n="btn_login">登入</span>
           </button>
-
           <p class="form-switch">
             <span data-i18n="no_account">還沒有帳號？</span>
-            <button class="link-btn" onclick="switchTab('register')" data-i18n="go_register">立即註冊</button>
+            <button class="link-btn" type="button" onclick="switchTab('register')" data-i18n="go_register">立即註冊</button>
           </p>
         </div>
 
-        <!-- ── REGISTER FORM ─────────────────────────────── -->
+        <!-- ── 註冊 ───────────────────────────────────────── -->
         <div id="form-register" class="auth-form">
-          <p class="form-desc" data-i18n="register_desc">建立您的個人帳號，開始追蹤演奏健康</p>
+          <p class="form-desc" data-i18n="register_desc">請先選擇身分，系統會依身分顯示對應的表單。同一個帳號可同時擁有兩種身分。</p>
 
           <div class="form-group">
-            <label data-i18n="label_name">姓名 / 代號</label>
-            <div class="input-wrapper">
-              <i data-lucide="user"></i>
-              <input type="text" id="reg-name" data-i18n-placeholder="placeholder_name" placeholder="請輸入姓名或代號" autocomplete="name">
+            <span class="form-label"><span data-i18n="label_role">註冊身分</span><span class="req">*</span></span>
+            <div class="role-pick">
+              <label class="performer" id="role-label-performer">
+                <input type="checkbox" id="role-performer" onchange="onRoleChange()">
+                <div><strong data-i18n="role_performer">演奏者</strong><span data-i18n="role_performer_desc">記錄練習姿勢、接收照護建議</span></div>
+              </label>
+              <label class="provider" id="role-label-provider">
+                <input type="checkbox" id="role-provider" onchange="onRoleChange()">
+                <div><strong data-i18n="role_provider">醫師／物理治療師</strong><span data-i18n="role_provider_desc">查看獲授權個案的趨勢並給予建議</span></div>
+              </label>
             </div>
           </div>
 
-          <div class="form-group">
-            <label data-i18n="label_email">電子信箱</label>
-            <div class="input-wrapper">
-              <i data-lucide="mail"></i>
-              <input type="email" id="reg-email" placeholder="example@email.com" autocomplete="email">
+          <!-- 帳號（共用） -->
+          <div class="reg-block" id="block-account">
+            <div class="reg-block-title" data-i18n="block_account">帳號資料</div>
+            <div class="form-group">
+              <label><span data-i18n="label_name">姓名 / 代號</span><span class="req">*</span></label>
+              <input type="text" class="form-control" id="reg-name" data-i18n-placeholder="placeholder_name" placeholder="請輸入姓名或代號" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label><span data-i18n="label_email">電子信箱</span><span class="req">*</span></label>
+              <input type="email" class="form-control" id="reg-email" placeholder="example@email.com" autocomplete="email">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><span data-i18n="label_password">密碼</span><span class="req">*</span></label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="reg-password" data-i18n-placeholder="placeholder_pw" placeholder="至少 8 個字元" autocomplete="new-password">
+                  <button class="toggle-pw" type="button" onclick="togglePassword('reg-password', this)" tabindex="-1"><i data-lucide="eye"></i></button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label><span data-i18n="label_confirm_pw">確認密碼</span><span class="req">*</span></label>
+                <div class="input-wrapper">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="reg-confirm" data-i18n-placeholder="placeholder_confirm_pw" placeholder="再次輸入密碼" autocomplete="new-password">
+                  <button class="toggle-pw" type="button" onclick="togglePassword('reg-confirm', this)" tabindex="-1"><i data-lucide="eye"></i></button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label data-i18n="label_password">密碼</label>
-            <div class="input-wrapper">
-              <i data-lucide="lock"></i>
-              <input type="password" id="reg-password" data-i18n-placeholder="placeholder_pw" placeholder="至少 8 個字元" autocomplete="new-password">
-              <button class="toggle-pw" onclick="togglePassword('reg-password', this)" tabindex="-1">
-                <i data-lucide="eye"></i>
-              </button>
+          <!-- 演奏者：初診式表單 -->
+          <div class="reg-block performer" id="block-performer" style="display:none;">
+            <div class="reg-block-title" data-i18n="block_performer">演奏者資料（初診式表單）</div>
+
+            <div class="reg-sub" data-i18n="sub_basic">基本資料</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><span data-i18n="label_gender">性別</span><span class="req">*</span></label>
+                <select class="form-control" id="p-gender">
+                  <option value="" data-i18n="ph_select">請選擇</option>
+                  <option value="男" data-i18n="opt_male">男</option>
+                  <option value="女" data-i18n="opt_female">女</option>
+                  <option value="其他" data-i18n="opt_other">其他</option>
+                  <option value="不便透露" data-i18n="opt_na">不便透露</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label><span data-i18n="label_birthdate">出生年月日</span><span class="req">*</span></label>
+                <input type="date" class="form-control" id="p-birthdate">
+              </div>
+            </div>
+            <div class="form-group">
+              <label><span data-i18n="label_identity">身分</span><span class="req">*</span></label>
+              <select class="form-control" id="p-identity">
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="音樂系學生" data-i18n="id_student">音樂系學生</option>
+                <option value="職業演奏者" data-i18n="id_pro">職業演奏者</option>
+                <option value="業餘演奏者" data-i18n="id_amateur">業餘演奏者</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><span data-i18n="label_height">身高 (cm)</span><span class="req">*</span></label>
+                <input type="number" class="form-control" id="p-height" min="80" max="250">
+              </div>
+              <div class="form-group">
+                <label data-i18n="label_weight">體重 (kg)</label>
+                <input type="number" class="form-control" id="p-weight" min="20" max="250">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label data-i18n="label_phone">聯絡電話</label>
+                <input type="tel" class="form-control" id="p-phone">
+              </div>
+              <div class="form-group">
+                <label data-i18n="label_emergency">緊急聯絡人（姓名／電話）</label>
+                <input type="text" class="form-control" id="p-emergency">
+              </div>
+            </div>
+
+            <div class="reg-sub" data-i18n="sub_music">演奏背景</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><span data-i18n="label_instrument">演奏樂器</span><span class="req">*</span></label>
+                <select class="form-control" id="p-instrument">
+                  <option value="" data-i18n="ph_select">請選擇</option>
+                  <option value="小提琴" data-i18n="opt_violin">小提琴</option>
+                  <option value="大提琴" data-i18n="opt_cello">大提琴</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label><span data-i18n="label_years">學習年資（年）</span><span class="req">*</span></label>
+                <input type="number" class="form-control" id="p-years" min="0" max="90">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><span data-i18n="label_days">每週練習天數</span><span class="req">*</span></label>
+                <input type="number" class="form-control" id="p-days" min="0" max="7">
+              </div>
+              <div class="form-group">
+                <label><span data-i18n="label_minutes">每次平均練習時長（分鐘）</span><span class="req">*</span></label>
+                <input type="number" class="form-control" id="p-minutes" min="0" max="900">
+              </div>
+            </div>
+            <div class="form-group">
+              <span class="form-label" data-i18n="label_pt">是否曾接受物理治療／復健</span>
+              <div class="radio-group">
+                <label><input type="radio" name="p-pt" value="no" checked> <span data-i18n="opt_no">否</span></label>
+                <label><input type="radio" name="p-pt" value="yes"> <span data-i18n="opt_yes">是</span></label>
+              </div>
+              <input type="text" class="form-control" id="p-pt-note" data-i18n-placeholder="ph_pt_note" placeholder="若有，請說明部位、時間" style="margin-top:0.4rem;">
+            </div>
+
+            <div class="reg-sub" data-i18n="sub_pain">疼痛及傷害史</div>
+            <div class="form-group">
+              <span class="form-label" data-i18n="label_painmap">目前不適或曾受傷的部位</span>
+              <div id="reg-bodymap"></div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_msk">骨骼肌肉相關疾病或傷害史</label>
+              <textarea class="form-control" id="p-msk"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label data-i18n="label_surgery">開刀史</label>
+                <input type="text" class="form-control" id="p-surgery">
+              </div>
+              <div class="form-group">
+                <label data-i18n="label_meds">目前用藥</label>
+                <input type="text" class="form-control" id="p-meds">
+              </div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_allergy">藥物／其他過敏史</label>
+              <input type="text" class="form-control" id="p-allergy">
+            </div>
+
+            <div class="reg-sub" data-i18n="sub_consent">研究同意</div>
+            <label class="check-row"><input type="checkbox" id="p-consent-research"> <span><span data-i18n="consent_research">我已閱讀並同意參與本研究（研究參與同意書）</span><span class="req">*</span></span></label>
+            <label class="check-row"><input type="checkbox" id="p-consent-data"> <span><span data-i18n="consent_data">我同意本系統蒐集與使用我的評估資料於研究用途</span><span class="req">*</span></span></label>
+            <div class="form-group">
+              <label data-i18n="label_referral">轉介來源</label>
+              <select class="form-control" id="p-referral">
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="自行報名" data-i18n="ref_self">自行報名</option>
+                <option value="醫師轉介" data-i18n="ref_doctor">醫師轉介</option>
+                <option value="教師推薦" data-i18n="ref_teacher">教師推薦</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+              </select>
             </div>
           </div>
 
-          <div class="form-group">
-            <label data-i18n="label_confirm_pw">確認密碼</label>
-            <div class="input-wrapper">
-              <i data-lucide="lock"></i>
-              <input type="password" id="reg-confirm" data-i18n-placeholder="placeholder_confirm_pw" placeholder="再次輸入密碼" autocomplete="new-password">
-              <button class="toggle-pw" onclick="togglePassword('reg-confirm', this)" tabindex="-1">
-                <i data-lucide="eye"></i>
-              </button>
+          <!-- 照護端：登記表單 -->
+          <div class="reg-block provider" id="block-provider" style="display:none;">
+            <div class="reg-block-title" data-i18n="block_provider">照護端資料（僅登記，不審核）</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><span data-i18n="label_title">職稱</span><span class="req">*</span></label>
+                <select class="form-control" id="d-title" onchange="document.getElementById('d-title-other').style.display = this.value === '其他' ? 'block' : 'none'">
+                  <option value="" data-i18n="ph_select">請選擇</option>
+                  <option value="醫師" data-i18n="title_doctor">醫師</option>
+                  <option value="物理治療師" data-i18n="title_pt">物理治療師</option>
+                  <option value="其他" data-i18n="opt_other">其他</option>
+                </select>
+                <input type="text" class="form-control" id="d-title-other" data-i18n-placeholder="ph_title_other" placeholder="請填寫職稱" style="display:none; margin-top:0.4rem;">
+              </div>
+              <div class="form-group">
+                <label data-i18n="label_specialty">專科</label>
+                <select class="form-control" id="d-specialty">
+                  <option value="" data-i18n="ph_select">請選擇</option>
+                  <option value="骨科" data-i18n="sp_ortho">骨科</option>
+                  <option value="復健科" data-i18n="sp_rehab">復健科</option>
+                  <option value="運動醫學科" data-i18n="sp_sports">運動醫學科</option>
+                  <option value="一般物理治療" data-i18n="sp_pt">一般物理治療</option>
+                  <option value="其他" data-i18n="opt_other">其他</option>
+                </select>
+              </div>
             </div>
+            <div class="form-group">
+              <label data-i18n="label_institution">執業機構名稱</label>
+              <input type="text" class="form-control" id="d-institution">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label data-i18n="label_license">執照字號（僅登記）</label>
+                <input type="text" class="form-control" id="d-license">
+              </div>
+              <div class="form-group">
+                <label data-i18n="label_phone">聯絡電話</label>
+                <input type="tel" class="form-control" id="d-phone">
+              </div>
+            </div>
+            <p class="hint" data-i18n="provider_hint">系統不會驗證執照真偽；註冊後會產生一組邀請碼，個案可輸入邀請碼或您的 Email 授權您查看資料。</p>
           </div>
 
           <button class="btn-auth" onclick="handleRegister()" id="btn-register">
-            <i data-lucide="user-plus"></i>
-            <span data-i18n="btn_register">建立帳號</span>
+            <i data-lucide="user-plus"></i><span data-i18n="btn_register">建立帳號</span>
           </button>
-
           <p class="form-switch">
             <span data-i18n="have_account">已有帳號？</span>
-            <button class="link-btn" onclick="switchTab('login')" data-i18n="go_login">前往登入</button>
+            <button class="link-btn" type="button" onclick="switchTab('login')" data-i18n="go_login">前往登入</button>
           </p>
         </div>
 
-        <!-- ── FORGOT PASSWORD FORM ──────────────────────── -->
+        <!-- ── 忘記密碼 ───────────────────────────────────── -->
         <div id="form-forgot" class="auth-form">
           <p class="form-desc" data-i18n="forgot_desc">輸入您的電子信箱，我們將寄送密碼重設連結</p>
-
           <div class="form-group">
             <label data-i18n="label_email">電子信箱</label>
             <div class="input-wrapper">
@@ -159,219 +316,230 @@
               <input type="email" id="forgot-email" placeholder="example@email.com" autocomplete="email">
             </div>
           </div>
-
           <button class="btn-auth" onclick="handleForgotPassword()" id="btn-forgot">
-            <i data-lucide="send"></i>
-            <span data-i18n="btn_send_reset">寄送重設連結</span>
+            <i data-lucide="send"></i><span data-i18n="btn_send_reset">寄送重設連結</span>
           </button>
-
-          <!-- Success message (hidden by default) -->
           <div id="forgot-success" class="success-msg" style="display:none;">
-            <i data-lucide="check-circle"></i>
-            <span data-i18n="forgot_sent">重設連結已寄出，請檢查您的信箱。</span>
+            <i data-lucide="check-circle"></i><span data-i18n="forgot_sent">重設連結已寄出，請檢查您的信箱。</span>
           </div>
-
           <p class="form-switch">
-            <button class="link-btn" onclick="switchTab('login')">
-              <i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:middle;"></i>
-              <span data-i18n="back_to_login">返回登入</span>
-            </button>
+            <button class="link-btn" type="button" onclick="switchTab('login')">← <span data-i18n="back_to_login">返回登入</span></button>
           </p>
         </div>
 
-        <!-- Error message area -->
         <div id="auth-error" class="error-msg" style="display:none;"></div>
-
-        <!-- Version -->
-        <p class="version-label">Version 1.0.0</p>
+        <p class="version-label">Version 2.0.0</p>
       </div>
     </div>
   </div>
 
+<script src="firebase-config.js"></script>
+<script src="bodymap.js"></script>
 <script>
-// ── i18n strings ─────────────────────────────────────────────────
+// ── i18n ─────────────────────────────────────────────────────────
 const i18n = {
   zh: {
     page_title: '演奏者智能照護系統',
-    brand_title: '演奏者智能<br>照護系統',
-    brand_subtitle: '追蹤並改善演奏姿態與肌肉骨骼健康',
-    feature_cva: 'CVA 頭部前傾即時偵測',
-    feature_posture: '三階段演奏姿態評估',
-    feature_history: '個人化歷史紀錄追蹤',
-    tab_login: '登入',
-    tab_register: '註冊',
-    login_desc: '請登入您的帳號以繼續使用評估系統',
-    register_desc: '建立您的個人帳號，開始追蹤演奏健康',
+    brand_title: '演奏者<br>智能照護系統',
+    brand_subtitle: '演奏者與照護端協作，追蹤演奏姿勢與肌肉骨骼健康',
+    feature_cva: '姿勢即時偵測與警示',
+    feature_posture: '練習時間紀錄與提醒',
+    feature_history: '授權照護端追蹤趨勢、給予建議',
+    tab_login: '登入', tab_register: '註冊',
+    login_desc: '請登入您的帳號；同時具有演奏者與照護端身分者，登入後可切換平台',
+    register_desc: '請先選擇身分，系統會依身分顯示對應的表單。同一個帳號可同時擁有兩種身分。',
+    register_done: '註冊成功！請使用剛才的帳號密碼重新登入。',
     forgot_desc: '輸入您的電子信箱，我們將寄送密碼重設連結',
-    label_email: '電子信箱',
-    label_password: '密碼',
-    label_name: '姓名 / 代號',
-    label_confirm_pw: '確認密碼',
-    placeholder_name: '請輸入姓名或代號',
-    placeholder_pw: '至少 8 個字元',
-    placeholder_confirm_pw: '再次輸入密碼',
-    forgot_link: '忘記密碼？',
-    btn_login: '登入',
-    btn_register: '建立帳號',
-    btn_send_reset: '寄送重設連結',
-    no_account: '還沒有帳號？',
-    go_register: '立即註冊',
-    have_account: '已有帳號？',
-    go_login: '前往登入',
-    back_to_login: '返回登入',
-    forgot_sent: '重設連結已寄出，請檢查您的信箱。',
+    label_role: '註冊身分',
+    role_performer: '演奏者', role_performer_desc: '記錄練習姿勢、接收照護建議',
+    role_provider: '醫師／物理治療師', role_provider_desc: '查看獲授權個案的趨勢並給予建議',
+    block_account: '帳號資料',
+    block_performer: '演奏者資料（初診式表單）',
+    block_provider: '照護端資料（僅登記，不審核）',
+    sub_basic: '基本資料', sub_music: '演奏背景', sub_pain: '疼痛及傷害史', sub_consent: '研究同意',
+    label_email: '電子信箱', label_password: '密碼', label_name: '姓名 / 代號', label_confirm_pw: '確認密碼',
+    label_gender: '性別', label_birthdate: '出生年月日', label_identity: '身分',
+    label_height: '身高 (cm)', label_weight: '體重 (kg)', label_phone: '聯絡電話',
+    label_emergency: '緊急聯絡人（姓名／電話）',
+    label_instrument: '演奏樂器', label_years: '學習年資（年）',
+    label_days: '每週練習天數', label_minutes: '每次平均練習時長（分鐘）',
+    label_pt: '是否曾接受物理治療／復健', ph_pt_note: '若有，請說明部位、時間',
+    label_painmap: '目前不適或曾受傷的部位',
+    label_msk: '骨骼肌肉相關疾病或傷害史', label_surgery: '開刀史', label_meds: '目前用藥',
+    label_allergy: '藥物／其他過敏史',
+    consent_research: '我已閱讀並同意參與本研究（研究參與同意書）',
+    consent_data: '我同意本系統蒐集與使用我的評估資料於研究用途',
+    label_referral: '轉介來源',
+    ref_self: '自行報名', ref_doctor: '醫師轉介', ref_teacher: '教師推薦',
+    label_title: '職稱', title_doctor: '醫師', title_pt: '物理治療師', ph_title_other: '請填寫職稱',
+    label_specialty: '專科', sp_ortho: '骨科', sp_rehab: '復健科', sp_sports: '運動醫學科', sp_pt: '一般物理治療',
+    label_institution: '執業機構名稱', label_license: '執照字號（僅登記）',
+    provider_hint: '系統不會驗證執照真偽；註冊後會產生一組邀請碼，個案可輸入邀請碼或您的 Email 授權您查看資料。',
+    ph_select: '請選擇', opt_male: '男', opt_female: '女', opt_other: '其他', opt_na: '不便透露',
+    id_student: '音樂系學生', id_pro: '職業演奏者', id_amateur: '業餘演奏者',
+    opt_violin: '小提琴', opt_cello: '大提琴', opt_yes: '是', opt_no: '否',
+    placeholder_name: '請輸入姓名或代號', placeholder_pw: '至少 8 個字元', placeholder_confirm_pw: '再次輸入密碼',
+    forgot_link: '忘記密碼？', btn_login: '登入', btn_register: '建立帳號', btn_send_reset: '寄送重設連結',
+    no_account: '還沒有帳號？', go_register: '立即註冊', have_account: '已有帳號？', go_login: '前往登入',
+    back_to_login: '返回登入', forgot_sent: '重設連結已寄出，請檢查您的信箱。',
     err_fill_all: '請填寫所有欄位。',
+    err_fill_required: '請填寫所有標示 * 的必填欄位。',
+    err_role: '請至少選擇一種註冊身分。',
+    err_consent: '演奏者需勾選兩項研究同意才能註冊。',
     err_pw_short: '密碼至少需要 8 個字元。',
     err_pw_mismatch: '兩次輸入的密碼不一致。',
     err_invalid_email: '請輸入有效的電子信箱。',
     err_login_fail: '帳號或密碼錯誤，請再試一次。',
     err_email_exists: '此信箱已被註冊，請直接登入。',
     err_forgot_fill: '請輸入您的電子信箱。',
+    err_profile_write: '帳號已建立，但資料寫入失敗；請登入後到「基本資料」補填。',
   },
   en: {
     page_title: 'Performer Intelligent Care System',
-    brand_title: 'Performer Intelligent<br>Care System',
-    brand_subtitle: 'Track and improve playing posture and musculoskeletal health',
-    feature_cva: 'Real-time CVA Forward Head Detection',
-    feature_posture: 'Three-Stage Playing Posture Assessment',
-    feature_history: 'Personalised History Tracking',
-    tab_login: 'Login',
-    tab_register: 'Register',
-    login_desc: 'Sign in to your account to continue using the assessment system',
-    register_desc: 'Create your personal account and start tracking your playing health',
+    brand_title: 'Performer<br>Intelligent Care System',
+    brand_subtitle: 'Performers and care providers working together on playing posture and musculoskeletal health',
+    feature_cva: 'Real-time posture detection & alerts',
+    feature_posture: 'Practice time logging & reminders',
+    feature_history: 'Authorised providers follow trends and give advice',
+    tab_login: 'Login', tab_register: 'Register',
+    login_desc: 'Sign in to your account. If you hold both roles you can switch platforms after signing in.',
+    register_desc: 'Choose your role first; the matching form will appear. One account can hold both roles.',
+    register_done: 'Registration complete! Please sign in again with your new account.',
     forgot_desc: 'Enter your email address and we will send you a password reset link',
-    label_email: 'Email Address',
-    label_password: 'Password',
-    label_name: 'Name / ID',
-    label_confirm_pw: 'Confirm Password',
-    placeholder_name: 'Enter your name or ID',
-    placeholder_pw: 'At least 8 characters',
-    placeholder_confirm_pw: 'Re-enter password',
-    forgot_link: 'Forgot password?',
-    btn_login: 'Sign In',
-    btn_register: 'Create Account',
-    btn_send_reset: 'Send Reset Link',
-    no_account: "Don't have an account?",
-    go_register: 'Register now',
-    have_account: 'Already have an account?',
-    go_login: 'Sign in',
-    back_to_login: 'Back to login',
-    forgot_sent: 'Reset link sent. Please check your inbox.',
+    label_role: 'Register as',
+    role_performer: 'Performer', role_performer_desc: 'Record practice posture, receive care advice',
+    role_provider: 'Physician / Physiotherapist', role_provider_desc: 'Review authorised cases and give advice',
+    block_account: 'Account',
+    block_performer: 'Performer information (intake form)',
+    block_provider: 'Provider information (registration only, not verified)',
+    sub_basic: 'Basic information', sub_music: 'Playing background', sub_pain: 'Pain & injury history', sub_consent: 'Research consent',
+    label_email: 'Email Address', label_password: 'Password', label_name: 'Name / ID', label_confirm_pw: 'Confirm Password',
+    label_gender: 'Gender', label_birthdate: 'Date of birth', label_identity: 'Status',
+    label_height: 'Height (cm)', label_weight: 'Weight (kg)', label_phone: 'Phone',
+    label_emergency: 'Emergency contact (name / phone)',
+    label_instrument: 'Instrument', label_years: 'Years of study',
+    label_days: 'Practice days per week', label_minutes: 'Average minutes per session',
+    label_pt: 'Have you received physiotherapy / rehabilitation?', ph_pt_note: 'If yes, describe area and time',
+    label_painmap: 'Current discomfort or past injury areas',
+    label_msk: 'Musculoskeletal disease or injury history', label_surgery: 'Surgical history', label_meds: 'Current medication',
+    label_allergy: 'Drug / other allergies',
+    consent_research: 'I have read and agree to take part in this study (informed consent)',
+    consent_data: 'I agree that my assessment data may be collected and used for research',
+    label_referral: 'Referral source',
+    ref_self: 'Self-enrolled', ref_doctor: 'Physician referral', ref_teacher: 'Teacher recommendation',
+    label_title: 'Title', title_doctor: 'Physician', title_pt: 'Physiotherapist', ph_title_other: 'Enter your title',
+    label_specialty: 'Specialty', sp_ortho: 'Orthopaedics', sp_rehab: 'Rehabilitation', sp_sports: 'Sports medicine', sp_pt: 'General physiotherapy',
+    label_institution: 'Institution', label_license: 'Licence no. (recorded only)',
+    provider_hint: 'Licences are not verified. After registering you get an invite code; cases can enter the code or your email to authorise you.',
+    ph_select: 'Select', opt_male: 'Male', opt_female: 'Female', opt_other: 'Other', opt_na: 'Prefer not to say',
+    id_student: 'Music student', id_pro: 'Professional performer', id_amateur: 'Amateur performer',
+    opt_violin: 'Violin', opt_cello: 'Cello', opt_yes: 'Yes', opt_no: 'No',
+    placeholder_name: 'Enter your name or ID', placeholder_pw: 'At least 8 characters', placeholder_confirm_pw: 'Re-enter password',
+    forgot_link: 'Forgot password?', btn_login: 'Sign In', btn_register: 'Create Account', btn_send_reset: 'Send Reset Link',
+    no_account: "Don't have an account?", go_register: 'Register now', have_account: 'Already have an account?', go_login: 'Sign in',
+    back_to_login: 'Back to login', forgot_sent: 'Reset link sent. Please check your inbox.',
     err_fill_all: 'Please fill in all fields.',
+    err_fill_required: 'Please complete all required fields marked *.',
+    err_role: 'Please choose at least one role.',
+    err_consent: 'Performers must tick both consent boxes to register.',
     err_pw_short: 'Password must be at least 8 characters.',
     err_pw_mismatch: 'Passwords do not match.',
     err_invalid_email: 'Please enter a valid email address.',
     err_login_fail: 'Incorrect email or password. Please try again.',
     err_email_exists: 'This email is already registered. Please sign in.',
     err_forgot_fill: 'Please enter your email address.',
+    err_profile_write: 'Account created but saving your details failed; please complete them under "Basic Info" after signing in.',
   }
 };
 
 let currentLang = localStorage.getItem('lang') || 'zh';
+let isRegistering = false;
+let regBodyMap = null;
 
-function t(key) {
-  return i18n[currentLang][key] || key;
-}
+function t(key) { return i18n[currentLang][key] || key; }
 
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
-
   document.getElementById('html-root').lang = lang === 'zh' ? 'zh-Hant' : 'en';
   document.getElementById('lang-zh').classList.toggle('active', lang === 'zh');
   document.getElementById('lang-en').classList.toggle('active', lang === 'en');
-
-  // Update all data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (i18n[lang][key] !== undefined) {
-      el.innerHTML = i18n[lang][key];
-    }
+    if (i18n[lang][key] !== undefined) el.innerHTML = i18n[lang][key];
   });
-
-  // Update placeholders
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.getAttribute('data-i18n-placeholder');
     if (i18n[lang][key]) el.placeholder = i18n[lang][key];
   });
-
   document.title = t('page_title');
+  // 人體圖文字跟著語言重繪（保留已標記內容）
+  if (regBodyMap) initRegBodyMap(regBodyMap.getMarks());
   hideError();
 }
 
-// ── Tab switching ─────────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-
+  document.querySelectorAll('.auth-tab').forEach(x => x.classList.remove('active'));
   document.getElementById(`form-${tab}`).classList.add('active');
-  if (tab === 'login' || tab === 'register') {
-    document.getElementById(`tab-${tab}`).classList.add('active');
-  }
+  if (tab === 'login' || tab === 'register') document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById('form-panel').classList.toggle('wide', tab === 'register' && document.getElementById('role-performer').checked);
   hideError();
   document.getElementById('forgot-success').style.display = 'none';
+  if (tab !== 'login') document.getElementById('register-success').style.display = 'none';
 }
 
-// ── Password visibility toggle ────────────────────────────────────
+function onRoleChange() {
+  const perf = document.getElementById('role-performer').checked;
+  const prov = document.getElementById('role-provider').checked;
+  document.getElementById('block-performer').style.display = perf ? 'flex' : 'none';
+  document.getElementById('block-provider').style.display = prov ? 'flex' : 'none';
+  document.getElementById('role-label-performer').classList.toggle('checked', perf);
+  document.getElementById('role-label-provider').classList.toggle('checked', prov);
+  document.getElementById('form-panel').classList.toggle('wide', perf);
+  if (perf && !regBodyMap) initRegBodyMap([]);
+}
+
+function initRegBodyMap(marks) {
+  regBodyMap = BodyMap.create(document.getElementById('reg-bodymap'), {
+    marks, editable: true, gender: document.getElementById('p-gender').value
+  });
+}
+
 function togglePassword(inputId, btn) {
   const input = document.getElementById(inputId);
-  const isHidden = input.type === 'password';
-  input.type = isHidden ? 'text' : 'password';
-  btn.innerHTML = isHidden
-    ? '<i data-lucide="eye-off"></i>'
-    : '<i data-lucide="eye"></i>';
+  const hidden = input.type === 'password';
+  input.type = hidden ? 'text' : 'password';
+  btn.innerHTML = hidden ? '<i data-lucide="eye-off"></i>' : '<i data-lucide="eye"></i>';
   lucide.createIcons();
 }
 
-// ── Error / loading helpers ───────────────────────────────────────
 function showError(msg) {
   const el = document.getElementById('auth-error');
   el.textContent = msg;
   el.style.display = 'flex';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
-
-function hideError() {
-  document.getElementById('auth-error').style.display = 'none';
-}
-
+function hideError() { document.getElementById('auth-error').style.display = 'none'; }
 function setLoading(btnId, loading) {
   const btn = document.getElementById(btnId);
   btn.disabled = loading;
-  btn.style.opacity = loading ? '0.7' : '1';
 }
+function isValidEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function num(id) { const v = val(id); return v === '' ? null : Number(v); }
 
-// ── Validation helpers ────────────────────────────────────────────
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-// ── Firebase init ─────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyD8oyp3qrsZ0lF6a4n20-TVzDCJLvpuelw",
-  authDomain: "posture-assessment.firebaseapp.com",
-  projectId: "posture-assessment",
-  storageBucket: "posture-assessment.firebasestorage.app",
-  messagingSenderId: "354726206119",
-  appId: "1:354726206119:web:b78eb4f044236caeafd982",
-  measurementId: "G-X26QMQHVVR"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-
-// ── AUTH HANDLERS ─────────────────────────────────────────────────
-
+// ── 登入 ─────────────────────────────────────────────────────────
 async function handleLogin() {
   hideError();
-  const email    = document.getElementById('login-email').value.trim();
+  const email = val('login-email');
   const password = document.getElementById('login-password').value;
-
   if (!email || !password) { showError(t('err_fill_all')); return; }
   if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
-
   setLoading('btn-login', true);
   try {
     await auth.signInWithEmailAndPassword(email, password);
-    localStorage.setItem('lang', currentLang);
+    sessionStorage.removeItem('activeRole');   // 登入後重新選擇平台
     window.location.href = 'index.html';
   } catch (err) {
     showError(t('err_login_fail'));
@@ -380,42 +548,148 @@ async function handleLogin() {
   }
 }
 
-async function handleRegister() {
-  hideError();
-  const name     = document.getElementById('reg-name').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value;
-  const confirm  = document.getElementById('reg-confirm').value;
-
-  if (!name || !email || !password || !confirm) { showError(t('err_fill_all')); return; }
-  if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
-  if (password.length < 8)  { showError(t('err_pw_short')); return; }
-  if (password !== confirm)  { showError(t('err_pw_mismatch')); return; }
-
-  setLoading('btn-register', true);
-  try {
-    const cred = await auth.createUserWithEmailAndPassword(email, password);
-    await cred.user.updateProfile({ displayName: name });
-    localStorage.setItem('lang', currentLang);
-    window.location.href = 'index.html';
-  } catch (err) {
-    if (err.code === 'auth/email-already-in-use') {
-      showError(t('err_email_exists'));
-    } else {
-      showError(err.message);
-    }
-  } finally {
-    setLoading('btn-register', false);
-  }
+// ── 註冊 ─────────────────────────────────────────────────────────
+function collectPerformerProfile(name, email) {
+  const birthdate = val('p-birthdate');
+  const pt = document.querySelector('input[name="p-pt"]:checked');
+  return {
+    username: name,
+    email,
+    gender: val('p-gender'),
+    birthdate,
+    age: ageFromBirthdate(birthdate),
+    identity: val('p-identity'),
+    height: num('p-height'),
+    weight: num('p-weight'),
+    phone: val('p-phone'),
+    emergencyContact: val('p-emergency'),
+    instrument: val('p-instrument'),
+    yearsOfStudy: num('p-years'),
+    practiceDaysPerWeek: num('p-days'),
+    practiceMinutesPerSession: num('p-minutes'),
+    hadPhysicalTherapy: pt ? pt.value === 'yes' : false,
+    physicalTherapyNote: val('p-pt-note'),
+    mskHistory: val('p-msk'),
+    surgeryHistory: val('p-surgery'),
+    currentMedication: val('p-meds'),
+    allergies: val('p-allergy'),
+    consentResearch: document.getElementById('p-consent-research').checked,
+    consentDataUse: document.getElementById('p-consent-data').checked,
+    consentAt: Date.now(),
+    referralSource: val('p-referral')
+  };
 }
 
+function collectProviderProfile(name, email) {
+  const title = val('d-title');
+  return {
+    name, email, emailLower: email.toLowerCase(),
+    title,
+    titleOther: title === '其他' ? val('d-title-other') : '',
+    specialty: val('d-specialty'),
+    institution: val('d-institution'),
+    licenseNo: val('d-license'),
+    phone: val('d-phone')
+  };
+}
+
+async function handleRegister() {
+  hideError();
+  const isPerf = document.getElementById('role-performer').checked;
+  const isProv = document.getElementById('role-provider').checked;
+  const name = val('reg-name');
+  const email = val('reg-email');
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+
+  if (!isPerf && !isProv) { showError(t('err_role')); return; }
+  if (!name || !email || !password || !confirm) { showError(t('err_fill_required')); return; }
+  if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
+  if (password.length < 8) { showError(t('err_pw_short')); return; }
+  if (password !== confirm) { showError(t('err_pw_mismatch')); return; }
+
+  let perfProfile = null, provProfile = null;
+  if (isPerf) {
+    perfProfile = collectPerformerProfile(name, email);
+    const required = ['gender', 'birthdate', 'identity', 'height', 'instrument', 'yearsOfStudy', 'practiceDaysPerWeek', 'practiceMinutesPerSession'];
+    if (required.some(k => perfProfile[k] === '' || perfProfile[k] === null || Number.isNaN(perfProfile[k]))) {
+      showError(t('err_fill_required')); return;
+    }
+    if (!perfProfile.consentResearch || !perfProfile.consentDataUse) { showError(t('err_consent')); return; }
+  }
+  if (isProv) {
+    provProfile = collectProviderProfile(name, email);
+    if (!provProfile.title || (provProfile.title === '其他' && !provProfile.titleOther)) { showError(t('err_fill_required')); return; }
+  }
+
+  const roles = [];
+  if (isPerf) roles.push('performer');
+  if (isProv) roles.push('provider');
+
+  setLoading('btn-register', true);
+  isRegistering = true;
+  let cred;
+  try {
+    cred = await auth.createUserWithEmailAndPassword(email, password);
+    await cred.user.updateProfile({ displayName: name });
+  } catch (err) {
+    isRegistering = false;
+    setLoading('btn-register', false);
+    showError(err.code === 'auth/email-already-in-use' ? t('err_email_exists') : err.message);
+    return;
+  }
+
+  const uid = cred.user.uid;
+  const now = Date.now();
+  let writeFailed = false;
+  try {
+    const profile = isPerf ? { ...perfProfile, roles } : { username: name, email, roles };
+    await db.collection('users').doc(uid).set({
+      profile,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAtMs: now
+    }, { merge: true });
+
+    if (isProv) {
+      await db.collection('providers').doc(uid).set({
+        profile: provProfile,
+        inviteCode: makeInviteCode(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAtMs: now
+      }, { merge: true });
+    }
+
+    if (isPerf && regBodyMap) {
+      const marks = regBodyMap.getMarks();
+      await db.collection('users').doc(uid).collection('bodyMaps').add({
+        context: 'baseline', recordId: null, marks,
+        gender: perfProfile.gender,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAtMs: now, dateKey: dateKeyOf(now)
+      });
+    }
+  } catch (err) {
+    console.error('註冊資料寫入失敗：', err);
+    writeFailed = true;
+  }
+
+  // 註冊完成後登出，請使用者重新登入
+  await auth.signOut();
+  isRegistering = false;
+  setLoading('btn-register', false);
+  switchTab('login');
+  document.getElementById('login-email').value = email;
+  document.getElementById('login-password').value = '';
+  document.getElementById('register-success').style.display = 'flex';
+  if (writeFailed) showError(t('err_profile_write'));
+}
+
+// ── 忘記密碼 ─────────────────────────────────────────────────────
 async function handleForgotPassword() {
   hideError();
-  const email = document.getElementById('forgot-email').value.trim();
-
+  const email = val('forgot-email');
   if (!email) { showError(t('err_forgot_fill')); return; }
   if (!isValidEmail(email)) { showError(t('err_invalid_email')); return; }
-
   setLoading('btn-forgot', true);
   try {
     await auth.sendPasswordResetEmail(email);
@@ -427,32 +701,24 @@ async function handleForgotPassword() {
   }
 }
 
-// ── Mock helper (no longer needed but kept for safety) ────────────
-function mockDelay(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-// ── Init ──────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // If already logged in via Firebase, go straight to app
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      window.location.href = 'index.html';
-      return;
-    }
-    setLang(currentLang);
-    lucide.createIcons();
+  setLang(currentLang);
+  lucide.createIcons();
+  document.getElementById('p-gender').addEventListener('change', () => {
+    if (regBodyMap) initRegBodyMap(regBodyMap.getMarks());
   });
 
-  // Allow Enter key to submit
+  auth.onAuthStateChanged(user => {
+    if (user && !isRegistering) window.location.href = 'index.html';
+  });
+
   document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA') return;
     const active = document.querySelector('.auth-form.active');
     if (!active) return;
-    const id = active.id;
-    if (id === 'form-login')    handleLogin();
-    if (id === 'form-register') handleRegister();
-    if (id === 'form-forgot')   handleForgotPassword();
+    if (active.id === 'form-login') handleLogin();
+    if (active.id === 'form-forgot') handleForgotPassword();
   });
 });
 </script>

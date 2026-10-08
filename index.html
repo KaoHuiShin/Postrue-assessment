@@ -9,848 +9,950 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <!-- Chart.js CDN for interactive charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lucide Icons CDN -->
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- MediaPipe Pose for CVA detection -->
+  <!-- MediaPipe Pose -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js" crossorigin="anonymous"></script>
 </head>
-<body>
+<body class="role-performer">
 
-  <!-- Loading Screen (shown until auth check completes) -->
-  <div id="loading-screen" style="
-    position: fixed; inset: 0; z-index: 9999;
-    background: var(--bg-primary);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 1.5rem;
-    transition: opacity 0.4s ease;
-  ">
-    <!-- Animated ECG icon -->
-    <div style="position:relative; width:72px; height:72px;">
-      <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:72px;height:72px;">
-        <rect width="72" height="72" rx="16" fill="#8D6B61" fill-opacity="0.12"/>
-        <!-- ECG line animation -->
-        <polyline id="ecg-line"
-          points="8,36 20,36 24,20 28,52 34,28 38,44 42,36 64,36"
-          stroke="#8D6B61" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-          fill="none"
-          stroke-dasharray="120"
-          stroke-dashoffset="120"
-          style="animation: ecgDraw 1.2s ease-in-out infinite alternate;">
-        </polyline>
-        <!-- Pulse dot -->
-        <circle cx="42" cy="36" r="3.5" fill="#C39289" style="animation: pulseDot 1.2s ease-in-out infinite alternate;"/>
-      </svg>
-    </div>
-
+  <!-- Loading -->
+  <div id="loading-screen" style="position:fixed; inset:0; z-index:9999; background:var(--bg-primary); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.5rem; transition:opacity 0.4s ease;">
+    <svg viewBox="0 0 72 72" fill="none" style="width:72px;height:72px;">
+      <rect width="72" height="72" rx="16" fill="#0D5661" fill-opacity="0.1"/>
+      <polyline points="8,36 20,36 24,20 28,52 34,28 38,44 42,36 64,36" stroke="#0D5661" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-dasharray="120" stroke-dashoffset="120" style="animation: ecgDraw 1.2s ease-in-out infinite alternate;"></polyline>
+      <circle cx="42" cy="36" r="3.5" fill="#8E354A"/>
+    </svg>
     <div style="text-align:center;">
-      <div style="font-size:1rem; font-weight:600; color:var(--text-primary); letter-spacing:0.01em;" data-i18n="brand_name">
-        <span data-i18n="brand_name">演奏者智能照護系統</span>
-      </div>
-      <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.3rem;">
-        Performer Intelligent Care System
-      </div>
+      <div style="font-size:1rem; font-weight:600; color:#0D5661;" data-i18n="brand_name">演奏者智能照護系統</div>
+      <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.3rem;">Performer Intelligent Care System</div>
     </div>
-
-    <!-- Loading dots -->
-    <div style="display:flex; gap:6px; align-items:center;">
-      <span class="loading-dot" style="animation-delay:0s;"></span>
-      <span class="loading-dot" style="animation-delay:0.2s;"></span>
-      <span class="loading-dot" style="animation-delay:0.4s;"></span>
+    <div style="display:flex; gap:6px;">
+      <span class="loading-dot"></span><span class="loading-dot" style="animation-delay:0.2s;"></span><span class="loading-dot" style="animation-delay:0.4s;"></span>
     </div>
   </div>
 
-  <style>
-    @keyframes ecgDraw {
-      0%   { stroke-dashoffset: 120; opacity: 0.4; }
-      100% { stroke-dashoffset: 0;   opacity: 1; }
-    }
-    @keyframes pulseDot {
-      0%   { r: 2; opacity: 0.4; }
-      100% { r: 4; opacity: 1; }
-    }
-    .loading-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--color-accent, #8D6B61);
-      display: inline-block;
-      animation: dotBounce 0.8s ease-in-out infinite alternate;
-    }
-    @keyframes dotBounce {
-      0%   { opacity: 0.25; transform: translateY(0); }
-      100% { opacity: 1;    transform: translateY(-5px); }
-    }
-  </style>
+  <!-- 頁面上方警示條（姿勢警示／休息提醒） -->
+  <div class="page-alert-bar" id="page-alert-bar">
+    <i data-lucide="alert-triangle"></i>
+    <span id="page-alert-text"></span>
+    <button onclick="dismissPageAlert()" data-i18n="btn_dismiss">知道了</button>
+  </div>
 
-  <!-- Sidebar Navigation -->
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
   <aside>
     <div class="brand">
-      <div class="brand-icon">
-        <i data-lucide="activity"></i>
-      </div>
-      <div class="brand-name">
-        <span data-i18n="brand_title_html">演奏者智能<br>照護系統</span>
-      </div>
+      <div class="brand-icon"><i data-lucide="activity"></i></div>
+      <div class="brand-name"><span data-i18n="brand_title_html">演奏者<br>智能照護系統</span></div>
     </div>
-    
-    <ul class="nav-links">
-      <li>
-        <a id="nav-dashboard" class="nav-item active" onclick="switchSection('dashboard')">
-          <i data-lucide="layout-dashboard"></i>
-          <span data-i18n="nav_dashboard">儀表板總覽</span>
-        </a>
-      </li>
-      <li>
-        <a id="nav-profile" class="nav-item" onclick="switchSection('profile')">
-          <i data-lucide="user-cog"></i>
-          <span data-i18n="nav_profile">個資填寫</span>
-        </a>
-      </li>
-      <li>
-        <a id="nav-playing" class="nav-item" onclick="switchSection('playing')">
-          <i data-lucide="music"></i>
-          <span data-i18n="nav_playing">演奏動作評估</span>
-        </a>
-      </li>
-      <li>
-        <a id="nav-standard" class="nav-item" onclick="switchSection('standard')">
-          <i data-lucide="body"></i>
-          <span data-i18n="nav_standard">標準動作辨識</span>
-        </a>
-      </li>
-      <li>
-        <a id="nav-history" class="nav-item" onclick="switchSection('history')">
-          <i data-lucide="history"></i>
-          <span data-i18n="nav_history">使用者歷史紀錄</span>
-        </a>
-      </li>
+
+    <div class="role-chip" id="role-chip">
+      <div class="role-chip-text">
+        <div class="role-chip-label" data-i18n="current_platform">目前平台</div>
+        <div class="role-chip-name" id="role-chip-name">演奏者</div>
+      </div>
+      <button id="btn-switch-role" onclick="openRoleSwitcher()" style="display:none;" data-i18n="btn_switch_role">切換</button>
+    </div>
+
+    <!-- 演奏者選單 -->
+    <ul class="nav-links" id="nav-performer">
+      <li><a id="nav-dashboard" class="nav-item active" onclick="switchSection('dashboard')"><i data-lucide="layout-dashboard"></i><span data-i18n="nav_dashboard">個人儀表板</span></a></li>
+      <li><a id="nav-profile" class="nav-item" onclick="switchSection('profile')"><i data-lucide="user-cog"></i><span data-i18n="nav_profile">基本資料</span></a></li>
+      <li><a id="nav-playing" class="nav-item" onclick="switchSection('playing')"><i data-lucide="music"></i><span data-i18n="nav_playing">演奏動作評估</span></a></li>
+      <li><a id="nav-standard-movement" class="nav-item" onclick="switchSection('standard-movement')"><i data-lucide="person-standing"></i><span data-i18n="nav_standard_movement">標準動作辨識</span></a></li>
+      <li><a id="nav-history" class="nav-item" onclick="switchSection('history')"><i data-lucide="history"></i><span data-i18n="nav_history">歷史紀錄</span></a></li>
+      <li><a id="nav-records" class="nav-item" onclick="switchSection('records')"><i data-lucide="clipboard-list"></i><span data-i18n="nav_records">問卷與紀錄</span></a></li>
+      <li><a id="nav-education" class="nav-item" onclick="switchSection('education')"><i data-lucide="book-open"></i><span data-i18n="nav_education">衛教與問答</span></a></li>
+      <li><a id="nav-authorization" class="nav-item" onclick="switchSection('authorization')"><i data-lucide="shield-check"></i><span data-i18n="nav_authorization">資料授權管理</span></a></li>
+    </ul>
+
+    <!-- 照護端選單 -->
+    <ul class="nav-links" id="nav-provider" hidden>
+      <li><a id="nav-provider-cases" class="nav-item" onclick="switchSection('provider-cases')"><i data-lucide="users"></i><span data-i18n="nav_provider_cases">個案總覽</span><span class="nav-badge" id="nav-pending-badge" style="display:none;">0</span></a></li>
+      <li><a id="nav-provider-case" class="nav-item disabled" onclick="switchSection('provider-case')"><i data-lucide="line-chart"></i><span data-i18n="nav_provider_case">個案儀表板</span></a></li>
+      <li><a id="nav-provider-advice" class="nav-item disabled" onclick="switchSection('provider-advice')"><i data-lucide="file-pen-line"></i><span data-i18n="nav_provider_advice">照護建議與報告</span></a></li>
+      <li><a id="nav-provider-profile" class="nav-item" onclick="switchSection('provider-profile')"><i data-lucide="id-card"></i><span data-i18n="nav_provider_profile">照護者資料</span></a></li>
     </ul>
 
     <div class="nav-footer">
-      <!-- Language toggle -->
       <div class="lang-toggle-bar-side">
         <button class="lang-btn-side active" id="nav-lang-zh" onclick="setLang('zh')">中文</button>
         <span style="color:var(--border-color);font-size:0.8rem;">|</span>
         <button class="lang-btn-side" id="nav-lang-en" onclick="setLang('en')">EN</button>
       </div>
-      <button class="btn-logout" onclick="handleLogout()">
-        <i data-lucide="log-out"></i>
-        <span id="nav-logout-label" data-i18n="nav_logout">登出</span>
-      </button>
-      <p id="nav-footer-label" data-i18n="brand_name">演奏者智能照護系統</p>
-      <p style="margin-top: 0.25rem; font-size: 0.7rem; opacity: 0.7;">Version 1.0.0</p>
+      <button class="btn-logout" onclick="handleLogout()"><i data-lucide="log-out"></i><span data-i18n="nav_logout">登出</span></button>
+      <p data-i18n="brand_name">演奏者智能照護系統</p>
+      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.0.0</p>
     </div>
   </aside>
 
-  <!-- Main Content Area -->
   <main>
-    
-    <!-- 1. DASHBOARD SECTION -->
-    <section id="section-dashboard" class="active">
+
+    <!-- ═════════════ 演奏者端 ═════════════ -->
+
+    <!-- 1. 個人儀表板 -->
+    <section id="section-dashboard" class="active" data-role="performer">
       <div class="page-header">
         <div class="page-title">
-          <h1 data-i18n="nav_dashboard">儀表板總覽</h1>
-          <p data-i18n="dash_sub">歡迎使用演奏者動作評估系統，追蹤並改善演奏姿態與健康</p>
+          <h1 data-i18n="nav_dashboard">個人儀表板</h1>
+          <p data-i18n="dash_sub">追蹤演奏姿勢、練習時間與照護建議</p>
         </div>
-        <div class="user-badge">
-          <div class="user-badge-avatar" id="header-avatar">?</div>
-          <span id="header-username" data-i18n="guest">訪客</span>
-        </div>
+        <div class="user-badge"><div class="user-badge-avatar" id="header-avatar">?</div><span id="header-username" data-i18n="guest">訪客</span></div>
       </div>
 
-      <!-- Welcome Banner Card -->
       <div class="card hero-card">
         <div class="hero-content">
           <div class="hero-text">
-            <h2 data-i18n="dash_cta_title">開始您的健康動作評估</h2>
-            <p data-i18n="dash_cta_desc">本系統可記錄您在演奏前、中、後的身體姿態，或是診斷常見的靜態動作（如高低肩、頭部前傾與抬手姿勢）。請先填寫基本個資，隨後點選左側評估功能開始檢測。</p>
+            <h2 data-i18n="dash_cta_title">開始今天的練習評估</h2>
+            <p data-i18n="dash_cta_desc">系統會在演奏時即時偵測頸椎角、雙肩傾斜與手肘角度，姿勢超過警戒值時以畫面與震動提醒；評估結束後可標記練習前後的不適部位。</p>
           </div>
-          <button class="btn btn-primary" onclick="switchSection('profile')">
-            <i data-lucide="edit-3"></i> <span data-i18n="dash_fill_profile">填寫基本資料</span>
-          </button>
+          <button class="btn btn-primary" onclick="switchSection('playing')"><i data-lucide="play"></i><span data-i18n="dash_start">開始評估</span></button>
         </div>
       </div>
 
-      <!-- Quick Stats -->
       <div class="stat-grid">
-        <div class="card stat-card">
-          <div class="stat-num" id="stat-total-count">0</div>
-          <div class="stat-label" data-i18n="stat_total">總評估次數</div>
-        </div>
-        <div class="card stat-card">
-          <div class="stat-num" id="stat-last-score">--</div>
-          <div class="stat-label" data-i18n="stat_score">最近評估得分</div>
-        </div>
-        <div class="card stat-card">
-          <div class="stat-num" id="stat-instrument" data-i18n-default="stat_none" style="font-size: 1.5rem; line-height: 2.2rem;">無</div>
-          <div class="stat-label" data-i18n="stat_instrument">演奏樂器</div>
-        </div>
+        <div class="card stat-card"><div class="stat-num" id="stat-total-count">0</div><div class="stat-label" data-i18n="stat_total">總評估次數</div></div>
+        <div class="card stat-card"><div class="stat-num" id="stat-last-score">--</div><div class="stat-label" data-i18n="stat_score">最近評估得分</div></div>
+        <div class="card stat-card"><div class="stat-num sm" id="stat-week-practice">0</div><div class="stat-label" data-i18n="stat_week_practice">近 7 天練習（分鐘）</div></div>
+        <div class="card stat-card"><div class="stat-num sm" id="stat-providers">0</div><div class="stat-label" data-i18n="stat_providers">已授權照護者</div></div>
       </div>
 
-      <!-- Dashboard Layout: Recent Trend & Recommendations -->
       <div class="grid-main-side">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="trending-up"></i> <span data-i18n="dash_trend">歷史評估趨勢</span>
-            </div>
+            <div class="card-title"><i data-lucide="trending-up"></i><span data-i18n="dash_trend">歷史評估趨勢</span></div>
+            <span class="card-sub" data-i18n="dash_trend_sub">近 10 次演奏評估</span>
           </div>
-          <div class="chart-container-large">
-            <canvas id="dashboardTrendChart"></canvas>
-          </div>
+          <div class="chart-container-large"><canvas id="dashboardTrendChart"></canvas></div>
+          <div class="empty-state" id="dashboard-trend-empty" style="display:none;"><i data-lucide="line-chart"></i><span data-i18n="dash_trend_empty">尚無評估紀錄可繪製趨勢圖</span></div>
         </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="heart-pulse"></i> <span data-i18n="dash_tips">健康建議提示</span>
-            </div>
+        <div class="stack">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="stethoscope"></i><span data-i18n="dash_advice">照護建議</span></div></div>
+            <div class="stack" id="dashboard-advice"></div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 1rem;" id="dashboard-tips">
-            <p style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; padding: 2rem 0;">
-              <span data-i18n="dash_no_tips">暫無足夠的評估紀錄。請至少完成一次動作評估以獲得個人化的健康改善建議。</span>
-            </p>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="bell"></i><span data-i18n="dash_reminders">提醒</span></div></div>
+            <div class="stack" id="dashboard-reminders"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 2. PERSONAL INFO SECTION -->
-    <section id="section-profile">
+    <!-- 2. 基本資料 -->
+    <section id="section-profile" data-role="performer">
       <div class="page-header">
         <div class="page-title">
-          <h1 data-i18n="nav_profile">個資填寫</h1>
-          <p data-i18n="profile_sub">請輸入演奏者的基本資料，以便系統建立專屬的姿勢評估報告</p>
+          <h1 data-i18n="nav_profile">基本資料</h1>
+          <p data-i18n="profile_sub">年齡、樂器、練習習慣與疼痛及傷害史，作為評估結果的對照基準</p>
         </div>
       </div>
 
-      <div style="max-width: 600px; margin: 0 auto; width: 100%;">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="user"></i> <span data-i18n="profile_form_title">演奏者基本資料表單</span>
+      <div class="card" style="max-width: 980px; width:100%; margin: 0 auto;">
+        <form id="profile-form" onsubmit="saveProfile(event)">
+          <div class="form-section-title"><i data-lucide="user"></i><span data-i18n="sub_basic">基本資料</span></div>
+          <div class="form-row">
+            <div class="form-group"><label><span data-i18n="label_name">姓名 / 代號</span><span class="req">*</span></label><input type="text" id="pf-username" class="form-control" required></div>
+            <div class="form-group">
+              <label><span data-i18n="label_gender">性別</span><span class="req">*</span></label>
+              <select id="pf-gender" class="form-control" required>
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="男" data-i18n="opt_male">男</option>
+                <option value="女" data-i18n="opt_female">女</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+                <option value="不便透露" data-i18n="opt_na">不便透露</option>
+              </select>
             </div>
           </div>
-          <form id="profile-form" onsubmit="saveProfile(event)">
+          <div class="form-row-3">
+            <div class="form-group"><label><span data-i18n="label_birthdate">出生年月日</span><span class="req">*</span></label><input type="date" id="pf-birthdate" class="form-control" required><div class="muted small" id="pf-age-hint"></div></div>
             <div class="form-group">
-              <label for="username" data-i18n="label_name">姓名 / 代號</label>
-              <input type="text" id="username" class="form-control" placeholder="請輸入姓名" data-i18n-ph="ph_name" required>
+              <label><span data-i18n="label_identity">身分</span><span class="req">*</span></label>
+              <select id="pf-identity" class="form-control" required>
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="音樂系學生" data-i18n="id_student">音樂系學生</option>
+                <option value="職業演奏者" data-i18n="id_pro">職業演奏者</option>
+                <option value="業餘演奏者" data-i18n="id_amateur">業餘演奏者</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+              </select>
             </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label for="gender" data-i18n="label_gender">性別</label>
-                <select id="gender" class="form-control" required>
-                  <option value="" disabled selected data-i18n="ph_gender">請選擇性別</option>
-                  <option value="男" data-i18n="opt_male">男</option>
-                  <option value="女" data-i18n="opt_female">女</option>
-                  <option value="其他" data-i18n="opt_other_gender">其他 / 不便透露</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label for="age" data-i18n="label_age">年齡</label>
-                <input type="number" id="age" class="form-control" placeholder="請輸入年齡" data-i18n-ph="ph_age" min="1" max="120" required>
-              </div>
-            </div>
+            <div class="form-group"><label data-i18n="label_phone">聯絡電話</label><input type="tel" id="pf-phone" class="form-control"></div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group"><label><span data-i18n="label_height">身高 (cm)</span><span class="req">*</span></label><input type="number" id="pf-height" class="form-control" min="80" max="250" required></div>
+            <div class="form-group"><label data-i18n="label_weight">體重 (kg)</label><input type="number" id="pf-weight" class="form-control" min="20" max="250"></div>
+            <div class="form-group"><label data-i18n="label_emergency">緊急聯絡人（姓名／電話）</label><input type="text" id="pf-emergency" class="form-control"></div>
+          </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="height" data-i18n="label_height">身高 (cm)</label>
-                <input type="number" id="height" class="form-control" placeholder="請輸入身高" data-i18n-ph="ph_height" min="50" max="250" required>
-              </div>
-              
-              <div class="form-group">
-                <label for="instrument" data-i18n="label_instrument">演奏樂器</label>
-                <select id="instrument" class="form-control" required>
-                  <option value="" disabled selected data-i18n="ph_instrument">請選擇樂器</option>
-                  <option value="小提琴" data-i18n="opt_violin">小提琴 (Violin)</option>
-                  <option value="大提琴" data-i18n="opt_cello">大提琴 (Cello)</option>
-                </select>
-              </div>
+          <div class="form-section-title"><i data-lucide="music"></i><span data-i18n="sub_music">演奏背景</span></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label><span data-i18n="label_instrument">演奏樂器</span><span class="req">*</span></label>
+              <select id="pf-instrument" class="form-control" required>
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="小提琴" data-i18n="opt_violin">小提琴</option>
+                <option value="大提琴" data-i18n="opt_cello">大提琴</option>
+              </select>
             </div>
+            <div class="form-group"><label><span data-i18n="label_years">學習年資（年）</span><span class="req">*</span></label><input type="number" id="pf-years" class="form-control" min="0" max="90" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label><span data-i18n="label_days">每週練習天數</span><span class="req">*</span></label><input type="number" id="pf-days" class="form-control" min="0" max="7" required></div>
+            <div class="form-group"><label><span data-i18n="label_minutes">每次平均練習時長（分鐘）</span><span class="req">*</span></label><input type="number" id="pf-minutes" class="form-control" min="0" max="900" required></div>
+          </div>
+          <div class="form-group">
+            <span class="form-label" data-i18n="label_pt">是否曾接受物理治療／復健</span>
+            <div class="radio-group">
+              <label><input type="radio" name="pf-pt" value="no" checked> <span data-i18n="opt_no">否</span></label>
+              <label><input type="radio" name="pf-pt" value="yes"> <span data-i18n="opt_yes">是</span></label>
+            </div>
+            <input type="text" id="pf-pt-note" class="form-control" data-i18n-ph="ph_pt_note" placeholder="若有，請說明部位、時間" style="margin-top:0.4rem;">
+          </div>
 
-            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
-              <button type="button" class="btn btn-outline" onclick="resetProfileForm()" data-i18n="btn_reset">重設</button>
-              <button type="submit" class="btn btn-primary">
-                <i data-lucide="check"></i> <span data-i18n="btn_save_profile">儲存並開始評估</span>
-              </button>
+          <div class="form-section-title"><i data-lucide="heart-pulse"></i><span data-i18n="sub_pain">疼痛及傷害史</span></div>
+          <div class="form-group">
+            <span class="form-label" data-i18n="label_painmap">目前不適或曾受傷的部位</span>
+            <div id="profile-bodymap"></div>
+            <div class="muted small" id="profile-bodymap-meta" style="margin-top:0.4rem;"></div>
+          </div>
+          <div class="form-group"><label data-i18n="label_msk">骨骼肌肉相關疾病或傷害史</label><textarea id="pf-msk" class="form-control"></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label data-i18n="label_surgery">開刀史</label><input type="text" id="pf-surgery" class="form-control"></div>
+            <div class="form-group"><label data-i18n="label_meds">目前用藥</label><input type="text" id="pf-meds" class="form-control"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label data-i18n="label_allergy">藥物／其他過敏史</label><input type="text" id="pf-allergy" class="form-control"></div>
+            <div class="form-group">
+              <label data-i18n="label_referral">轉介來源</label>
+              <select id="pf-referral" class="form-control">
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="自行報名" data-i18n="ref_self">自行報名</option>
+                <option value="醫師轉介" data-i18n="ref_doctor">醫師轉介</option>
+                <option value="教師推薦" data-i18n="ref_teacher">教師推薦</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+              </select>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div class="form-section-title"><i data-lucide="file-check"></i><span data-i18n="sub_consent">研究同意</span></div>
+          <label class="check-row"><input type="checkbox" id="pf-consent-research"> <span><span data-i18n="consent_research">我已閱讀並同意參與本研究（研究參與同意書）</span><span class="req">*</span></span></label>
+          <label class="check-row"><input type="checkbox" id="pf-consent-data"> <span><span data-i18n="consent_data">我同意本系統蒐集與使用我的評估資料於研究用途</span><span class="req">*</span></span></label>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" onclick="fillProfileForm()" data-i18n="btn_reset">還原</button>
+            <button type="submit" class="btn btn-primary"><i data-lucide="check"></i><span data-i18n="btn_save_profile">儲存基本資料</span></button>
+          </div>
+        </form>
       </div>
     </section>
 
-    <!-- 3. PLAYING ASSESSMENT SECTION -->
-    <section id="section-playing">
+    <!-- 3. 演奏動作評估 -->
+    <section id="section-playing" data-role="performer">
       <div class="page-header">
         <div class="page-title">
           <h1 data-i18n="nav_playing">演奏動作評估</h1>
-          <p data-i18n="playing_sub">記錄三個不同演奏狀態下的關節點位數值，生成當次姿態評估儀表板</p>
+          <p data-i18n="playing_sub">依序錄製三個狀態；錄製中姿勢超過警戒值會以畫面與震動提醒</p>
         </div>
-        <div class="user-badge">
-          <div class="user-badge-avatar" id="playing-avatar">?</div>
-          <span id="playing-username" data-i18n="guest">訪客</span>
-        </div>
+        <div class="user-badge"><div class="user-badge-avatar" id="playing-avatar">?</div><span id="playing-username" data-i18n="guest">訪客</span></div>
       </div>
 
       <div class="grid-main-side">
-        <!-- Left: Simulator Video Frame -->
         <div class="capture-container">
           <div class="card" style="padding: 1rem;">
             <div class="video-screen">
-              <!-- Skeleton simulator canvas (shown when webcam is off) -->
-              <canvas id="playingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
-
-              <!-- Live webcam feed (shown when CVA recording is active) -->
+              <div class="video-placeholder" id="video-placeholder">
+                <i data-lucide="video-off"></i>
+                <span data-i18n="video_placeholder">尚未啟動攝影機。請在下方任一階段按「啟動攝影機」。</span>
+              </div>
               <video id="cva-video" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:none;transform:scaleX(-1);" autoplay playsinline muted></video>
-
-              <!-- Skeleton / landmark overlay drawn on top of webcam -->
               <canvas id="cva-overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);display:none;pointer-events:none;"></canvas>
 
-              <!-- Calibration countdown overlay -->
-              <div id="cva-calibration-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:10;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;">
-                <div style="font-size:0.85rem;color:#C6CCC0;letter-spacing:0.1em;font-family:monospace;">CALIBRATING — HOLD STILL</div>
-                <div id="cva-calib-countdown" style="font-size:3.5rem;font-weight:700;color:#fff;font-family:monospace;line-height:1;">3</div>
-                <div style="font-size:0.75rem;color:#A1B0AD;" data-i18n="calib_recording">正在記錄您的基準姿勢…</div>
-              </div>
+              <div class="posture-alert" id="posture-alert"><i data-lucide="alert-triangle"></i><span id="posture-alert-text"></span></div>
 
-              <!-- Top-left badge: changes between SIMULATOR / CALIBRATING / RECORDING -->
-              <div class="video-overlay" id="video-status-badge">
-                <div class="video-overlay-dot" id="video-overlay-dot-el"></div>
-                <span id="video-status-text">POSE ESTIMATOR SIMULATOR</span>
-              </div>
-
-              <!-- Top-right: live CVA angle (only while recording) -->
-              <div id="cva-live-overlay-angle" style="display:none;position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.65);color:#fff;padding:4px 12px;border-radius:20px;font-size:0.85rem;font-family:monospace;z-index:5;">CVA Δ: --°</div>
-
-              <!-- Bottom-right: calibration reference badge -->
-              <div id="cva-ref-badge" style="display:none;position:absolute;bottom:0.75rem;right:0.75rem;background:rgba(0,0,0,0.55);color:#C6CCC0;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-family:monospace;z-index:5;"><span data-i18n="baseline_label">基準</span>: --°</div>
-
-              <div class="video-hud">
-                <div class="hud-metrics" id="playing-hud-text">
-                  STATUS: WAITING FOR CAPTURE<br>
-                  KEYPOINTS: 0 ACTIVE
-                </div>
-              </div>
+              <div class="video-overlay"><div class="video-overlay-dot" id="video-overlay-dot-el"></div><span id="video-status-text">CAMERA OFF</span></div>
+              <div id="cva-live-overlay-angle" style="display:none;position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.65);color:#fff;padding:4px 12px;border-radius:20px;font-size:0.82rem;font-family:monospace;z-index:5;">CVA --°</div>
+              <div id="cva-ref-badge" style="display:none;position:absolute;bottom:0.75rem;right:0.75rem;background:rgba(0,0,0,0.55);color:#E5ECE4;padding:3px 10px;border-radius:20px;font-size:0.74rem;font-family:monospace;z-index:5;">--</div>
+              <div class="video-hud"><div class="hud-metrics" id="playing-hud-text">STATUS: WAITING</div></div>
             </div>
           </div>
 
-          <!-- Capture Steps Controller -->
+          <!-- 練習時間紀錄 -->
+          <div class="card" style="padding: 1rem;">
+            <div class="card-header" style="margin-bottom:0.75rem;">
+              <div class="card-title" style="font-size:0.95rem;"><i data-lucide="timer"></i><span data-i18n="practice_title">本次練習時間紀錄</span></div>
+              <label class="toggle-line"><input type="checkbox" id="alert-vibrate-toggle" checked onchange="saveAlertSettings()"> <span data-i18n="alert_vibrate">警示時震動裝置</span></label>
+            </div>
+            <div class="practice-panel">
+              <div class="practice-stat" id="ps-duration-box"><div class="lbl" data-i18n="ps_duration">錄製累計時間</div><div class="val" id="ps-duration">00:00</div></div>
+              <div class="practice-stat" id="ps-bad-box"><div class="lbl" data-i18n="ps_bad">不良姿勢累計</div><div class="val" id="ps-bad">00:00</div></div>
+              <div class="practice-stat"><div class="lbl" data-i18n="ps_alerts">提醒次數</div><div class="val" id="ps-alerts">0</div></div>
+            </div>
+            <p class="muted small" style="margin-top:0.6rem;" id="practice-rule-text"></p>
+          </div>
+
           <div class="capture-steps">
-            <div class="step-card" id="step-relax" onclick="selectStep('relax')">
-              <div class="step-icon"><i data-lucide="wind"></i></div>
-              <strong style="font-size: 0.9rem;" data-i18n="stage_relax">1. 演奏前放鬆姿勢</strong>
-              <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-relax" data-i18n="not_recorded">未錄製</span>
-              <div class="cva-step-controls" onclick="event.stopPropagation()">
-
-                <!-- ① 啟動攝影機 (初始狀態) -->
-                <button class="btn btn-outline btn-interactive" id="cva-btn-relax"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
-                  onclick="openCamera('relax', event)">
-                  <i data-lucide="video"></i> <span data-i18n="btn_open_camera">啟動攝影機</span>
-                </button>
-
-                <!-- ② 校準歸零 (攝影機開啟後顯示) -->
-                <button class="btn btn-outline" id="cva-calib-btn-relax"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none; border-color: var(--color-warning); color: var(--color-warning);"
-                  onclick="runCalibration('relax', event)">
-                  <i data-lucide="crosshair"></i> <span data-i18n="btn_calibrate">校準歸零</span>
-                </button>
-                <div id="cva-calib-status-relax" style="display:none; font-size:0.72rem; color:var(--text-secondary); text-align:center;"></div>
-
-                <!-- ③ 開始錄製 / 停止錄製 (校準後解鎖) -->
-                <button class="btn btn-primary" id="cva-rec-btn-relax"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
-                  onclick="toggleRecording('relax', event)">
-                  <i data-lucide="circle"></i> <span data-i18n="btn_start_rec">開始錄製</span>
-                </button>
-
-                <!-- 即時角度 badge (錄製中) -->
-                <div class="cva-live-badge" id="cva-live-relax" style="display:none;">
-                  <span class="cva-live-dot"></span>
-                  <span id="cva-angle-relax">Δ --°</span>
-                  <span id="cva-frames-relax" style="font-size:0.7rem; opacity:0.7;">0 <span data-i18n="frames_unit">幀</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="step-card" id="step-prepare" onclick="selectStep('prepare')">
-              <div class="step-icon"><i data-lucide="user-check"></i></div>
-              <strong style="font-size: 0.9rem;" data-i18n="stage_prepare">2. 準備演奏的姿勢</strong>
-              <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-prepare" data-i18n="not_recorded">未錄製</span>
-              <div class="cva-step-controls" onclick="event.stopPropagation()">
-
-                <button class="btn btn-outline btn-interactive" id="cva-btn-prepare"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
-                  onclick="openCamera('prepare', event)">
-                  <i data-lucide="video"></i> <span data-i18n="btn_open_camera">啟動攝影機</span>
-                </button>
-
-                <button class="btn btn-outline" id="cva-calib-btn-prepare"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none; border-color: var(--color-warning); color: var(--color-warning);"
-                  onclick="runCalibration('prepare', event)">
-                  <i data-lucide="crosshair"></i> <span data-i18n="btn_calibrate">校準歸零</span>
-                </button>
-                <div id="cva-calib-status-prepare" style="display:none; font-size:0.72rem; color:var(--text-secondary); text-align:center;"></div>
-
-                <button class="btn btn-primary" id="cva-rec-btn-prepare"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
-                  onclick="toggleRecording('prepare', event)">
-                  <i data-lucide="circle"></i> <span data-i18n="btn_start_rec">開始錄製</span>
-                </button>
-
-                <div class="cva-live-badge" id="cva-live-prepare" style="display:none;">
-                  <span class="cva-live-dot"></span>
-                  <span id="cva-angle-prepare">Δ --°</span>
-                  <span id="cva-frames-prepare" style="font-size:0.7rem; opacity:0.7;">0 <span data-i18n="frames_unit">幀</span></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="step-card" id="step-playing" onclick="selectStep('playing')">
-              <div class="step-icon"><i data-lucide="music-4"></i></div>
-              <strong style="font-size: 0.9rem;" data-i18n="stage_playing">3. 演奏中的動作</strong>
-              <span style="font-size: 0.75rem; color: var(--text-secondary);" id="label-playing" data-i18n="not_recorded">未錄製</span>
-              <div class="cva-step-controls" onclick="event.stopPropagation()">
-
-                <button class="btn btn-outline btn-interactive" id="cva-btn-playing"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
-                  onclick="openCamera('playing', event)">
-                  <i data-lucide="video"></i> <span data-i18n="btn_open_camera">啟動攝影機</span>
-                </button>
-
-                <button class="btn btn-outline" id="cva-calib-btn-playing"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none; border-color: var(--color-warning); color: var(--color-warning);"
-                  onclick="runCalibration('playing', event)">
-                  <i data-lucide="crosshair"></i> <span data-i18n="btn_calibrate">校準歸零</span>
-                </button>
-                <div id="cva-calib-status-playing" style="display:none; font-size:0.72rem; color:var(--text-secondary); text-align:center;"></div>
-
-                <button class="btn btn-primary" id="cva-rec-btn-playing"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display:none;"
-                  onclick="toggleRecording('playing', event)">
-                  <i data-lucide="circle"></i> <span data-i18n="btn_start_rec">開始錄製</span>
-                </button>
-
-                <div class="cva-live-badge" id="cva-live-playing" style="display:none;">
-                  <span class="cva-live-dot"></span>
-                  <span id="cva-angle-playing">Δ --°</span>
-                  <span id="cva-frames-playing" style="font-size:0.7rem; opacity:0.7;">0 <span data-i18n="frames_unit">幀</span></span>
-                </div>
-              </div>
-            </div>
+            <!-- 階段卡片由 renderStageCards() 產生 -->
           </div>
-
         </div>
 
-        <!-- Right: Current Info or Status -->
-        <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; text-align: center;" id="playing-waiting-panel">
-          <i data-lucide="camera" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 1rem; width: 64px; height: 64px;"></i>
-          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;" data-i18n="playing_waiting_title">等待資料錄製</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 250px; margin: 0 auto 1.5rem auto;"><span data-i18n="playing_waiting_desc">請依序點選左側三個狀態的「點擊擷取」按鈕，完成後系統將為您生成姿勢分析儀表板。</span></p>
-          <button class="btn btn-outline" onclick="loadSampleData('playing')">
-            <i data-lucide="sparkles"></i> <span data-i18n="btn_load_sample">載入模擬示範數據</span>
-          </button>
+        <!-- 右側：等待 -->
+        <div class="card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:400px; text-align:center;" id="playing-waiting-panel">
+          <i data-lucide="camera" style="color: var(--primary); margin-bottom: 1rem; width: 56px; height: 56px;"></i>
+          <h3 style="color: var(--primary); margin-bottom: 0.5rem;" data-i18n="playing_waiting_title">等待資料錄製</h3>
+          <p class="muted" style="max-width: 280px; line-height:1.6;" data-i18n="playing_waiting_desc">每個階段依序按「啟動攝影機 → 校準歸零 → 開始錄製」。三個階段都完成後，會請您標記練習前後的不適部位，再產生評估報告。</p>
         </div>
 
-        <!-- Right: Dashboard of results (hidden initially) -->
-        <div class="card" style="display: none;" id="playing-results-panel">
-          <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="line-chart"></i> <span data-i18n="playing_results_title">評估結果分析</span>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Health Score Ring -->
-            <div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center;">
+        <!-- 右側：結果 -->
+        <div class="card" style="display:none;" id="playing-results-panel">
+          <div class="card-header"><div class="card-title"><i data-lucide="clipboard-check"></i><span data-i18n="playing_results_title">單次評估報告</span></div></div>
+          <div class="stack" style="gap:1.25rem;">
+            <div style="display:flex; align-items:center; gap:1.25rem; justify-content:center; flex-wrap:wrap;">
               <div class="score-badge-large optimal" id="playing-score-badge">
-                <span class="score-value" id="playing-score-val">92</span>
+                <span class="score-value" id="playing-score-val">--</span>
                 <span class="score-label" data-i18n="score_label">健康度評分</span>
               </div>
-              <div style="text-align: left;">
-                <h3 id="playing-rating-text" style="color: var(--text-primary);" data-i18n="playing_rating_default">姿態表現：優良</h3>
-                <p id="playing-result-desc" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 200px; margin-top: 0.25rem;"><span data-i18n="playing_result_default">您的整體肩頸、手肘角度皆符合健康工學範圍，請繼續保持。</span></p>
+              <div style="text-align:left; max-width:240px;">
+                <h3 id="playing-rating-text" style="color: var(--primary); font-size:1.05rem;"></h3>
+                <p id="playing-result-desc" class="muted" style="margin-top:0.3rem; line-height:1.55;"></p>
               </div>
             </div>
 
-            <!-- Joint detail list -->
-            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem;" data-i18n="metrics_title">關鍵關節點位數值 (演奏中狀態)</h4>
-              
-              <div class="metric-row">
-                <div class="metric-info">
-                  <span class="metric-name" data-i18n="metric_neck">頸椎前傾角度</span>
-                  <span class="metric-value" id="val-neck">12° (<span data-i18n="norm_neck">標準 &lt; 15°</span>)</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="bar-neck" style="width: 85%"></div>
-                </div>
-              </div>
-
-              <div class="metric-row">
-                <div class="metric-info">
-                  <span class="metric-name" data-i18n="metric_shoulder">雙肩傾斜度</span>
-                  <span class="metric-value" id="val-shoulder-tilt">2.5° (<span data-i18n="norm_shoulder">標準 &lt; 5°</span>)</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="bar-shoulder-tilt" style="width: 90%"></div>
-                </div>
-              </div>
-
-              <div class="metric-row">
-                <div class="metric-info">
-                  <span class="metric-name" data-i18n="metric_symmetry">左右肩對稱程度 (Shoulder Symmetry)</span>
-                  <span class="metric-value" id="val-shoulder-sym">98% (<span data-i18n="norm_sym">標準 &gt; 90%</span>)</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="bar-shoulder-sym" style="width: 98%"></div>
-                </div>
-              </div>
-
-              <div class="metric-row">
-                <div class="metric-info">
-                  <span class="metric-name" data-i18n="metric_left_elbow">左手肘夾角</span>
-                  <span class="metric-value" id="val-left-elbow">85°</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="bar-left-elbow" style="width: 75%"></div>
-                </div>
-              </div>
-
-              <div class="metric-row">
-                <div class="metric-info">
-                  <span class="metric-name" data-i18n="metric_right_elbow">右手肘夾角</span>
-                  <span class="metric-value" id="val-right-elbow">95°</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="bar-right-elbow" style="width: 80%"></div>
-                </div>
-              </div>
+            <div style="border-top:1px solid var(--border-color); padding-top:1rem;">
+              <h4 style="font-size:0.88rem; color:var(--primary); margin-bottom:0.75rem;" data-i18n="metrics_title">關鍵關節數值（演奏中）</h4>
+              <div id="playing-metrics"></div>
+              <p class="muted small" style="margin-top:0.4rem;" data-i18n="metrics_pending_note">手腕彎曲度、脊椎傾斜度尚未接入真實偵測，暫不顯示。</p>
             </div>
 
-            <!-- Abnormal Postures Placeholder -->
-            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;" id="playing-anomalies-section">
-              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--color-danger);"></i>
-                <span data-i18n="anomaly_slot">動態動作異常姿勢分析 (預留辨識插槽)</span>
-              </h4>
-              <div style="display: flex; flex-direction: column; gap: 0.75rem;" id="playing-anomalies-list">
-                <!-- Populated dynamically by app.js -->
-              </div>
+            <div style="border-top:1px solid var(--border-color); padding-top:1rem;">
+              <h4 style="font-size:0.88rem; color:var(--primary); margin-bottom:0.75rem;" data-i18n="over_title">超過警戒值的比例（依階段）</h4>
+              <div class="stack" id="playing-over-list" style="gap:0.6rem;"></div>
             </div>
 
-            <!-- Buttons -->
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <div style="border-top:1px solid var(--border-color); padding-top:1rem;">
+              <h4 style="font-size:0.88rem; color:var(--primary); margin-bottom:0.5rem;" data-i18n="discomfort_title">練習前後不適部位</h4>
+              <div id="playing-discomfort-summary" class="muted"></div>
+              <button class="btn btn-outline btn-sm" style="margin-top:0.6rem;" onclick="openSessionBodyMap()"><i data-lucide="pencil"></i><span data-i18n="btn_edit_discomfort">編輯不適部位</span></button>
+            </div>
+
+            <div class="tip-item" id="playing-tip"></div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn btn-outline" onclick="resetPlayingCapture()" data-i18n="btn_re_record">重新錄製</button>
-              <button class="btn btn-primary" onclick="savePlayingRecord()">
-                <i data-lucide="save"></i> <span data-i18n="btn_save_assessment">儲存此評估</span>
-              </button>
+              <button class="btn btn-primary" onclick="savePlayingRecord()" id="btn-save-playing"><i data-lucide="save"></i><span data-i18n="btn_save_assessment">儲存此評估</span></button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Detail analysis dashboard section (Full width charts, shown when results exist) -->
-      <div class="grid-2" id="playing-charts-grid" style="display: none;">
+      <div class="grid-2" id="playing-charts-grid" style="display:none;">
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="trending-up"></i> <span data-i18n="chart_joint_title">三狀態關節夾角折線圖</span>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="playingRadarChart"></canvas>
-          </div>
-          <p style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 0.5rem;">
-            <span data-i18n="chart_joint_desc">折線圖顯示三個不同動作姿態（放鬆、準備、演奏）在頸椎、雙肩、雙肘及手腕的關節夾角變化趨勢。</span>
-          </p>
+          <div class="card-header"><div class="card-title"><i data-lucide="trending-up"></i><span data-i18n="chart_joint_title">三狀態關節角度折線圖</span></div></div>
+          <div class="chart-container"><canvas id="playingJointChart"></canvas></div>
+          <p class="muted small" style="text-align:center; margin-top:0.5rem;" data-i18n="chart_joint_desc">各階段的平均 CVA、雙肩傾斜（Δ）與左右手肘角度。</p>
         </div>
-
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="activity"></i> <span data-i18n="chart_sym_title">左右肩部對稱折線圖 (Shoulder Symmetry)</span>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="playingSymmetryChart"></canvas>
-          </div>
-          <p style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 0.5rem;">
-            <span data-i18n="chart_sym_desc">對比三個狀態下左右肩膀水平線高度差與受力對稱百分比（100% 代表完全對稱與平衡）。</span>
-          </p>
+          <div class="card-header"><div class="card-title"><i data-lucide="bar-chart-3"></i><span data-i18n="chart_over_title">各階段超過警戒值比例</span></div></div>
+          <div class="chart-container"><canvas id="playingOverChart"></canvas></div>
+          <p class="muted small" style="text-align:center; margin-top:0.5rem;" data-i18n="chart_over_desc">錄製幀數中超過警戒值的百分比。</p>
         </div>
-
-        <!-- CVA Chart: full-width spanning 2 cols -->
         <div class="card" style="grid-column: 1 / -1;" id="cva-chart-card">
           <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="scan-face"></i> <span data-i18n="chart_cva_title">CVA 頭部前傾角度 — 逐幀折線圖（三階段）</span>
-            </div>
-            <div style="display:flex; gap:1rem; font-size:0.8rem; align-items:center;">
-              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:3px;background:#A1B0AD;display:inline-block;border-radius:2px;"></span><span data-i18n="stage_relax_short">放鬆</span></span>
-              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:3px;background:#8D6B61;display:inline-block;border-radius:2px;"></span><span data-i18n="stage_prepare_short">準備</span></span>
-              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:3px;background:#C39289;display:inline-block;border-radius:2px;"></span><span data-i18n="stage_playing_short">演奏中</span></span>
-              <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:12px;height:2px;background:rgba(195,146,137,0.5);display:inline-block;border-radius:2px;border-top: 2px dashed #C39289;"></span><span data-i18n="threshold_label">警戒線 60°</span></span>
+            <div class="card-title"><i data-lucide="scan-face"></i><span data-i18n="chart_cva_title">CVA 頸椎角 — 逐幀折線圖（三階段）</span></div>
+            <div class="chart-legend-inline">
+              <span><span class="legend-swatch" style="background:#91989F;"></span><span data-i18n="stage_relax_short">放鬆</span></span>
+              <span><span class="legend-swatch" style="background:#0D5661;"></span><span data-i18n="stage_prepare_short">準備</span></span>
+              <span><span class="legend-swatch" style="background:#77428D;"></span><span data-i18n="stage_playing_short">演奏中</span></span>
+              <span><span class="legend-swatch" style="background:#8E354A;"></span><span id="cva-threshold-label"></span></span>
             </div>
           </div>
-          <div id="cva-chart-container" style="height: 240px; position:relative;">
-            <canvas id="cvaTrendChart"></canvas>
-          </div>
-          <div id="cva-stats-row" style="display:flex; gap:1.5rem; margin-top:0.75rem; flex-wrap:wrap;">
-            <!-- populated by JS -->
-          </div>
-          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top:0.5rem;">
-            <span data-i18n="cva_desc">CVA Δ（頸椎角變化量）為相對於您校準基準姿勢的角度偏移。<strong>負值</strong>代表頭部比基準更前傾，<strong>正值</strong>代表更後仰。Δ &lt; −10° 的區間以紅色色帶標示。</span>
-          </p>
+          <div style="height: 250px; position:relative;"><canvas id="cvaTrendChart"></canvas></div>
+          <div class="chip-row" id="cva-stats-row" style="margin-top:0.75rem;"></div>
+          <p class="muted small" style="margin-top:0.5rem;" id="cva-desc"></p>
         </div>
       </div>
     </section>
 
-    <!-- 4. STANDARD MOVEMENT RECOGNITION SECTION -->
-    <section id="section-standard">
+    <!-- 4. 標準動作辨識（尚未開放） -->
+    <section id="section-standard-movement" data-role="performer">
       <div class="page-header">
         <div class="page-title">
-          <h1 data-i18n="nav_standard">標準動作辨識</h1>
-          <p data-i18n="standard_sub">進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點</p>
-        </div>
-        <div class="user-badge">
-          <div class="user-badge-avatar" id="standard-avatar">?</div>
-          <span id="standard-username" data-i18n="guest">訪客</span>
+          <h1 data-i18n="nav_standard_movement">標準動作辨識</h1>
+          <p data-i18n="sm_sub">高低肩、頭部前傾、抬手三項標準動作的影像辨識</p>
         </div>
       </div>
-
-      <!-- Selection of Diagnostics -->
-      <div>
-        <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.75rem;" data-i18n="standard_select_title">1. 選擇檢測診斷項目</h3>
-        <div class="diag-selector-grid">
-          <div class="diag-option active" id="diag-uneven-shoulders" onclick="selectDiag('uneven-shoulders')">
-            <div class="diag-option-title" data-i18n="diag_uneven">高低肩檢測</div>
-            <div class="diag-option-desc" data-i18n="diag_uneven_desc">診斷左右肩膀水平線之高度偏差，檢視脊椎側彎或肌肉不平衡風險。</div>
-          </div>
-          <div class="diag-option" id="diag-forward-head" onclick="selectDiag('forward-head')">
-            <div class="diag-option-title" data-i18n="diag_fhp">頭部前傾檢測</div>
-            <div class="diag-option-desc" data-i18n="diag_fhp_desc">檢測頸椎與耳垂之鉛垂夾角，判斷是否有俗稱「烏龜頸」的長頸族體態。</div>
-          </div>
-          <div class="diag-option" id="diag-arm-raise" onclick="selectDiag('arm-raise')">
-            <div class="diag-option-title" data-i18n="diag_arm">抬手檢測</div>
-            <div class="diag-option-desc" data-i18n="diag_arm_desc">檢測雙手高舉過頭時，肩膀與手臂的伸展夾角與關節活動度，評估五十肩風險。</div>
-          </div>
-        </div>
+      <div class="notice-card">
+        <i data-lucide="construction"></i>
+        <h3 data-i18n="sm_closed_title">此功能尚未開放</h3>
+        <p data-i18n="sm_closed_desc">三項辨識正在開發真實偵測程式，接入前不提供模擬結果，也不會寫入任何資料。</p>
       </div>
-
-      <div class="grid-main-side">
-        <!-- Camera Simulator frame -->
-        <div class="capture-container">
-          <div class="card" style="padding: 1rem;">
-            <div class="video-screen">
-              <canvas id="standardCanvas"></canvas>
-              <div class="video-overlay">
-                <div class="video-overlay-dot"></div>
-                <span id="standard-overlay-title" data-i18n="diag_sim_uneven">高低肩檢測模擬中</span>
-              </div>
-              <div class="video-hud">
-                <div class="hud-metrics" id="standard-hud-text">
-                  STATUS: WAITING TO DIAGNOSE<br>
-                  DIAGNOSTIC: UNEVEN SHOULDERS
-                </div>
-              </div>
-            </div>
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-              <button class="btn btn-primary" style="flex: 1;" id="btn-start-standard" onclick="startStandardDiagnosis()">
-                <i data-lucide="play"></i> <span data-i18n="btn_start_diag">開始診斷</span>
-              </button>
-              <button class="btn btn-outline" id="btn-reset-standard" onclick="resetStandardDiagnosis()" disabled>
-                <span data-i18n="btn_reset_diag">重新診斷</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Diagnostic Output Dashboard -->
-        <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; text-align: center;" id="standard-waiting-panel">
-          <i data-lucide="scan-face" style="font-size: 3rem; color: var(--color-accent); margin-bottom: 1rem; width: 64px; height: 64px;"></i>
-          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;" data-i18n="standard_waiting_title">等待診斷分析</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 250px; margin: 0 auto 1.5rem auto;"><span data-i18n="standard_waiting_desc">請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。</span></p>
-          <button class="btn btn-outline" onclick="loadSampleData('standard')">
-            <i data-lucide="sparkles"></i> <span data-i18n="btn_load_sample">載入模擬示範數據</span>
-          </button>
-        </div>
-
-        <!-- Right: Diagnostic Dashboard of results (hidden initially) -->
-        <div class="card" style="display: none;" id="standard-results-panel">
-          <div class="card-header">
-            <div class="card-title">
-              <i data-lucide="clipboard-check"></i> <span data-i18n="diag_result_title">診斷結果報告</span>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Health Score Ring -->
-            <div style="display: flex; align-items: center; gap: 1.5rem; justify-content: center;">
-              <div class="score-badge-large" id="standard-score-badge">
-                <span class="score-value" id="standard-score-val">90</span>
-                <span class="score-label" id="standard-score-label" data-i18n="diag_sym_score">對稱分數</span>
-              </div>
-              <div style="text-align: left;">
-                <h3 id="standard-rating-text" style="color: var(--text-primary);" data-i18n="diag_rating_default">評定：正常</h3>
-                <p id="standard-result-desc" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 200px; margin-top: 0.25rem;"><span data-i18n="diag_result_default">您的肩膀高度對稱，未發現明顯傾斜，請保持良好坐姿與站姿。</span></p>
-              </div>
-            </div>
-
-            <!-- Diagnostic Details -->
-            <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-              <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem;" id="standard-details-title" data-i18n="diag_metrics_title">檢測指標數值</h4>
-              
-              <div class="metric-row" id="standard-metric-row-1">
-                <div class="metric-info">
-                  <span class="metric-name" id="standard-m1-name" data-i18n="diag_m1">雙肩水平高度差</span>
-                  <span class="metric-value" id="standard-m1-val">0.3 cm (<span data-i18n="diag_m1_unit">偏差 &lt; 1.0 cm</span>)</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="standard-m1-bar" style="width: 95%"></div>
-                </div>
-              </div>
-
-              <div class="metric-row" id="standard-metric-row-2">
-                <div class="metric-info">
-                  <span class="metric-name" id="standard-m2-name" data-i18n="diag_m2">左右肩關節角度</span>
-                  <span class="metric-value" id="standard-m2-val" data-i18n="diag_m2_default">左右對稱良好</span>
-                </div>
-                <div class="metric-bar-bg">
-                  <div class="metric-bar-fill success" id="standard-m2-bar" style="width: 98%"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Therapeutic Advice -->
-            <div style="background-color: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 1rem; border-left: 4px solid var(--color-interactive);">
-              <h4 style="font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.25rem;">
-                <i data-lucide="info" style="width: 16px; height: 16px;"></i> <span data-i18n="diag_pt_advice">物理治療建議</span>
-              </h4>
-              <p id="standard-advice-text" style="font-size: 0.8rem; color: var(--text-dark); margin-top: 0.25rem; line-height: 1.4;">
-                <span data-i18n="diag_pt_text">日常練習前可進行 5 分鐘肩頸拉伸，拉伸斜方肌。演奏小提琴每 45 分鐘建議休息 10 分鐘，並做水平轉頭動作放鬆頸部。</span>
-              </p>
-            </div>
-
-            <!-- Buttons -->
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <button class="btn btn-primary" onclick="saveStandardRecord()">
-                <i data-lucide="save"></i> <span data-i18n="btn_save_diag">儲存此檢測</span>
-              </button>
-            </div>
-          </div>
-        </div>
+      <div class="diag-selector-grid">
+        <div class="diag-option disabled"><div class="diag-option-title"><span data-i18n="diag_uneven">高低肩辨識</span><span class="badge badge-muted" data-i18n="badge_dev">開發中</span></div><div class="diag-option-desc" data-i18n="diag_uneven_desc">辨識左右肩膀水平線的高度差。</div></div>
+        <div class="diag-option disabled"><div class="diag-option-title"><span data-i18n="diag_fhp">頭部前傾辨識</span><span class="badge badge-muted" data-i18n="badge_dev">開發中</span></div><div class="diag-option-desc" data-i18n="diag_fhp_desc">辨識耳垂與肩峰的相對位置。</div></div>
+        <div class="diag-option disabled"><div class="diag-option-title"><span data-i18n="diag_arm">抬手辨識</span><span class="badge badge-muted" data-i18n="badge_dev">開發中</span></div><div class="diag-option-desc" data-i18n="diag_arm_desc">辨識雙手上舉時的肩關節角度。</div></div>
+      </div>
+      <div style="display:flex; gap:1rem;">
+        <button class="btn btn-primary" id="btn-start-standard-movement" disabled><i data-lucide="play"></i><span data-i18n="btn_start_diag">開始辨識</span></button>
       </div>
     </section>
 
-    <!-- 5. HISTORY SECTION -->
-    <section id="section-history">
+    <!-- 5. 歷史紀錄 -->
+    <section id="section-history" data-role="performer">
       <div class="page-header">
         <div class="page-title">
-          <h1 data-i18n="nav_history">使用者歷史紀錄</h1>
-          <p data-i18n="history_sub">查閱、篩選過往錄製的演奏姿態數據與靜態動作診斷紀錄</p>
+          <h1 data-i18n="nav_history">歷史紀錄</h1>
+          <p data-i18n="history_sub">查閱、篩選與比較過往的評估紀錄</p>
         </div>
       </div>
-
-      <!-- Filters panel -->
       <div class="card" style="padding: 1.25rem;">
         <div class="filter-bar">
-          <div class="form-group filter-search" style="margin-bottom: 0;">
-            <label for="search-name" style="margin-bottom: 0.25rem;" data-i18n="history_search">搜尋演奏者</label>
-            <input type="text" id="search-name" class="form-control" placeholder="輸入姓名或關鍵字" data-i18n-ph="ph_search" oninput="filterHistory()">
+          <div class="form-group filter-search" style="margin-bottom:0;">
+            <label for="search-name" data-i18n="history_search">搜尋</label>
+            <input type="text" id="search-name" class="form-control" data-i18n-ph="ph_search" placeholder="輸入關鍵字" oninput="filterHistory()">
           </div>
-          
-          <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
-            <label for="filter-instrument" style="margin-bottom: 0.25rem;" data-i18n="history_filter_inst">依樂器篩選</label>
-            <select id="filter-instrument" class="form-control" onchange="filterHistory()">
-              <option value="All" data-i18n="opt_all_inst">全部樂器</option>
-              <option value="小提琴" data-i18n="opt_violin_short">小提琴</option>
-              <option value="大提琴" data-i18n="opt_cello_short">大提琴</option>
+          <div class="form-group" style="margin-bottom:0; min-width:150px;">
+            <label for="filter-level" data-i18n="history_filter_level">依健康等級</label>
+            <select id="filter-level" class="form-control" onchange="filterHistory()">
+              <option value="All" data-i18n="opt_all">全部</option>
+              <option value="good" data-i18n="level_good">良好</option>
+              <option value="caution" data-i18n="level_caution">注意</option>
+              <option value="alert" data-i18n="level_alert">警示</option>
             </select>
           </div>
-
-          <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
-            <label for="filter-type" style="margin-bottom: 0.25rem;" data-i18n="history_filter_type">依檢測類型</label>
+          <div class="form-group" style="margin-bottom:0; min-width:150px;">
+            <label for="filter-type" data-i18n="history_filter_type">依評估類型</label>
             <select id="filter-type" class="form-control" onchange="filterHistory()">
-              <option value="All" data-i18n="opt_all_type">全部類型</option>
-              <option value="playing" data-i18n="opt_playing_type">演奏評估</option>
-              <option value="static" data-i18n="opt_standard_type">標準評估</option>
+              <option value="All" data-i18n="opt_all">全部</option>
+              <option value="playing" data-i18n="type_playing">演奏動作評估</option>
+              <option value="static" data-i18n="type_static">標準動作辨識（舊資料）</option>
             </select>
           </div>
-
-          <div style="margin-top: 1.2rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-outline" onclick="exportHistoryData()">
-              <i data-lucide="download"></i> <span data-i18n="btn_export">匯出資料</span>
-            </button>
-            <button class="btn btn-outline" style="position: relative;">
-              <i data-lucide="upload"></i> <span data-i18n="btn_import">匯入</span>
-              <input type="file" id="import-file" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="importHistoryData(event)">
-            </button>
-            <button class="btn btn-outline" style="color: var(--color-danger); border-color: var(--color-danger);" onclick="clearAllHistory()">
-              <i data-lucide="trash-2"></i> <span data-i18n="btn_clear">清空</span>
-            </button>
-            <button class="btn btn-primary" id="btn-compare-records" onclick="showComparisonModal()" style="display: none; background-color: var(--color-interactive);">
-              <i data-lucide="git-compare"></i> <span data-i18n="btn_compare">比較所選紀錄</span> (<span id="selected-count">0</span>)
-            </button>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="exportHistoryData()"><i data-lucide="download"></i><span data-i18n="btn_export">匯出</span></button>
+            <button class="btn btn-danger-outline" onclick="clearAllHistory()"><i data-lucide="trash-2"></i><span data-i18n="btn_clear">清空</span></button>
+            <button class="btn btn-primary" id="btn-compare-records" onclick="showComparisonModal()" style="display:none;"><i data-lucide="git-compare"></i><span data-i18n="btn_compare">比較所選紀錄</span> (<span id="selected-count">0</span>)</button>
           </div>
         </div>
       </div>
-
-      <!-- History Table Card -->
-      <div class="card" style="padding: 0; overflow: hidden;">
-        <div style="overflow-x: auto;">
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th style="width: 50px; text-align: center;">
-                  <input type="checkbox" id="check-all-records" onchange="toggleSelectAll(this)" style="width: 16px; height: 16px; cursor: pointer;">
-                </th>
+                <th style="width:46px; text-align:center;"><input type="checkbox" id="check-all-records" onchange="toggleSelectAll(this)"></th>
                 <th data-i18n="th_time">評估時間</th>
-                <th data-i18n="th_name">姓名 / 代號</th>
                 <th data-i18n="th_instrument">樂器</th>
                 <th data-i18n="th_type">評估類型</th>
-                <th data-i18n="th_item">評估項目 / 得分</th>
+                <th data-i18n="th_item">得分 / 摘要</th>
+                <th data-i18n="th_practice">練習時間</th>
                 <th data-i18n="th_level">健康等級</th>
-                <th data-i18n="th_actions">操作項目</th>
+                <th data-i18n="th_actions">操作</th>
               </tr>
             </thead>
-            <tbody id="history-table-body">
-              <tr>
-                <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 3rem;">
-                  <i data-lucide="inbox" style="width: 48px; height: 48px; margin: 0 auto 0.5rem auto; opacity: 0.5; display: block;"></i>
-                  <span data-i18n="history_empty">目前無歷史評估紀錄，請開始填寫基本資料並進行評估！</span>
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="history-table-body"></tbody>
           </table>
         </div>
       </div>
     </section>
 
+    <!-- 6. 問卷與紀錄 -->
+    <section id="section-records" data-role="performer">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 data-i18n="nav_records">問卷與紀錄</h1>
+          <p data-i18n="records_sub">量表、活動量、練習時間、就醫用藥與筆記</p>
+        </div>
+      </div>
+      <div class="tabs" id="records-tabs">
+        <button class="tab-btn active" data-tab="rec-scale" onclick="switchTab('records-tabs','rec-scale')"><i data-lucide="list-checks"></i><span data-i18n="tab_scale">肩背適能量表</span></button>
+        <button class="tab-btn" data-tab="rec-ipaq" onclick="switchTab('records-tabs','rec-ipaq')"><i data-lucide="footprints"></i><span data-i18n="tab_ipaq">IPAQ 活動量</span></button>
+        <button class="tab-btn" data-tab="rec-practice" onclick="switchTab('records-tabs','rec-practice')"><i data-lucide="timer"></i><span data-i18n="tab_practice">練習時間</span></button>
+        <button class="tab-btn" data-tab="rec-medical" onclick="switchTab('records-tabs','rec-medical')"><i data-lucide="pill"></i><span data-i18n="tab_medical">就醫及用藥</span></button>
+        <button class="tab-btn" data-tab="rec-notes" onclick="switchTab('records-tabs','rec-notes')"><i data-lucide="notebook-pen"></i><span data-i18n="tab_notes">筆記</span></button>
+        <button class="tab-btn" data-tab="rec-wearable" onclick="switchTab('records-tabs','rec-wearable')"><i data-lucide="watch"></i><span data-i18n="tab_wearable">健康手環</span></button>
+      </div>
+
+      <!-- 肩背適能量表 -->
+      <div class="tab-panel active" id="rec-scale">
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="list-checks"></i><span data-i18n="scale_title">肩背適能自我檢核量表</span></div></div>
+            <div class="sample-flag" id="scale-sample-flag" data-i18n="scale_sample_flag">目前為示意題目，正式題目待研究者提供後替換（questionnaires.js 中的 SHOULDER_BACK_SCALE）。</div>
+            <div class="form-group">
+              <label data-i18n="label_phase">施測階段</label>
+              <select id="scale-phase" class="form-control" style="max-width:220px;">
+                <option value="pre" data-i18n="phase_pre">前測</option>
+                <option value="post" data-i18n="phase_post">後測</option>
+              </select>
+            </div>
+            <div id="scale-items"></div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitScale()"><i data-lucide="send"></i><span data-i18n="btn_submit">送出</span></button></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">填寫紀錄</span></div></div>
+            <div id="scale-history"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IPAQ -->
+      <div class="tab-panel" id="rec-ipaq">
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="footprints"></i><span data-i18n="ipaq_title">國際身體活動量表（IPAQ 短版）</span></div></div>
+            <p class="muted" style="margin-bottom:1rem; line-height:1.6;" data-i18n="ipaq_intro">請回想過去 7 天，只計算每次持續至少 10 分鐘的活動（不含演奏練習本身）。</p>
+            <div class="form-group">
+              <label data-i18n="label_phase">施測階段</label>
+              <select id="ipaq-phase" class="form-control" style="max-width:220px;">
+                <option value="pre" data-i18n="phase_pre">前測</option>
+                <option value="post" data-i18n="phase_post">後測</option>
+                <option value="routine" data-i18n="phase_routine">平時</option>
+              </select>
+            </div>
+            <div id="ipaq-items"></div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitIPAQ()"><i data-lucide="send"></i><span data-i18n="btn_submit">送出</span></button></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">填寫紀錄</span></div></div>
+            <div id="ipaq-history"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 練習時間 -->
+      <div class="tab-panel" id="rec-practice">
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="timer"></i><span data-i18n="practice_log_title">練習時間紀錄</span></div></div>
+            <p class="muted" style="margin-bottom:1rem;" data-i18n="practice_log_intro">使用演奏動作評估時會自動記錄；沒有使用偵測的練習，可在這裡手動補登。</p>
+            <div class="form-row-3">
+              <div class="form-group"><label data-i18n="label_date">日期</label><input type="date" id="pr-date" class="form-control"></div>
+              <div class="form-group"><label data-i18n="label_practice_minutes">練習時長（分鐘）</label><input type="number" id="pr-minutes" class="form-control" min="1" max="900"></div>
+              <div class="form-group"><label data-i18n="label_note_short">備註</label><input type="text" id="pr-note" class="form-control"></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitPracticeLog()"><i data-lucide="plus"></i><span data-i18n="btn_add">新增</span></button></div>
+            <div class="chart-container" style="margin-top:1rem;"><canvas id="practiceChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">紀錄</span></div></div>
+            <div id="practice-history"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 就醫及用藥 -->
+      <div class="tab-panel" id="rec-medical">
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="pill"></i><span data-i18n="medical_title">近期就醫及用藥紀錄</span></div></div>
+            <p class="muted" style="margin-bottom:1rem;" data-i18n="medical_intro">由您自行輸入，不與醫院病歷串接。</p>
+            <div class="form-row">
+              <div class="form-group"><label data-i18n="label_date">日期</label><input type="date" id="md-date" class="form-control"></div>
+              <div class="form-group"><label data-i18n="label_department">科別</label><input type="text" id="md-dept" class="form-control" data-i18n-ph="ph_department" placeholder="例如：復健科"></div>
+            </div>
+            <div class="form-group"><label data-i18n="label_reason">就醫原因</label><input type="text" id="md-reason" class="form-control"></div>
+            <div class="form-group"><label data-i18n="label_medication">用藥</label><textarea id="md-meds" class="form-control" data-i18n-ph="ph_medication" placeholder="藥名、劑量、使用期間"></textarea></div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitMedicalLog()"><i data-lucide="plus"></i><span data-i18n="btn_add">新增</span></button></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">紀錄</span></div></div>
+            <div id="medical-history"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 筆記 -->
+      <div class="tab-panel" id="rec-notes">
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="notebook-pen"></i><span data-i18n="notes_title">筆記</span></div></div>
+            <div class="form-group"><label data-i18n="label_date">日期</label><input type="date" id="nt-date" class="form-control" style="max-width:220px;"></div>
+            <div class="form-group"><label data-i18n="label_content">內容</label><textarea id="nt-content" class="form-control" rows="5" data-i18n-ph="ph_note" placeholder="記錄疼痛、當日狀況或練習心得"></textarea></div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitNote()"><i data-lucide="plus"></i><span data-i18n="btn_add">新增</span></button></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">紀錄</span></div></div>
+            <div id="notes-history"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 健康手環 -->
+      <div class="tab-panel" id="rec-wearable">
+        <div class="notice-card">
+          <i data-lucide="watch"></i>
+          <h3 data-i18n="wearable_title">健康手環資料（規劃中）</h3>
+          <p data-i18n="wearable_desc">未來將同步手環的步數與活動時間，作為演奏以外活動量的補充資料。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. 衛教與問答 -->
+    <section id="section-education" data-role="performer">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 data-i18n="nav_education">衛教與問答</h1>
+          <p data-i18n="edu_sub">依練習與評估狀況給予提醒；提供暖身、休息與姿勢保健資訊</p>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="bell"></i><span data-i18n="edu_reminders">提醒</span></div></div>
+          <div class="stack" id="edu-reminders"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="stethoscope"></i><span data-i18n="edu_advice">照護端給您的建議</span></div></div>
+          <div class="stack" id="edu-advice"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i data-lucide="book-open"></i><span data-i18n="edu_topics">衛教資訊</span></div><span class="badge badge-warning" data-i18n="edu_review_badge">內容待研究團隊審核</span></div>
+        <div class="grid-3" id="edu-topics"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i data-lucide="message-circle-question"></i><span data-i18n="edu_qa">智慧問答</span></div><span class="badge badge-muted" data-i18n="badge_planned">規劃中</span></div>
+        <p class="muted" style="margin-bottom:0.8rem; line-height:1.6;" data-i18n="edu_qa_desc">後續階段將以大型語言模型回答保健問題，並標示參考的資料（評估摘要、筆記、照護建議）。只提供衛教與練習建議，不做診斷、不建議用藥；出現疼痛加劇、麻木等警訊時，請回到照護端就診。</p>
+        <div class="qa-box">
+          <input type="text" class="form-control" disabled data-i18n-ph="ph_qa" placeholder="例如：練習前該做哪些暖身？（尚未開放）">
+          <button class="btn btn-primary" disabled><i data-lucide="send"></i><span data-i18n="btn_ask">提問</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. 資料授權管理 -->
+    <section id="section-authorization" data-role="performer">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 data-i18n="nav_authorization">資料授權管理</h1>
+          <p data-i18n="auth_sub">選擇哪位醫師／物理治療師可以看到您的資料，可隨時撤銷</p>
+        </div>
+      </div>
+      <div class="grid-main-side">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="users"></i><span data-i18n="auth_list_title">授權名單</span></div></div>
+          <div id="auth-binding-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="user-plus"></i><span data-i18n="auth_add_title">新增授權</span></div></div>
+          <p class="muted" style="margin-bottom:1rem; line-height:1.6;" data-i18n="auth_add_desc">輸入照護者提供的 6 碼邀請碼，或對方註冊的 Email。送出後需對方確認，授權才會生效。</p>
+          <div class="form-group"><label data-i18n="label_code_or_email">邀請碼或 Email</label><input type="text" id="auth-input" class="form-control" placeholder="ABC123 / doctor@example.com"></div>
+          <button class="btn btn-primary" style="width:100%;" onclick="requestBinding()"><i data-lucide="send"></i><span data-i18n="btn_send_invite">送出授權邀請</span></button>
+          <div class="tip-item" style="margin-top:1.25rem;">
+            <strong data-i18n="auth_scope_title">授權後對方可以看到</strong>
+            <p data-i18n="auth_scope_desc">基本資料、評估紀錄與趨勢、人體圖、問卷、練習時間、就醫用藥紀錄與筆記。對方只能讀取，不能修改您的資料；可以寫照護建議給您。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ 照護端 ═════════════ -->
+
+    <!-- 11. 個案總覽 -->
+    <section id="section-provider-cases" data-role="provider">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 data-i18n="nav_provider_cases">個案總覽</h1>
+          <p data-i18n="pc_sub">已授權給您的個案，可依最近評估日或需關注程度排序</p>
+        </div>
+        <div class="user-badge"><div class="user-badge-avatar" id="provider-avatar">?</div><span id="provider-username">--</span></div>
+      </div>
+
+      <div class="grid-main-side">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="users"></i><span data-i18n="pc_list_title">獲授權的個案</span></div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <label class="muted small" for="pc-sort" data-i18n="label_sort">排序</label>
+              <select id="pc-sort" class="form-control" style="width:auto; padding:0.35rem 0.6rem; font-size:0.82rem;" onchange="renderCaseList()">
+                <option value="concern" data-i18n="sort_concern">需關注程度</option>
+                <option value="recent" data-i18n="sort_recent">最近評估日</option>
+                <option value="name" data-i18n="sort_name">姓名</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="th_case">個案</th>
+                <th data-i18n="th_instrument">樂器</th>
+                <th data-i18n="th_last_assess">最近評估</th>
+                <th data-i18n="th_over_days">超過警戒值天數（近 30 天）</th>
+                <th data-i18n="th_status">狀態</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="case-table-body"></tbody>
+            </table>
+          </div>
+          <p class="muted small" style="margin-top:0.8rem;" id="pc-rule-text"></p>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="key-round"></i><span data-i18n="pc_code_title">我的邀請碼</span></div></div>
+            <div class="code-box" id="provider-invite-code">------</div>
+            <p class="muted small" style="margin-top:0.6rem; line-height:1.6;" data-i18n="pc_code_desc">請個案在「資料授權管理」輸入這組邀請碼或您的 Email。</p>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="inbox"></i><span data-i18n="pc_pending_title">待確認的授權邀請</span></div></div>
+            <div id="pending-invites"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. 個案儀表板 -->
+    <section id="section-provider-case" data-role="provider">
+      <div class="page-header">
+        <div class="page-title">
+          <h1><span data-i18n="nav_provider_case">個案儀表板</span>：<span id="case-title-name">--</span></h1>
+          <p id="case-title-sub"></p>
+        </div>
+        <select id="case-switcher" class="form-control" style="width:auto; min-width:200px;" onchange="openCase(this.value)"></select>
+      </div>
+
+      <div class="card" style="padding:1rem 1.25rem;">
+        <div class="period-bar" id="case-period-bar">
+          <span class="muted small" data-i18n="label_period">查看期間</span>
+          <button class="btn btn-outline btn-sm" data-period="lastVisit" onclick="setCasePeriod('lastVisit')" data-i18n="period_last_visit">自上次就診</button>
+          <button class="btn btn-outline btn-sm" data-period="30" onclick="setCasePeriod('30')" data-i18n="period_30">近 30 天</button>
+          <button class="btn btn-outline btn-sm" data-period="90" onclick="setCasePeriod('90')" data-i18n="period_90">近 90 天</button>
+          <button class="btn btn-outline btn-sm" data-period="all" onclick="setCasePeriod('all')" data-i18n="period_all">全部</button>
+          <span class="muted small" style="margin-left:0.5rem;" data-i18n="period_custom">自訂</span>
+          <input type="date" id="case-from" class="form-control" onchange="setCasePeriod('custom')">
+          <span class="muted small">~</span>
+          <input type="date" id="case-to" class="form-control" onchange="setCasePeriod('custom')">
+          <span class="muted small" id="case-period-text" style="margin-left:auto;"></span>
+        </div>
+      </div>
+
+      <div class="tabs" id="case-tabs">
+        <button class="tab-btn active" data-tab="case-overview" onclick="switchTab('case-tabs','case-overview')"><i data-lucide="layout-dashboard"></i><span data-i18n="tab_case_overview">趨勢與異常統計</span></button>
+        <button class="tab-btn" data-tab="case-compare" onclick="switchTab('case-tabs','case-compare')"><i data-lucide="git-compare"></i><span data-i18n="tab_case_compare">多次比較</span></button>
+        <button class="tab-btn" data-tab="case-detail" onclick="switchTab('case-tabs','case-detail')"><i data-lucide="list"></i><span data-i18n="tab_case_detail">紀錄明細</span></button>
+        <button class="tab-btn" data-tab="case-profile" onclick="switchTab('case-tabs','case-profile')"><i data-lucide="user"></i><span data-i18n="tab_case_profile">個案基本資料</span></button>
+      </div>
+
+      <div class="tab-panel active" id="case-overview">
+        <div class="stat-grid" style="margin-bottom:1.5rem;">
+          <div class="card stat-card"><div class="stat-num" id="cs-count">0</div><div class="stat-label" data-i18n="cs_count">評估次數</div></div>
+          <div class="card stat-card"><div class="stat-num" id="cs-over-days">--</div><div class="stat-label" data-i18n="cs_over_days">超過警戒值天數比例</div></div>
+          <div class="card stat-card"><div class="stat-num sm" id="cs-practice">0</div><div class="stat-label" data-i18n="cs_practice">練習總時間（分鐘）</div></div>
+          <div class="card stat-card"><div class="stat-num sm" id="cs-bad-ratio">--</div><div class="stat-label" data-i18n="cs_bad_ratio">平均不良姿勢比例</div></div>
+        </div>
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="trending-up"></i><span data-i18n="cs_trend">動作角度趨勢</span></div><span class="card-sub" data-i18n="cs_trend_sub">每次評估「演奏中」階段的平均值</span></div>
+            <div class="chart-container-large"><canvas id="caseTrendChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="alert-triangle"></i><span data-i18n="cs_abnormal">異常狀況及比例統計</span></div></div>
+            <div id="case-abnormal"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:1.5rem;">
+          <div class="card-header"><div class="card-title"><i data-lucide="bar-chart-3"></i><span data-i18n="cs_daily">每日超過警戒值比例</span></div></div>
+          <div class="chart-container"><canvas id="caseDailyChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="case-compare">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="period-bar">
+            <span class="muted small" data-i18n="compare_a">比較期間 A</span>
+            <input type="date" id="cmp-a-from" class="form-control"> <span class="muted small">~</span> <input type="date" id="cmp-a-to" class="form-control">
+            <span class="muted small" style="margin-left:1rem;" data-i18n="compare_b">期間 B</span>
+            <input type="date" id="cmp-b-from" class="form-control"> <span class="muted small">~</span> <input type="date" id="cmp-b-to" class="form-control">
+            <button class="btn btn-primary btn-sm" onclick="renderCaseCompare()" data-i18n="btn_compare_run">比較</button>
+          </div>
+          <p class="muted small" style="margin-top:0.5rem;" data-i18n="compare_hint">預設 B 為目前查看期間，A 為其前一段等長期間。</p>
+        </div>
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="table-wrap"><table id="compare-table"></table></div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><div class="card-title" data-i18n="compare_pain_a">期間 A 不適部位（練習後）</div></div><div id="compare-map-a"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title" data-i18n="compare_pain_b">期間 B 不適部位（練習後）</div></div><div id="compare-map-b"></div></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="case-detail">
+        <div class="card" style="padding:0; overflow:hidden; margin-bottom:1.5rem;">
+          <div class="card-header" style="padding:1rem 1.25rem 0.75rem; margin:0;"><div class="card-title"><i data-lucide="list"></i><span data-i18n="detail_records">評估紀錄</span></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="th_time">評估時間</th><th data-i18n="th_item">得分</th><th>CVA</th><th data-i18n="th_shoulder">肩傾斜 Δ</th><th data-i18n="th_elbow">手肘 L / R</th><th data-i18n="th_practice">練習時間</th><th data-i18n="th_discomfort">不適部位（後）</th><th></th>
+              </tr></thead>
+              <tbody id="case-record-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="notebook-pen"></i><span data-i18n="tab_notes">筆記</span></div></div><div id="case-notes"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="pill"></i><span data-i18n="tab_medical">就醫及用藥</span></div></div><div id="case-medical"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="list-checks"></i><span data-i18n="detail_questionnaires">量表與 IPAQ</span></div></div><div id="case-questionnaires"></div></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="case-profile">
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="user"></i><span data-i18n="sub_basic">基本資料</span></div></div><div id="case-profile-info"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="heart-pulse"></i><span data-i18n="sub_pain">疼痛及傷害史</span></div></div><div id="case-baseline-map"></div><div id="case-pain-info" style="margin-top:1rem;"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. 照護建議與報告 -->
+    <section id="section-provider-advice" data-role="provider">
+      <div class="page-header">
+        <div class="page-title">
+          <h1><span data-i18n="nav_provider_advice">照護建議與報告</span>：<span id="advice-case-name">--</span></h1>
+          <p data-i18n="pa_sub">撰寫照護建議推送給個案、列印報告並歸檔</p>
+        </div>
+      </div>
+      <div class="grid-main-side">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="file-pen-line"></i><span data-i18n="pa_form_title">撰寫照護建議</span></div></div>
+          <div class="form-group"><label data-i18n="label_assessment_note">評估重點</label><textarea id="adv-diagnosis" class="form-control" rows="3" data-i18n-ph="ph_assessment_note" placeholder="例如：演奏中頸椎前傾比例偏高，右肩較常不適"></textarea></div>
+          <div class="form-group"><label><span data-i18n="label_recommendation">照護建議</span><span class="req">*</span></label><textarea id="adv-recommendation" class="form-control" rows="5" data-i18n-ph="ph_recommendation" placeholder="給個案的具體建議，例如：每練習 40 分鐘休息 5 分鐘、譜架調高至視線水平"></textarea></div>
+          <div class="form-group">
+            <span class="form-label" data-i18n="label_related_records">關聯的評估紀錄（目前查看期間）</span>
+            <div id="adv-related" style="max-height:180px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; padding:0.6rem;"></div>
+          </div>
+          <label class="check-row"><input type="checkbox" id="adv-followup-only"> <span data-i18n="label_followup_only">僅記錄追蹤項目，不推送給個案</span></label>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="submitAdvice()"><i data-lucide="send"></i><span data-i18n="btn_push_advice">儲存並推送</span></button>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="printer"></i><span data-i18n="pa_report_title">報告列印及歸檔</span></div></div>
+            <p class="muted" style="margin-bottom:1rem; line-height:1.6;" data-i18n="pa_report_desc">依「個案儀表板」目前選定的期間產生報告。列印時可選擇「另存為 PDF」。</p>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn btn-outline" onclick="printCaseReport()"><i data-lucide="printer"></i><span data-i18n="btn_print">列印／存 PDF</span></button>
+              <button class="btn btn-primary" onclick="archiveCaseReport()"><i data-lucide="archive"></i><span data-i18n="btn_archive">歸檔此期間資料</span></button>
+            </div>
+            <div id="archive-list" style="margin-top:1rem;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="pa_history_title">歷次照護建議</span></div></div>
+          <div id="advice-history"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="bookmark"></i><span data-i18n="pa_followups_title">追蹤項目（不推送）</span></div></div>
+          <div id="followup-history"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. 照護者資料 -->
+    <section id="section-provider-profile" data-role="provider">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 data-i18n="nav_provider_profile">照護者資料</h1>
+          <p data-i18n="pp_sub">僅登記使用，系統不驗證執照</p>
+        </div>
+      </div>
+      <div class="card" style="max-width: 760px; width:100%; margin:0 auto;">
+        <form onsubmit="saveProviderProfile(event)">
+          <div class="form-row">
+            <div class="form-group"><label><span data-i18n="label_name">姓名 / 代號</span><span class="req">*</span></label><input type="text" id="pp-name" class="form-control" required></div>
+            <div class="form-group">
+              <label><span data-i18n="label_title">職稱</span><span class="req">*</span></label>
+              <select id="pp-title" class="form-control" required onchange="document.getElementById('pp-title-other').style.display = this.value === '其他' ? 'block' : 'none'">
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="醫師" data-i18n="title_doctor">醫師</option>
+                <option value="物理治療師" data-i18n="title_pt">物理治療師</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+              </select>
+              <input type="text" id="pp-title-other" class="form-control" style="display:none; margin-top:0.4rem;" data-i18n-ph="ph_title_other" placeholder="請填寫職稱">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label data-i18n="label_specialty">專科</label>
+              <select id="pp-specialty" class="form-control">
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="骨科" data-i18n="sp_ortho">骨科</option>
+                <option value="復健科" data-i18n="sp_rehab">復健科</option>
+                <option value="運動醫學科" data-i18n="sp_sports">運動醫學科</option>
+                <option value="一般物理治療" data-i18n="sp_pt">一般物理治療</option>
+                <option value="其他" data-i18n="opt_other">其他</option>
+              </select>
+            </div>
+            <div class="form-group"><label data-i18n="label_institution">執業機構名稱</label><input type="text" id="pp-institution" class="form-control"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label data-i18n="label_license">執照字號（僅登記）</label><input type="text" id="pp-license" class="form-control"></div>
+            <div class="form-group"><label data-i18n="label_phone">聯絡電話</label><input type="tel" id="pp-phone" class="form-control"></div>
+          </div>
+          <div class="form-group">
+            <span class="form-label" data-i18n="pc_code_title">我的邀請碼</span>
+            <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+              <div class="code-box" id="pp-invite-code">------</div>
+              <button type="button" class="btn btn-outline btn-sm" onclick="regenerateInviteCode()"><i data-lucide="refresh-cw"></i><span data-i18n="btn_regen_code">重新產生</span></button>
+            </div>
+          </div>
+          <div class="form-actions"><button type="submit" class="btn btn-primary"><i data-lucide="check"></i><span data-i18n="btn_save">儲存</span></button></div>
+        </form>
+      </div>
+    </section>
+
   </main>
 
-  <!-- Detailed Record Modal (For viewing historic dashboards) -->
-  <div id="detail-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(58, 53, 51, 0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center;">
-    <div class="card" style="width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; background-color: var(--bg-primary); padding: 2rem; position: relative; border-radius: var(--border-radius-lg);">
-      <button class="btn btn-outline" style="position: absolute; top: 1.5rem; right: 1.5rem; padding: 0.5rem; border-radius: 50%;" onclick="closeDetailModal()">
-        <i data-lucide="x"></i>
-      </button>
-      
-      <div id="modal-content">
-        <!-- Rendered dynamically by app.js -->
+  <!-- 詳細內容 Modal -->
+  <div class="modal-backdrop" id="detail-modal" onclick="if(event.target===this) closeDetailModal()">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeDetailModal()"><i data-lucide="x"></i></button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- 評估結束：練習前後人體圖 -->
+  <div class="modal-backdrop" id="session-bodymap-modal">
+    <div class="modal-card">
+      <h2 class="modal-title" data-i18n="sbm_title">標記練習前後的不適部位</h2>
+      <p class="muted" style="margin-bottom:1.25rem; line-height:1.6;" data-i18n="sbm_desc">請分別點選練習前與練習後感到不適的部位，並填寫備註。若沒有不適，可直接按「完成」。</p>
+      <div class="bodymap-pair">
+        <div><h4 data-i18n="sbm_pre">練習前</h4><div id="sbm-pre"></div></div>
+        <div><h4 data-i18n="sbm_post">練習後</h4><div id="sbm-post"></div></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="finishSessionBodyMap()"><i data-lucide="check"></i><span data-i18n="btn_done_view_report">完成，查看評估報告</span></button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification Container -->
+  <!-- 角色切換器 -->
+  <div class="modal-backdrop" id="role-modal">
+    <div class="modal-card narrow">
+      <h2 class="modal-title" data-i18n="role_modal_title">要進入哪個平台？</h2>
+      <p class="muted" data-i18n="role_modal_desc">您的帳號同時具有兩種身分，切換平台不影響各自的授權關係。</p>
+      <div class="role-options">
+        <button class="role-option performer" onclick="chooseRole('performer')">
+          <i data-lucide="music"></i><strong data-i18n="role_performer">演奏者</strong><span data-i18n="role_performer_desc">練習評估、紀錄與照護建議</span>
+        </button>
+        <button class="role-option provider" onclick="chooseRole('provider')">
+          <i data-lucide="stethoscope"></i><strong data-i18n="role_provider">醫師／物理治療師</strong><span data-i18n="role_provider_desc">查看獲授權個案、給予建議</span>
+        </button>
+      </div>
+      <div id="role-add-area" style="margin-top:1.25rem; text-align:center;"></div>
+    </div>
+  </div>
+
+  <div id="print-area"></div>
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- App Script -->
+  <script src="firebase-config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="bodymap.js"></script>
   <script src="app.js"></script>
+  <script src="detection.js"></script>
+  <script src="features.js"></script>
+  <script src="provider.js"></script>
 </body>
 </html>

@@ -1,3352 +1,1093 @@
-// ── i18n ─────────────────────────────────────────────────────────
-const APP_I18N = {
-  zh: {
-    brand_name: '演奏者智能照護系統',
-    brand_title_html: '演奏者智能<br>照護系統',
-    nav_dashboard: '儀表板總覽', nav_profile: '個資填寫',
-    nav_playing: '演奏動作評估', nav_standard: '標準動作辨識',
-    nav_history: '使用者歷史紀錄', nav_logout: '登出',
-    guest: '訪客',
-    // Dashboard
-    dash_sub: '歡迎使用演奏者動作評估系統，追蹤並改善演奏姿態與健康',
-    dash_cta_title: '開始您的健康動作評估',
-    dash_cta_desc: '本系統可記錄您在演奏前、中、後的身體姿態，或是診斷常見的靜態動作（如高低肩、頭部前傾與抬手姿勢）。請先填寫基本個資，隨後點選左側評估功能開始檢測。',
-    dash_fill_profile: '填寫基本資料',
-    stat_total: '總評估次數', stat_score: '最近評估得分',
-    stat_instrument: '演奏樂器', stat_none: '無',
-    dash_trend: '歷史評估趨勢', dash_tips: '健康建議提示',
-    dash_no_tips: '暫無足夠的評估紀錄。請至少完成一次動作評估以獲得個人化的健康改善建議。',
-    // Profile
-    profile_sub: '請輸入演奏者的基本資料，以便系統建立專屬的姿勢評估報告',
-    profile_form_title: '演奏者基本資料表單',
-    label_name: '姓名 / 代號', label_gender: '性別',
-    label_age: '年齡', label_height: '身高 (cm)', label_instrument: '演奏樂器',
-    ph_name: '請輸入姓名', ph_gender: '請選擇性別',
-    ph_age: '請輸入年齡', ph_height: '請輸入身高', ph_instrument: '請選擇樂器',
-    opt_male: '男', opt_female: '女', opt_other_gender: '其他 / 不便透露',
-    opt_violin: '小提琴 (Violin)', opt_cello: '大提琴 (Cello)',
-    btn_reset: '重設', btn_save_profile: '儲存並開始評估',
-    // Playing
-    playing_sub: '記錄三個不同演奏狀態下的關節點位數值，生成當次姿態評估儀表板',
-    calib_recording: '正在記錄您的基準姿勢…',
-    stage_relax: '1. 演奏前放鬆姿勢',
-    stage_prepare: '2. 準備演奏的姿勢',
-    stage_playing: '3. 演奏中的動作',
-    frames_unit: '幀',
-    playing_waiting_title: '等待資料錄製',
-    btn_load_sample: '載入模擬示範數據',
-    playing_results_title: '評估結果分析',
-    score_label: '健康度評分',
-    playing_rating_default: '姿態表現：優良',
-    metrics_title: '關鍵關節點位數值 (演奏中狀態)',
-    metric_neck: '頸椎前傾角度', metric_shoulder: '雙肩傾斜度',
-    metric_symmetry: '左右肩對稱程度 (Shoulder Symmetry)',
-    metric_left_elbow: '左手肘夾角', metric_right_elbow: '右手肘夾角',
-    anomaly_slot: '動態動作異常姿勢分析 (預留辨識插槽)',
-    btn_re_record: '重新錄製', btn_save_assessment: '儲存此評估',
-    chart_joint_title: '三狀態關節夾角折線圖',
-    chart_sym_title: '左右肩部對稱折線圖 (Shoulder Symmetry)',
-    chart_cva_title: 'CVA 頭部前傾角度 — 逐幀折線圖（三階段）',
-    // Standard
-    standard_sub: '進行常見靜態動作的影像檢測與診斷，找出潛在的肌肉骨骼壓力點',
-    standard_select_title: '1. 選擇檢測診斷項目',
-    diag_uneven: '高低肩檢測',
-    diag_uneven_desc: '診斷左右肩膀水平線之高度偏差，檢視脊椎側彎或肌肉不平衡風險。',
-    diag_fhp: '頭部前傾檢測',
-    diag_fhp_desc: '檢測頸椎與耳垂之鉛垂夾角，判斷是否有俗稱「烏龜頸」的長頸族體態。',
-    diag_arm: '抬手檢測',
-    diag_arm_desc: '檢測雙手高舉過頭時，肩膀與手臂的伸展夾角與關節活動度，評估五十肩風險。',
-    btn_start_diag: '開始診斷', btn_reset_diag: '重新診斷',
-    standard_waiting_title: '等待診斷分析',
-    diag_result_title: '診斷結果報告',
-    diag_sym_score: '對稱分數', diag_rating_default: '評定：正常',
-    diag_metrics_title: '檢測指標數值',
-    diag_m1: '雙肩水平高度差', diag_m2: '左右肩關節角度',
-    diag_pt_advice: '物理治療建議', btn_save_diag: '儲存此檢測',
-    // History
-    history_sub: '查閱、篩選過往錄製的演奏姿態數據與靜態動作診斷紀錄',
-    history_search: '搜尋演奏者', history_filter_inst: '依樂器篩選',
-    history_filter_type: '依檢測類型',
-    ph_search: '輸入姓名或關鍵字',
-    opt_all_inst: '全部樂器', opt_violin_short: '小提琴', opt_cello_short: '大提琴',
-    opt_all_type: '全部類型', opt_playing_type: '演奏評估', opt_standard_type: '標準評估',
-    btn_export: '匯出資料', btn_import: '匯入', btn_clear: '清空',
-    th_time: '評估時間', th_name: '姓名 / 代號', th_instrument: '樂器',
-    th_type: '評估類型', th_item: '評估項目 / 得分',
-    th_level: '健康等級', th_actions: '操作項目',
-    // Extra
-    not_recorded: '未錄製',
-    btn_open_camera: '啟動攝影機',
-    btn_calibrate: '校準歸零',
-    btn_start_rec: '開始錄製',
-    baseline_label: '基準',
-    playing_waiting_desc: '請依序啟動攝影機並完成三個階段的錄製，系統將自動生成姿勢分析儀表板。',
-    standard_waiting_desc: '請在左側選擇診斷項目，並點擊「開始診斷」進行影像比對與分析。',
-    chart_joint_desc: '折線圖顯示三個不同動作姿態（放鬆、準備、演奏）在頸椎、雙肩、雙肘及手腕的關節夾角變化趨勢。',
-    chart_sym_desc: '對比三個狀態下左右肩膀水平線高度差與受力對稱百分比（100% 代表完全對稱與平衡）。',
-    history_empty: '目前無歷史評估紀錄，請開始填寫基本資料並進行評估！',
-    btn_compare: '比較所選紀錄',
-    diag_m1_unit: '偏差 < 1.0 cm', diag_m2_default: '左右對稱良好',
-    diag_pt_text: '日常練習前可進行 5 分鐘肩頸拉伸，拉伸斜方肌。演奏小提琴每 45 分鐘建議休息 10 分鐘，並做水平轉頭動作放鬆頸部。',
-    playing_result_default: '您的整體肩頸、手肘角度皆符合健康工學範圍，請繼續保持。',
-    diag_result_default: '您的肩膀高度對稱，未發現明顯傾斜，請保持良好坐姿與站姿。',
-    norm_neck: '標準 < 15°', norm_shoulder: '標準 < 5°', norm_sym: '標準 > 90%',
-    stage_relax_short: '放鬆', stage_prepare_short: '準備', stage_playing_short: '演奏中',
-    threshold_label: '警戒線 60°',
-    cva_desc: 'CVA Δ（頸椎角變化量）為相對於您校準基準姿勢的角度偏移。<strong>負值</strong>代表頭部比基準更前傾，<strong>正值</strong>代表更後仰。Δ &lt; −10° 的區間以紅色色帶標示。',
-    diag_sim_uneven: '高低肩檢測模擬中',
-  },
-  en: {
-    brand_name: 'Performer Intelligent Care System',
-    brand_title_html: 'Performer Intelligent<br>Care System',
-    nav_dashboard: 'Dashboard', nav_profile: 'Personal Info',
-    nav_playing: 'Playing Assessment', nav_standard: 'Standard Movement Recognition',
-    nav_history: 'History Records', nav_logout: 'Logout',
-    guest: 'Guest',
-    // Dashboard
-    dash_sub: 'Welcome — track and improve your playing posture and health',
-    dash_cta_title: 'Start Your Health Assessment',
-    dash_cta_desc: 'This system records your body posture before, during, and after playing, and diagnoses common static posture issues. Please fill in your basic information first, then select an assessment from the left sidebar.',
-    dash_fill_profile: 'Fill in Basic Info',
-    stat_total: 'Total Assessments', stat_score: 'Latest Score',
-    stat_instrument: 'Instrument', stat_none: 'None',
-    dash_trend: 'Assessment History Trend', dash_tips: 'Health Recommendations',
-    dash_no_tips: 'No sufficient records yet. Complete at least one assessment to receive personalised recommendations.',
-    // Profile
-    profile_sub: "Please enter the performer's basic information to build a personalised posture assessment report.",
-    profile_form_title: 'Performer Basic Info Form',
-    label_name: 'Name / ID', label_gender: 'Gender',
-    label_age: 'Age', label_height: 'Height (cm)', label_instrument: 'Instrument',
-    ph_name: 'Enter name or ID', ph_gender: 'Select gender',
-    ph_age: 'Enter age', ph_height: 'Enter height', ph_instrument: 'Select instrument',
-    opt_male: 'Male', opt_female: 'Female', opt_other_gender: 'Other / Prefer not to say',
-    opt_violin: 'Violin', opt_cello: 'Cello',
-    btn_reset: 'Reset', btn_save_profile: 'Save & Start Assessment',
-    // Playing
-    playing_sub: 'Record joint values across three playing states to generate a posture assessment dashboard.',
-    calib_recording: 'Recording your baseline posture…',
-    stage_relax: '1. Pre-playing Relaxed Posture',
-    stage_prepare: '2. Ready-to-Play Posture',
-    stage_playing: '3. During-playing Motion',
-    frames_unit: 'frames',
-    playing_waiting_title: 'Waiting for Recording',
-    btn_load_sample: 'Load Sample Data',
-    playing_results_title: 'Assessment Results',
-    score_label: 'Health Score',
-    playing_rating_default: 'Posture: Excellent',
-    metrics_title: 'Key Joint Values (During Playing)',
-    metric_neck: 'Neck Forward Tilt', metric_shoulder: 'Shoulder Tilt',
-    metric_symmetry: 'Shoulder Symmetry',
-    metric_left_elbow: 'Left Elbow Angle', metric_right_elbow: 'Right Elbow Angle',
-    anomaly_slot: 'Dynamic Posture Anomaly Analysis (placeholder)',
-    btn_re_record: 'Reset Recording', btn_save_assessment: 'Save Assessment',
-    chart_joint_title: 'Three-State Joint Angle Chart',
-    chart_sym_title: 'Shoulder Symmetry Chart',
-    chart_cva_title: 'CVA Forward Head Angle — Per-Frame Chart (3 Stages)',
-    // Standard
-    standard_sub: 'Perform image-based detection and diagnosis of common static postures.',
-    standard_select_title: '1. Select Diagnostic Test',
-    diag_uneven: 'Uneven Shoulders',
-    diag_uneven_desc: 'Diagnose horizontal height deviation between shoulders; assess scoliosis or muscle imbalance risk.',
-    diag_fhp: 'Forward Head Posture',
-    diag_fhp_desc: 'Measure the angle between the cervical spine and earlobe to assess forward head posture ("tech neck").',
-    diag_arm: 'Arm Raise Test',
-    diag_arm_desc: 'Assess shoulder and arm extension angles during overhead raise to evaluate frozen shoulder risk.',
-    btn_start_diag: 'Start Diagnosis', btn_reset_diag: 'Reset Diagnosis',
-    standard_waiting_title: 'Awaiting Diagnosis',
-    diag_result_title: 'Diagnostic Report',
-    diag_sym_score: 'Symmetry Score', diag_rating_default: 'Rating: Normal',
-    diag_metrics_title: 'Diagnostic Metrics',
-    diag_m1: 'Shoulder Height Difference', diag_m2: 'Shoulder Joint Angles',
-    diag_pt_advice: 'Physical Therapy Advice', btn_save_diag: 'Save Diagnosis',
-    // History
-    history_sub: 'Browse and filter past playing posture data and static movement diagnosis records.',
-    history_search: 'Search Performer', history_filter_inst: 'Filter by Instrument',
-    history_filter_type: 'Filter by Type',
-    ph_search: 'Enter name or keyword',
-    opt_all_inst: 'All Instruments', opt_violin_short: 'Violin', opt_cello_short: 'Cello',
-    opt_all_type: 'All Types', opt_playing_type: 'Playing Assessment', opt_standard_type: 'Standard Movement Recognition',
-    btn_export: 'Export Data', btn_import: 'Import', btn_clear: 'Clear All',
-    th_time: 'Date / Time', th_name: 'Name / ID', th_instrument: 'Instrument',
-    th_type: 'Type', th_item: 'Assessment / Score',
-    th_level: 'Health Level', th_actions: 'Actions',
-    // Extra
-    not_recorded: 'Not recorded',
-    btn_open_camera: 'Start Camera',
-    btn_calibrate: 'Calibrate Zero',
-    btn_start_rec: 'Start Recording',
-    baseline_label: 'Baseline',
-    playing_waiting_desc: 'Activate the camera and complete all three recording stages. The system will automatically generate a posture analysis dashboard.',
-    standard_waiting_desc: 'Select a diagnostic item on the left, then click "Start Diagnosis" to begin analysis.',
-    chart_joint_desc: 'Line chart showing joint angle trends across three posture states (relax, prepare, playing).',
-    chart_sym_desc: 'Comparison of left-right shoulder symmetry percentage across the three states (100% = fully symmetric).',
-    history_empty: 'No history records yet. Please fill in your basic information and complete an assessment.',
-    btn_compare: 'Compare Selected',
-    diag_m1_unit: 'deviation < 1.0 cm', diag_m2_default: 'Good bilateral symmetry',
-    diag_pt_text: 'Perform 5 minutes of neck and shoulder stretching before daily practice. For violin players, rest for 10 minutes every 45 minutes and do horizontal head rotations to relax the neck.',
-    playing_result_default: 'Your overall shoulder, neck, and elbow angles are within healthy ergonomic ranges. Keep it up.',
-    diag_result_default: 'Your shoulder height is symmetric. No significant tilt detected. Maintain good posture.',
-    norm_neck: 'norm < 15°', norm_shoulder: 'norm < 5°', norm_sym: 'norm > 90%',
-    stage_relax_short: 'Relax', stage_prepare_short: 'Prepare', stage_playing_short: 'Playing',
-    threshold_label: 'Threshold 60°',
-    cva_desc: 'CVA Δ is the angular deviation from your calibrated baseline. <strong>Negative values</strong> indicate more forward head lean; <strong>positive values</strong> indicate more upright. Δ &lt; −10° regions are highlighted in red.',
-    diag_sim_uneven: 'Uneven Shoulders — Simulating',
-  }
+// =================================================================
+// 演奏者智能照護系統 — 核心程式（app.js）
+//   ・語言切換（APP_I18N 定義於 i18n.js）
+//   ・資料存取層 DataAPI（所有 Firestore 讀寫集中於此，未來換伺服器只改這裡）
+//   ・登入驗證、角色（profile.roles）與角色切換
+//   ・頁面路由、共用 UI 工具、分析計算
+//   ・演奏者：基本資料、儀表板、歷史紀錄
+// 其他模組：detection.js（偵測／警示／評估報告）、features.js（問卷、紀錄、
+// 衛教、授權）、provider.js（照護端）
+// =================================================================
+
+// ── 系統門檻（集中管理；標「待定」者為示意值，待研究團隊確認） ─────
+const SYSTEM_RULES = {
+  DAY_OVER_FRAME_PCT: 20,     // 某天「演奏中」超過警戒值的幀數比例 ≥ 此值，該天記為「超過警戒值」（待定）
+  CONCERN_DAY_PCT: 30,        // 超過警戒值天數比例 ≥ 此值，照護端標示「需關注」（待定）
+  OVER_DAY_DENOMINATOR: 'recorded', // 'recorded'＝以有錄製的天數為分母；'calendar'＝以期間日曆天數為分母（待討論）
+  REMINDER_OVER_PCT: 30,      // 單次評估某參數超過比例 ≥ 此值時產生提醒（待定）
+  SCORE_GOOD: 90,             // 健康度評分 ≥ 90 → 良好
+  SCORE_CAUTION: 75           // 健康度評分 ≥ 75 → 注意；以下 → 警示
 };
 
+// ── 語言 ─────────────────────────────────────────────────────────
 let currentLang = localStorage.getItem('lang') || 'zh';
 
-function tApp(key) {
-  return APP_I18N[currentLang][key] || key;
+function tApp(key, params) {
+  const dict = APP_I18N[currentLang] || APP_I18N.zh;
+  let s = dict[key];
+  if (s === undefined) s = APP_I18N.zh[key];
+  if (s === undefined) return key;
+  if (params) Object.keys(params).forEach(k => { s = s.split(`{${k}}`).join(params[k]); });
+  return s;
 }
 
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
   document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
-
-  // Update lang toggle buttons
   const zhBtn = document.getElementById('nav-lang-zh');
   const enBtn = document.getElementById('nav-lang-en');
   if (zhBtn) zhBtn.classList.toggle('active', lang === 'zh');
   if (enBtn) enBtn.classList.toggle('active', lang === 'en');
 
   const dict = APP_I18N[lang];
-
-  // Update all data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (dict[key] !== undefined) el.innerHTML = dict[key];
   });
-
-  // Update placeholders
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const key = el.getAttribute('data-i18n-ph');
     if (dict[key]) el.placeholder = dict[key];
   });
+  document.title = dict.brand_name || document.title;
 
-  // Update page title
-  document.title = dict['brand_name'] || document.title;
-
-  // Re-render any JS-injected text that depends on current language
-  updateDashboardStats();
+  // 重新繪製 JS 動態產生的文字
+  if (App.ready) refreshCurrentView();
 }
 
-// ── Firebase init ─────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyD8oyp3qrsZ0lF6a4n20-TVzDCJLvpuelw",
-  authDomain: "posture-assessment.firebaseapp.com",
-  projectId: "posture-assessment",
-  storageBucket: "posture-assessment.firebasestorage.app",
-  messagingSenderId: "354726206119",
-  appId: "1:354726206119:web:b78eb4f044236caeafd982",
-  measurementId: "G-X26QMQHVVR"
+// ── 全域狀態 ─────────────────────────────────────────────────────
+const App = {
+  ready: false,
+  user: null,
+  userDoc: null,          // users/{uid} 文件內容
+  profile: null,          // users/{uid}.profile
+  roles: [],
+  activeRole: 'performer',
+  providerDoc: null,      // providers/{uid}
+  currentSection: 'dashboard',
+  // 演奏者資料快取
+  records: [],
+  bodyMaps: [],
+  questionnaires: [],
+  practiceLogs: [],
+  medicalLogs: [],
+  notes: [],
+  advice: [],
+  bindings: []
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
 
-// ── Auth guard ───────────────────────────────────────────────────
+// =================================================================
+// DataAPI — Firestore 存取集中處
+// =================================================================
+const TS = () => firebase.firestore.FieldValue.serverTimestamp();
+
+function docTimeMs(d) {
+  if (!d) return 0;
+  if (typeof d.createdAtMs === 'number') return d.createdAtMs;
+  if (d.createdAt && typeof d.createdAt.toMillis === 'function') return d.createdAt.toMillis();
+  if (typeof d.id === 'number') return d.id;
+  return 0;
+}
+
+const DataAPI = {
+  async getUserDoc(uid) {
+    const snap = await db.collection('users').doc(uid).get();
+    return snap.exists ? snap.data() : null;
+  },
+  async setUserDoc(uid, data) {
+    await db.collection('users').doc(uid).set({ ...data, updatedAt: TS() }, { merge: true });
+  },
+  async updateProfile(uid, profile) {
+    await db.collection('users').doc(uid).set({ profile, updatedAt: TS() }, { merge: true });
+  },
+  async listSub(uid, sub) {
+    const snap = await db.collection('users').doc(uid).collection(sub).get();
+    const rows = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    rows.sort((a, b) => docTimeMs(b) - docTimeMs(a));
+    return rows;
+  },
+  async addSub(uid, sub, data) {
+    const now = data.createdAtMs || Date.now();
+    const ref = await db.collection('users').doc(uid).collection(sub)
+      .add({ ...data, createdAtMs: now, dateKey: data.dateKey || dateKeyOf(now), createdAt: TS() });
+    return ref.id;
+  },
+  async updateSub(uid, sub, id, data) {
+    await db.collection('users').doc(uid).collection(sub).doc(id).set(data, { merge: true });
+  },
+  async deleteSub(uid, sub, id) {
+    await db.collection('users').doc(uid).collection(sub).doc(id).delete();
+  },
+  async clearSub(uid, sub) {
+    const snap = await db.collection('users').doc(uid).collection(sub).get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  },
+  // 照護端
+  async getProvider(uid) {
+    const snap = await db.collection('providers').doc(uid).get();
+    return snap.exists ? snap.data() : null;
+  },
+  async setProvider(uid, data) {
+    await db.collection('providers').doc(uid).set({ ...data, updatedAt: TS() }, { merge: true });
+  },
+  async findProvider(field, value) {
+    const snap = await db.collection('providers').where(field, '==', value).limit(2).get();
+    return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  },
+  async listProviderSub(pid, sub, patientUid) {
+    let q = db.collection('providers').doc(pid).collection(sub);
+    if (patientUid) q = q.where('patientUid', '==', patientUid);
+    const snap = await q.get();
+    const rows = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    rows.sort((a, b) => docTimeMs(b) - docTimeMs(a));
+    return rows;
+  },
+  async addProviderSub(pid, sub, data) {
+    const now = Date.now();
+    const ref = await db.collection('providers').doc(pid).collection(sub).add({ ...data, createdAtMs: now, createdAt: TS() });
+    return ref.id;
+  },
+  // 授權綁定：bindings/{performerUid}_{providerUid}
+  bindingId(perf, prov) { return `${perf}_${prov}`; },
+  async getBinding(perf, prov) {
+    const snap = await db.collection('bindings').doc(this.bindingId(perf, prov)).get();
+    return snap.exists ? snap.data() : null;
+  },
+  async setBinding(perf, prov, data) {
+    await db.collection('bindings').doc(this.bindingId(perf, prov)).set({ ...data, updatedAtMs: Date.now() }, { merge: true });
+  },
+  async listBindings(field, uid) {
+    const snap = await db.collection('bindings').where(field, '==', uid).get();
+    return snap.docs.map(d => ({ bindingId: d.id, ...d.data() }));
+  }
+};
+
+// ── 與舊版相容的存取函式名稱 ─────────────────────────────────────
 function checkAuth() {
   return new Promise(resolve => {
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = 'login.html';
-        resolve(null);
-      } else {
-        resolve(user);
-      }
+    const unsub = auth.onAuthStateChanged(user => {
+      unsub();
+      if (!user) { window.location.href = 'login.html'; resolve(null); }
+      else resolve(user);
     });
   });
 }
 
 function handleLogout() {
-  auth.signOut().then(() => {
-    window.location.href = 'login.html';
-  });
+  if (typeof stopAllDetection === 'function') stopAllDetection();
+  sessionStorage.removeItem('activeRole');
+  auth.signOut().then(() => { window.location.href = 'login.html'; });
 }
 
-// Application State Management
-let currentProfile = null;
-let playingRecords = {
-  relax: null,
-  prepare: null,
-  playing: null
-};
-let selectedPlayingStep = 'relax'; // 'relax' | 'prepare' | 'playing'
-let selectedDiagnostic = 'uneven-shoulders'; // 'uneven-shoulders' | 'forward-head' | 'arm-raise'
-let isDiagnosingStandard = false;
+async function getHistoryFromStorage(uid) {
+  try {
+    return await DataAPI.listSub(uid || App.user.uid, 'records');
+  } catch (err) {
+    console.error('讀取評估紀錄失敗：', err);
+    return [];
+  }
+}
 
-// Chart references
-let dashboardTrendChartRef = null;
-let playingRadarChartRef = null;
-let playingSymmetryChartRef = null;
-let cvaTrendChartRef = null;
+async function saveHistoryToStorage(record) {
+  return DataAPI.addSub(App.user.uid, 'records', record);
+}
 
-// Canvas Animation variables
-let playingCanvasAnimId = null;
-let standardCanvasAnimId = null;
-
-// Multi-record Selection State
-let selectedRecordIds = new Set();
-
-// ── CVA Detection State ──────────────────────────────────────────
-let cvaState = {
-  pose: null,
-  camera: null,
-  stream: null,
-  activeStage: null,
-  isRecording: false,
-  isCalibrating: false,
-  referenceAngle: null,    // CVA baseline (delta reference)
-  refShoulderTilt: null,   // Shoulder tilt baseline
-  calibFrames: [],         // CVA angles during calibration
-  calibShoulderFrames: [], // Shoulder tilt angles during calibration
-  frameBuffers: {
-    // Each entry: { cva, shoulderTilt, leftElbow, rightElbow }
-    relax:   [],
-    prepare: [],
-    playing: []
-  },
-  modelReady: false
-};
-
-// Initialize App
+// =================================================================
+// 初始化
+// =================================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  // Auth guard — redirect to login if not logged in
   const user = await checkAuth();
   if (!user) return;
+  App.user = user;
 
-  // Auth confirmed — fade out loading screen and show app
-  const loadingScreen = document.getElementById('loading-screen');
-  if (loadingScreen) {
-    loadingScreen.style.opacity = '0';
-    setTimeout(() => { loadingScreen.style.display = 'none'; }, 400);
-  }
-
-  // Apply saved language
   setLang(currentLang);
-
-  // Show logged-in user name in nav / avatars
-  const displayName = user.displayName || user.email || tApp('guest');
-  document.querySelectorAll('#header-username, #playing-username, #standard-username').forEach(el => {
-    el.textContent = displayName;
-  });
-  document.querySelectorAll('#header-avatar, #playing-avatar, #standard-avatar').forEach(el => {
-    el.textContent = displayName.charAt(0).toUpperCase();
-  });
-
-  // Initialize Lucide Icons
   lucide.createIcons();
 
-  // Load profile and history from Firestore
-  await loadProfileFromStorage();
-  await refreshHistory();
+  try {
+    await loadAccount();
+  } catch (err) {
+    console.error('帳號資料載入失敗：', err);
+    showToast(tApp('toast_load_fail'), 'danger');
+  }
 
-  // Start canvas animations
-  initCanvasSimulators();
+  const loading = document.getElementById('loading-screen');
+  if (loading) { loading.style.opacity = '0'; setTimeout(() => { loading.style.display = 'none'; }, 400); }
+
+  App.ready = true;
+
+  const saved = sessionStorage.getItem('activeRole');
+  if (saved && App.roles.includes(saved)) {
+    await enterRole(saved);
+  } else if (App.roles.length > 1) {
+    await enterRole(App.roles[0], true);
+    openRoleSwitcher(true);
+  } else {
+    await enterRole(App.roles[0] || 'performer');
+  }
 });
 
-// Toast Notification Helper
+async function loadAccount() {
+  const uid = App.user.uid;
+  let doc = await DataAPI.getUserDoc(uid);
+  if (!doc) doc = {};
+  let profile = doc.profile || null;
+  let roles = (profile && Array.isArray(profile.roles)) ? profile.roles.slice() : [];
+
+  // 舊帳號（尚無 roles）：預設為演奏者
+  if (roles.length === 0) {
+    roles = ['performer'];
+    profile = { ...(profile || {}), username: (profile && profile.username) || App.user.displayName || '', email: App.user.email, roles };
+    try { await DataAPI.updateProfile(uid, profile); } catch (e) { console.warn(e); }
+  }
+  App.userDoc = doc;
+  App.profile = profile;
+  App.roles = roles;
+
+  if (roles.includes('provider')) {
+    App.providerDoc = await DataAPI.getProvider(uid);
+    if (!App.providerDoc) {
+      App.providerDoc = { profile: { name: profile.username || App.user.displayName || '', email: App.user.email, emailLower: (App.user.email || '').toLowerCase() }, inviteCode: makeInviteCode() };
+      try { await DataAPI.setProvider(uid, App.providerDoc); } catch (e) { console.warn(e); }
+    }
+  }
+  App.alertSettings = doc.alertSettings || { visual: true, vibrate: true };
+}
+
+// ── 角色 ─────────────────────────────────────────────────────────
+async function enterRole(role, silent) {
+  App.activeRole = role;
+  sessionStorage.setItem('activeRole', role);
+  document.body.classList.toggle('role-provider', role === 'provider');
+  document.body.classList.toggle('role-performer', role === 'performer');
+  document.getElementById('nav-performer').hidden = role !== 'performer';
+  document.getElementById('nav-provider').hidden = role !== 'provider';
+  updateRoleChip();
+
+  if (role === 'performer') {
+    if (typeof stopAllDetection === 'function') stopAllDetection();
+    await loadPerformerData();
+    const incomplete = !App.profile || !App.profile.instrument;
+    switchSection(incomplete ? 'profile' : 'dashboard');
+    if (incomplete && !silent) showToast(tApp('toast_complete_profile'), 'info');
+  } else {
+    if (typeof stopAllDetection === 'function') stopAllDetection();
+    await loadProviderData();
+    switchSection('provider-cases');
+  }
+}
+
+function updateRoleChip() {
+  document.getElementById('role-chip-name').textContent = tApp(App.activeRole === 'provider' ? 'role_provider' : 'role_performer');
+  const btn = document.getElementById('btn-switch-role');
+  btn.style.display = 'inline-block';
+  btn.textContent = App.roles.length > 1 ? tApp('btn_switch_role') : tApp('btn_add_role');
+}
+
+function openRoleSwitcher() {
+  const modal = document.getElementById('role-modal');
+  const perfBtn = modal.querySelector('.role-option.performer');
+  const provBtn = modal.querySelector('.role-option.provider');
+  perfBtn.style.display = App.roles.includes('performer') ? '' : 'none';
+  provBtn.style.display = App.roles.includes('provider') ? '' : 'none';
+  const add = document.getElementById('role-add-area');
+  add.innerHTML = '';
+  if (!App.roles.includes('performer')) {
+    add.innerHTML += `<button class="btn btn-outline" onclick="addRole('performer')"><i data-lucide="plus"></i>${tApp('btn_add_performer_role')}</button> `;
+  }
+  if (!App.roles.includes('provider')) {
+    add.innerHTML += `<button class="btn btn-outline" onclick="addRole('provider')"><i data-lucide="plus"></i>${tApp('btn_add_provider_role')}</button>`;
+  }
+  add.innerHTML += `<div style="margin-top:0.75rem;"><button class="link-btn btn btn-sm btn-outline" onclick="closeRoleSwitcher()">${tApp('btn_close')}</button></div>`;
+  modal.classList.add('show');
+  lucide.createIcons();
+}
+function closeRoleSwitcher() { document.getElementById('role-modal').classList.remove('show'); }
+
+async function chooseRole(role) {
+  closeRoleSwitcher();
+  if (role !== App.activeRole) await enterRole(role);
+}
+
+async function addRole(role) {
+  if (!confirm(tApp(role === 'performer' ? 'confirm_add_performer' : 'confirm_add_provider'))) return;
+  const uid = App.user.uid;
+  const roles = Array.from(new Set([...App.roles, role]));
+  App.profile = { ...(App.profile || {}), roles };
+  try {
+    await DataAPI.updateProfile(uid, App.profile);
+    if (role === 'provider' && !App.providerDoc) {
+      App.providerDoc = {
+        profile: { name: App.profile.username || App.user.displayName || '', email: App.user.email, emailLower: (App.user.email || '').toLowerCase() },
+        inviteCode: makeInviteCode(), createdAtMs: Date.now()
+      };
+      await DataAPI.setProvider(uid, App.providerDoc);
+    }
+    App.roles = roles;
+    closeRoleSwitcher();
+    showToast(tApp('toast_role_added'), 'success');
+    await enterRole(role);
+    switchSection(role === 'performer' ? 'profile' : 'provider-profile');
+  } catch (err) {
+    console.error(err);
+    showToast(tApp('toast_save_fail'), 'danger');
+  }
+}
+
+// =================================================================
+// 路由與共用 UI
+// =================================================================
+function switchSection(sectionId) {
+  const target = document.getElementById(`section-${sectionId}`);
+  if (!target) return;
+  if (target.dataset.role && target.dataset.role !== App.activeRole) return;
+
+  if (App.currentSection === 'playing' && sectionId !== 'playing' && typeof onLeavePlaying === 'function') onLeavePlaying();
+
+  document.querySelectorAll('main > section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  target.classList.add('active');
+  const nav = document.getElementById(`nav-${sectionId}`);
+  if (nav) nav.classList.add('active');
+  App.currentSection = sectionId;
+  renderSection(sectionId);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderSection(id) {
+  switch (id) {
+    case 'dashboard': renderDashboard(); break;
+    case 'profile': fillProfileForm(); break;
+    case 'playing': if (typeof renderPlayingPage === 'function') renderPlayingPage(); break;
+    case 'history': filterHistory(); break;
+    case 'records': if (typeof renderRecordsPage === 'function') renderRecordsPage(); break;
+    case 'education': if (typeof renderEducationPage === 'function') renderEducationPage(); break;
+    case 'authorization': if (typeof renderAuthorizationPage === 'function') renderAuthorizationPage(); break;
+    case 'provider-cases': if (typeof renderCaseList === 'function') renderCaseList(); break;
+    case 'provider-case': if (typeof renderCaseDashboard === 'function') renderCaseDashboard(); break;
+    case 'provider-advice': if (typeof renderAdvicePage === 'function') renderAdvicePage(); break;
+    case 'provider-profile': if (typeof fillProviderProfileForm === 'function') fillProviderProfileForm(); break;
+  }
+  lucide.createIcons();
+}
+
+function refreshCurrentView() {
+  updateRoleChip();
+  updateHeaderNames();
+  renderSection(App.currentSection);
+  if (typeof refreshStageCards === 'function') refreshStageCards();
+}
+
+function switchTab(groupId, tabId) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  const container = group.parentElement;
+  group.querySelectorAll('.tab-btn').forEach(b => {
+    const panel = container.querySelector(`#${b.dataset.tab}`);
+    if (panel) panel.classList.toggle('active', b.dataset.tab === tabId);
+  });
+  if (typeof onTabSwitched === 'function') onTabSwitched(groupId, tabId);
+  lucide.createIcons();
+}
+
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  
-  let iconName = 'info';
-  if (type === 'success') iconName = 'check-circle';
-  if (type === 'warning') iconName = 'alert-triangle';
-  if (type === 'danger') iconName = 'alert-circle';
-  
-  toast.innerHTML = `
-    <i data-lucide="${iconName}"></i>
-    <span>${message}</span>
-  `;
-  
+  const icon = { success: 'check-circle', warning: 'alert-triangle', danger: 'alert-circle' }[type] || 'info';
+  toast.innerHTML = `<i data-lucide="${icon}"></i><span></span>`;
+  toast.querySelector('span').textContent = message;
   container.appendChild(toast);
   lucide.createIcons();
-  
   setTimeout(() => {
     toast.style.animation = 'slideIn 0.2s reverse forwards';
     setTimeout(() => toast.remove(), 200);
-  }, 3500);
+  }, 3800);
 }
 
-// ----------------------------------------------------
-// 1. SPA ROUTING
-// ----------------------------------------------------
-function switchSection(sectionId) {
-  // Hide all sections
-  const sections = document.querySelectorAll('section');
-  sections.forEach(s => s.classList.remove('active'));
-  
-  // Deactivate all nav links
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => item.classList.remove('active'));
-  
-  // Show target section
-  const targetSection = document.getElementById(`section-${sectionId}`);
-  if (targetSection) {
-    targetSection.classList.add('active');
-  }
-  
-  // Activate target nav link
-  const targetNav = document.getElementById(`nav-${sectionId}`);
-  if (targetNav) {
-    targetNav.classList.add('active');
-  }
-  
-  // Stop/Start animations based on active view
-  if (sectionId === 'playing') {
-    startPlayingCanvas();
-    stopStandardCanvas();
-  } else if (sectionId === 'standard') {
-    startStandardCanvas();
-    stopPlayingCanvas();
-  } else {
-    stopPlayingCanvas();
-    stopStandardCanvas();
-  }
-  
-  // Refresh charts if needed
-  if (sectionId === 'dashboard') {
-    updateDashboardStats();
-    renderDashboardTrendChart();
-  }
-  
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function openModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('detail-modal').classList.add('show');
+  lucide.createIcons();
+}
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('show');
+  ChartRegistry.destroyGroup('modal');
 }
 
-// ----------------------------------------------------
-// 2. PROFILE MANAGEMENT
-// ----------------------------------------------------
-async function loadProfileFromStorage() {
-  try {
-    const user = auth.currentUser;
-    if (!user) return;
-    const doc = await db.collection('users').doc(user.uid).get();
-    if (doc.exists && doc.data().profile) {
-      currentProfile = doc.data().profile;
-      updateProfileUI();
+// 頁面上方警示條
+let pageAlertTimer = null;
+function showPageAlert(text, kind = 'danger', ms = 8000) {
+  const bar = document.getElementById('page-alert-bar');
+  document.getElementById('page-alert-text').textContent = text;
+  bar.classList.toggle('rest', kind === 'rest');
+  bar.classList.add('show');
+  clearTimeout(pageAlertTimer);
+  if (ms) pageAlertTimer = setTimeout(dismissPageAlert, ms);
+}
+function dismissPageAlert() { document.getElementById('page-alert-bar').classList.remove('show'); }
+
+// ── 格式化工具 ───────────────────────────────────────────────────
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function fmtDateTime(ms) {
+  if (!ms) return '--';
+  return new Date(ms).toLocaleString(currentLang === 'en' ? 'en-GB' : 'zh-TW', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+function fmtDate(ms) {
+  if (!ms) return '--';
+  return new Date(ms).toLocaleDateString(currentLang === 'en' ? 'en-GB' : 'zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+function fmtClock(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+function fmtMinutes(sec) { return Math.round((sec || 0) / 60); }
+function fmtNum(v, d = 1) { return (v === null || v === undefined || Number.isNaN(v)) ? '--' : Number(v).toFixed(d); }
+function todayStr() { return dateKeyOf(Date.now()); }
+function dateInputToMs(str, endOfDay) {
+  if (!str) return null;
+  const [y, m, d] = str.split('-').map(Number);
+  return endOfDay ? new Date(y, m - 1, d, 23, 59, 59, 999).getTime() : new Date(y, m - 1, d).getTime();
+}
+function instrumentLabel(v) {
+  if (v === '小提琴' || v === 'violin') return tApp('opt_violin');
+  if (v === '大提琴' || v === 'cello') return tApp('opt_cello');
+  return v || '--';
+}
+function optionLabel(map, v) { return map[v] ? tApp(map[v]) : (v || '--'); }
+const GENDER_KEYS = { '男': 'opt_male', '女': 'opt_female', '其他': 'opt_other', '不便透露': 'opt_na' };
+const IDENTITY_KEYS = { '音樂系學生': 'id_student', '職業演奏者': 'id_pro', '業餘演奏者': 'id_amateur', '其他': 'opt_other' };
+const TITLE_KEYS = { '醫師': 'title_doctor', '物理治療師': 'title_pt', '其他': 'opt_other' };
+const SPECIALTY_KEYS = { '骨科': 'sp_ortho', '復健科': 'sp_rehab', '運動醫學科': 'sp_sports', '一般物理治療': 'sp_pt', '其他': 'opt_other' };
+const REFERRAL_KEYS = { '自行報名': 'ref_self', '醫師轉介': 'ref_doctor', '教師推薦': 'ref_teacher', '其他': 'opt_other' };
+
+function providerTitleText(p) {
+  if (!p) return '';
+  return p.title === '其他' ? (p.titleOther || tApp('opt_other')) : optionLabel(TITLE_KEYS, p.title);
+}
+
+// ── 健康等級 ─────────────────────────────────────────────────────
+function normalizeLevel(level) {
+  if (level === '良好' || level === 'good') return 'good';
+  if (level === '注意' || level === 'caution' || level === 'Caution') return 'caution';
+  if (level === '警示' || level === 'alert' || level === 'Alert') return 'alert';
+  return 'good';
+}
+function levelFromScore(score) {
+  if (score >= SYSTEM_RULES.SCORE_GOOD) return 'good';
+  if (score >= SYSTEM_RULES.SCORE_CAUTION) return 'caution';
+  return 'alert';
+}
+function levelBadge(level) {
+  const l = normalizeLevel(level);
+  const cls = { good: 'badge-success', caution: 'badge-warning', alert: 'badge-danger' }[l];
+  return `<span class="badge ${cls}">${tApp('level_' + l)}</span>`;
+}
+
+// ── 圖表管理 ─────────────────────────────────────────────────────
+const ChartRegistry = {
+  charts: {},
+  // factory：回傳 new Chart(...) 的函式；先銷毀舊圖再建立，避免 canvas 重複使用錯誤
+  set(id, factory, group = 'page') {
+    this.destroy(id);
+    const chart = factory();
+    this.charts[id] = { chart, group };
+    return chart;
+  },
+  destroy(id) {
+    if (this.charts[id]) { try { this.charts[id].chart.destroy(); } catch (e) {} delete this.charts[id]; }
+  },
+  destroyGroup(group) {
+    Object.keys(this.charts).forEach(id => { if (this.charts[id].group === group) this.destroy(id); });
+  }
+};
+const CHART_COLORS = {
+  cva: '#0D5661', shoulder: '#77428D', leftElbow: '#7BA23F', rightElbow: '#6C6024',
+  threshold: '#8E354A', relax: '#91989F', prepare: '#0D5661', playing: '#77428D',
+  score: '#36563C', grid: 'rgba(112,124,116,0.15)', tick: '#707C74', text: '#2F2E2B'
+};
+function baseChartOptions(extra = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: CHART_COLORS.text, font: { family: 'Noto Sans TC', size: 11 }, boxWidth: 14 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: CHART_COLORS.tick, font: { family: 'Noto Sans TC', size: 11 } } },
+      y: { grid: { color: CHART_COLORS.grid }, ticks: { color: CHART_COLORS.tick } }
+    },
+    ...extra
+  };
+}
+
+// =================================================================
+// 分析計算（演奏者與照護端共用）
+// =================================================================
+function recordTimeMs(r) { return docTimeMs(r); }
+
+/** 將一筆評估紀錄轉成統一的分析指標（相容舊版紀錄） */
+function recordMetrics(r) {
+  const ms = recordTimeMs(r);
+  const out = {
+    id: r.firestoreId || r.id, ms, dateKey: r.dateKey || dateKeyOf(ms), type: r.type,
+    score: typeof r.score === 'number' ? r.score : null, level: normalizeLevel(r.level),
+    cvaAvg: null, cvaBelowPct: null, shoulderAvg: null, shoulderOverPct: null,
+    leftElbowAvg: null, rightElbowAvg: null, elbowOverPct: null, overAnyPct: null,
+    practiceSec: r.practice ? r.practice.durationSec || 0 : 0,
+    badSec: r.practice ? r.practice.badPostureSec || 0 : 0,
+    alertCount: r.practice ? r.practice.alertCount || 0 : 0,
+    stages: {}
+  };
+  if (r.type !== 'playing' || !r.details) return out;
+  const d = r.details;
+  if (d.summary) {
+    Object.assign(out, {
+      cvaAvg: d.summary.cvaAvg, cvaBelowPct: d.summary.cvaBelowPct,
+      shoulderAvg: d.summary.shoulderAvg, shoulderOverPct: d.summary.shoulderOverPct,
+      leftElbowAvg: d.summary.leftElbowAvg, rightElbowAvg: d.summary.rightElbowAvg,
+      elbowOverPct: d.summary.elbowOverPct, overAnyPct: d.summary.overAnyPct
+    });
+    if (d.stages) {
+      ['relax', 'prepare', 'playing'].forEach(s => {
+        const st = d.stages[s];
+        if (st && st.summary) out.stages[s] = st.summary;
+      });
     }
-  } catch (err) {
-    // Fallback to localStorage
-    const stored = localStorage.getItem('musician_profile');
-    if (stored) { currentProfile = JSON.parse(stored); updateProfileUI(); }
+  } else {
+    // 舊版：只有 CVA Δ 與手肘真實資料
+    const pc = d.cva && d.cva.playing;
+    if (pc) out.cvaAvg = (pc.referenceAngle || 0) + (pc.avg || 0);
+    if (d.raw && d.raw.playing && d.raw.playing.elbowData) {
+      out.leftElbowAvg = d.raw.playing.elbowData.leftAvg;
+      out.rightElbowAvg = d.raw.playing.elbowData.rightAvg;
+    } else {
+      out.leftElbowAvg = typeof d.leftElbow === 'number' ? d.leftElbow : null;
+      out.rightElbowAvg = typeof d.rightElbow === 'number' ? d.rightElbow : null;
+    }
+    if (d.raw && d.raw.playing && d.raw.playing.shoulderData) out.shoulderAvg = d.raw.playing.shoulderData.avg;
+  }
+  return out;
+}
+
+function filterByPeriod(rows, fromMs, toMs) {
+  return rows.filter(r => {
+    const t = docTimeMs(r);
+    return (!fromMs || t >= fromMs) && (!toMs || t <= toMs);
+  });
+}
+
+/** 期間內異常統計：超過警戒值天數百分比等 */
+function computeAbnormalStats(records, fromMs, toMs) {
+  const playing = records.filter(r => r.type === 'playing').map(recordMetrics);
+  const byDay = {};
+  playing.forEach(m => {
+    if (m.overAnyPct === null) return;
+    (byDay[m.dateKey] = byDay[m.dateKey] || []).push(m);
+  });
+  const days = Object.keys(byDay).sort();
+  const mean = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const dayStats = days.map(k => {
+    const list = byDay[k];
+    return {
+      dateKey: k,
+      overAny: mean(list.map(x => x.overAnyPct)),
+      cva: mean(list.map(x => x.cvaBelowPct).filter(v => v !== null)),
+      shoulder: mean(list.map(x => x.shoulderOverPct).filter(v => v !== null)),
+      elbow: mean(list.map(x => x.elbowOverPct).filter(v => v !== null))
+    };
+  });
+  let denom = dayStats.length;
+  if (SYSTEM_RULES.OVER_DAY_DENOMINATOR === 'calendar' && fromMs && toMs) {
+    denom = Math.max(1, Math.round((toMs - fromMs) / 86400000));
+  }
+  const th = SYSTEM_RULES.DAY_OVER_FRAME_PCT;
+  const pctDays = key => denom ? dayStats.filter(d => d[key] !== null && d[key] >= th).length / denom * 100 : null;
+
+  // 最常發生的階段
+  const stageMeans = {};
+  ['relax', 'prepare', 'playing'].forEach(s => {
+    const vals = playing.map(m => m.stages[s] && m.stages[s].overAnyPct).filter(v => typeof v === 'number');
+    stageMeans[s] = mean(vals);
+  });
+  // 最常發生的時段
+  const slotOf = ms => { const h = new Date(ms).getHours(); return h < 12 ? 'morning' : (h < 18 ? 'afternoon' : 'evening'); };
+  const slots = { morning: [], afternoon: [], evening: [] };
+  playing.forEach(m => { if (m.overAnyPct !== null) slots[slotOf(m.ms)].push(m.overAnyPct); });
+  const slotMeans = {};
+  Object.keys(slots).forEach(k => { slotMeans[k] = mean(slots[k]); });
+  const argmax = obj => {
+    let best = null, val = -1;
+    Object.keys(obj).forEach(k => { if (obj[k] !== null && obj[k] > val) { val = obj[k]; best = k; } });
+    return best;
+  };
+  const paramMeans = {
+    cva: mean(playing.map(m => m.cvaBelowPct).filter(v => v !== null)),
+    shoulder: mean(playing.map(m => m.shoulderOverPct).filter(v => v !== null)),
+    elbow: mean(playing.map(m => m.elbowOverPct).filter(v => v !== null))
+  };
+  return {
+    recordedDays: dayStats.length, denom, dayStats,
+    overDaysPct: pctDays('overAny'),
+    overDaysPctByParam: { cva: pctDays('cva'), shoulder: pctDays('shoulder'), elbow: pctDays('elbow') },
+    stageMeans, worstStage: argmax(stageMeans),
+    slotMeans, worstSlot: argmax(slotMeans),
+    paramMeans, worstParam: argmax(paramMeans),
+    meanOverAny: mean(playing.map(m => m.overAnyPct).filter(v => v !== null))
+  };
+}
+
+// =================================================================
+// 演奏者：資料載入
+// =================================================================
+async function loadPerformerData() {
+  const uid = App.user.uid;
+  const safe = async (sub) => { try { return await DataAPI.listSub(uid, sub); } catch (e) { console.warn(sub, e); return []; } };
+  const [records, bodyMaps, questionnaires, practiceLogs, medicalLogs, notes, advice] = await Promise.all([
+    safe('records'), safe('bodyMaps'), safe('questionnaires'), safe('practiceSessions'),
+    safe('medicalLogs'), safe('notes'), safe('notesFromProviders')
+  ]);
+  Object.assign(App, { records, bodyMaps, questionnaires, practiceLogs, medicalLogs, notes, advice });
+  try { App.bindings = await DataAPI.listBindings('performerUid', uid); } catch (e) { console.warn(e); App.bindings = []; }
+  updateHeaderNames();
+}
+
+async function refreshPerformerSub(sub, key) {
+  try { App[key] = await DataAPI.listSub(App.user.uid, sub); } catch (e) { console.warn(e); }
+}
+
+function updateHeaderNames() {
+  const p = App.profile || {};
+  const name = p.username || App.user.displayName || App.user.email || tApp('guest');
+  const inst = p.instrument ? ` · ${instrumentLabel(p.instrument)}` : '';
+  const ch = (name || '?').charAt(0).toUpperCase();
+  [['header-username', 'header-avatar'], ['playing-username', 'playing-avatar']].forEach(([n, a]) => {
+    const ne = document.getElementById(n), ae = document.getElementById(a);
+    if (ne) ne.textContent = name + inst;
+    if (ae) ae.textContent = ch;
+  });
+  const pv = App.providerDoc && App.providerDoc.profile;
+  if (pv) {
+    const pn = document.getElementById('provider-username'), pa = document.getElementById('provider-avatar');
+    if (pn) pn.textContent = `${pv.name || name} · ${providerTitleText(pv)}`;
+    if (pa) pa.textContent = (pv.name || name || '?').charAt(0).toUpperCase();
   }
 }
 
-function updateProfileUI() {
-  if (currentProfile) {
-    const avatarChar = currentProfile.username.charAt(0).toUpperCase();
-    
-    // Update headers
-    document.getElementById('header-username').textContent = `${currentProfile.username} (${currentProfile.instrument})`;
-    document.getElementById('header-avatar').textContent = avatarChar;
-    
-    // Update inner pages
-    document.getElementById('playing-username').textContent = `${currentProfile.username} - ${currentProfile.instrument}`;
-    document.getElementById('playing-avatar').textContent = avatarChar;
-    
-    document.getElementById('standard-username').textContent = `${currentProfile.username} - ${currentProfile.instrument}`;
-    document.getElementById('standard-avatar').textContent = avatarChar;
-    
-    // Pre-fill form
-    document.getElementById('username').value = currentProfile.username;
-    document.getElementById('gender').value = currentProfile.gender;
-    document.getElementById('age').value = currentProfile.age;
-    document.getElementById('height').value = currentProfile.height;
-    document.getElementById('instrument').value = currentProfile.instrument;
-  }
+// =================================================================
+// 演奏者：基本資料
+// =================================================================
+let profileBodyMap = null;
+
+function latestBodyMap(context, maps = App.bodyMaps) {
+  return maps.filter(m => m.context === context).sort((a, b) => docTimeMs(b) - docTimeMs(a))[0] || null;
+}
+
+function fillProfileForm() {
+  const p = App.profile || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v === null || v === undefined) ? '' : v; };
+  set('pf-username', p.username || App.user.displayName || '');
+  set('pf-gender', p.gender);
+  set('pf-birthdate', p.birthdate);
+  set('pf-identity', p.identity);
+  set('pf-phone', p.phone);
+  set('pf-height', p.height);
+  set('pf-weight', p.weight);
+  set('pf-emergency', p.emergencyContact);
+  set('pf-instrument', p.instrument);
+  set('pf-years', p.yearsOfStudy);
+  set('pf-days', p.practiceDaysPerWeek);
+  set('pf-minutes', p.practiceMinutesPerSession);
+  set('pf-pt-note', p.physicalTherapyNote);
+  set('pf-msk', p.mskHistory);
+  set('pf-surgery', p.surgeryHistory);
+  set('pf-meds', p.currentMedication);
+  set('pf-allergy', p.allergies);
+  set('pf-referral', p.referralSource);
+  document.querySelectorAll('input[name="pf-pt"]').forEach(r => { r.checked = (r.value === 'yes') === !!p.hadPhysicalTherapy; });
+  document.getElementById('pf-consent-research').checked = !!p.consentResearch;
+  document.getElementById('pf-consent-data').checked = !!p.consentDataUse;
+
+  const hint = document.getElementById('pf-age-hint');
+  const age = ageFromBirthdate(p.birthdate) ?? p.age;
+  hint.textContent = age !== null && age !== undefined ? tApp('age_hint', { age }) : '';
+
+  const baseline = latestBodyMap('baseline');
+  profileBodyMap = BodyMap.create(document.getElementById('profile-bodymap'), {
+    marks: baseline ? baseline.marks : [], editable: true, gender: p.gender
+  });
+  document.getElementById('profile-bodymap-meta').textContent = baseline ? tApp('bodymap_updated_at', { date: fmtDateTime(docTimeMs(baseline)) }) : '';
 }
 
 async function saveProfile(event) {
   event.preventDefault();
-  
-  const username = document.getElementById('username').value.trim();
-  const gender = document.getElementById('gender').value;
-  const age = parseInt(document.getElementById('age').value);
-  const height = parseInt(document.getElementById('height').value);
-  const instrument = document.getElementById('instrument').value;
-  
-  currentProfile = { username, gender, age, height, instrument };
+  const v = id => document.getElementById(id).value.trim();
+  const n = id => { const x = v(id); return x === '' ? null : Number(x); };
+  const consentResearch = document.getElementById('pf-consent-research').checked;
+  const consentDataUse = document.getElementById('pf-consent-data').checked;
+  if (!consentResearch || !consentDataUse) { showToast(tApp('toast_consent_required'), 'warning'); return; }
 
-  // Save to Firestore (and localStorage as fallback)
+  const birthdate = v('pf-birthdate');
+  const pt = document.querySelector('input[name="pf-pt"]:checked');
+  const old = App.profile || {};
+  const profile = {
+    ...old,
+    username: v('pf-username'),
+    email: old.email || App.user.email,
+    roles: App.roles,
+    gender: v('pf-gender'),
+    birthdate,
+    age: ageFromBirthdate(birthdate),
+    identity: v('pf-identity'),
+    phone: v('pf-phone'),
+    height: n('pf-height'),
+    weight: n('pf-weight'),
+    emergencyContact: v('pf-emergency'),
+    instrument: v('pf-instrument'),
+    yearsOfStudy: n('pf-years'),
+    practiceDaysPerWeek: n('pf-days'),
+    practiceMinutesPerSession: n('pf-minutes'),
+    hadPhysicalTherapy: pt ? pt.value === 'yes' : false,
+    physicalTherapyNote: v('pf-pt-note'),
+    mskHistory: v('pf-msk'),
+    surgeryHistory: v('pf-surgery'),
+    currentMedication: v('pf-meds'),
+    allergies: v('pf-allergy'),
+    referralSource: v('pf-referral'),
+    consentResearch, consentDataUse,
+    consentAt: old.consentAt || Date.now()
+  };
   try {
-    const user = auth.currentUser;
-    if (user) {
-      await db.collection('users').doc(user.uid).set(
-        { profile: currentProfile, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
-        { merge: true }
-      );
+    await DataAPI.updateProfile(App.user.uid, profile);
+    App.profile = profile;
+
+    // 人體圖有變動時新增一筆 baseline（保留歷史）
+    const marks = profileBodyMap ? profileBodyMap.getMarks() : [];
+    const baseline = latestBodyMap('baseline');
+    if (JSON.stringify(marks) !== JSON.stringify(baseline ? baseline.marks : [])) {
+      await DataAPI.addSub(App.user.uid, 'bodyMaps', { context: 'baseline', recordId: null, marks, gender: profile.gender });
+      await refreshPerformerSub('bodyMaps', 'bodyMaps');
     }
+    updateHeaderNames();
+    showToast(tApp('toast_profile_saved'), 'success');
+    fillProfileForm();
   } catch (err) {
-    console.error('Firestore 個資寫入失敗：', err);
-  }
-  localStorage.setItem('musician_profile', JSON.stringify(currentProfile));
-  
-  updateProfileUI();
-  showToast('個人資料儲存成功！已為您導航至動作評估。', 'success');
-  
-  // Navigate to playing assessment
-  setTimeout(() => {
-    switchSection('playing');
-  }, 600);
-}
-
-function resetProfileForm() {
-  document.getElementById('profile-form').reset();
-  currentProfile = null;
-  localStorage.removeItem('musician_profile');
-  
-  document.getElementById('header-username').textContent = '訪客';
-  document.getElementById('header-avatar').textContent = '?';
-  document.getElementById('playing-username').textContent = '訪客';
-  document.getElementById('playing-avatar').textContent = '?';
-  document.getElementById('standard-username').textContent = '訪客';
-  document.getElementById('standard-avatar').textContent = '?';
-  
-  showToast('資料已重設。', 'info');
-}
-
-// ----------------------------------------------------
-// 3. CANVAS POSTURE SIMULATOR
-// ----------------------------------------------------
-let playingCanvas, playingCtx;
-let standardCanvas, standardCtx;
-let animFrameCount = 0;
-
-function initCanvasSimulators() {
-  playingCanvas = document.getElementById('playingCanvas');
-  playingCtx = playingCanvas.getContext('2d');
-  
-  standardCanvas = document.getElementById('standardCanvas');
-  standardCtx = standardCanvas.getContext('2d');
-  
-  resizeCanvas(playingCanvas);
-  resizeCanvas(standardCanvas);
-  
-  window.addEventListener('resize', () => {
-    resizeCanvas(playingCanvas);
-    resizeCanvas(standardCanvas);
-  });
-}
-
-function resizeCanvas(canvas) {
-  if (canvas) {
-    // Set internal canvas resolution to match its styling box bounding client rect
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    console.error('個資寫入失敗：', err);
+    showToast(tApp('toast_save_fail'), 'danger');
   }
 }
 
-function startPlayingCanvas() {
-  if (!playingCanvasAnimId) {
-    const render = () => {
-      drawPlayingSkeleton();
-      animFrameCount++;
-      playingCanvasAnimId = requestAnimationFrame(render);
-    };
-    render();
-  }
+async function saveAlertSettings() {
+  const vibrate = document.getElementById('alert-vibrate-toggle').checked;
+  App.alertSettings = { visual: true, vibrate };
+  try { await DataAPI.setUserDoc(App.user.uid, { alertSettings: App.alertSettings }); } catch (e) { console.warn(e); }
 }
 
-function stopPlayingCanvas() {
-  if (playingCanvasAnimId) {
-    cancelAnimationFrame(playingCanvasAnimId);
-    playingCanvasAnimId = null;
-  }
+// =================================================================
+// 演奏者：個人儀表板
+// =================================================================
+function renderDashboard() {
+  const records = App.records;
+  const playing = records.filter(r => r.type === 'playing');
+  document.getElementById('stat-total-count').textContent = records.length;
+  document.getElementById('stat-last-score').textContent = playing.length ? playing[0].score : '--';
+  const weekAgo = Date.now() - 7 * 86400000;
+  const weekSec = App.practiceLogs.filter(p => docTimeMs(p) >= weekAgo).reduce((a, p) => a + (p.durationSec || 0), 0);
+  document.getElementById('stat-week-practice').textContent = fmtMinutes(weekSec);
+  document.getElementById('stat-providers').textContent = App.bindings.filter(b => b.status === 'active').length;
+
+  renderDashboardTrendChart();
+
+  // 照護建議（最新 3 則）
+  const adviceEl = document.getElementById('dashboard-advice');
+  adviceEl.innerHTML = App.advice.length
+    ? App.advice.slice(0, 3).map(adviceItemHtml).join('')
+    : `<p class="empty-state">${tApp('dash_no_advice')}</p>`;
+
+  // 提醒
+  const remEl = document.getElementById('dashboard-reminders');
+  const reminders = typeof generateReminders === 'function' ? generateReminders() : [];
+  remEl.innerHTML = reminders.length
+    ? reminders.slice(0, 4).map(reminderItemHtml).join('')
+    : `<p class="empty-state">${tApp('dash_no_reminders')}</p>`;
 }
 
-function startStandardCanvas() {
-  if (!standardCanvasAnimId) {
-    const render = () => {
-      drawStandardSkeleton();
-      standardCanvasAnimId = requestAnimationFrame(render);
-    };
-    render();
-  }
+function adviceItemHtml(a) {
+  const who = `${escapeHtml(a.providerName || '')} ${escapeHtml(a.providerTitleText || '')}`.trim();
+  return `<div class="tip-item">
+    <strong>${escapeHtml(a.recommendation || '')}</strong>
+    ${a.diagnosis ? `<p>${tApp('label_assessment_note')}：${escapeHtml(a.diagnosis)}</p>` : ''}
+    <div class="tip-meta">${who} · ${fmtDateTime(docTimeMs(a))}</div>
+  </div>`;
 }
 
-function stopStandardCanvas() {
-  if (standardCanvasAnimId) {
-    cancelAnimationFrame(standardCanvasAnimId);
-    standardCanvasAnimId = null;
-  }
+function reminderItemHtml(r) {
+  return `<div class="tip-item ${r.level || ''}"><strong>${escapeHtml(r.title)}</strong><p>${escapeHtml(r.text)}</p></div>`;
 }
 
-// Draw a stylized pose tracking background grid
-function drawHudBackground(ctx, w, h) {
-  ctx.fillStyle = '#1c1f24';
-  ctx.fillRect(0, 0, w, h);
-  
-  // Draw grid lines
-  ctx.strokeStyle = 'rgba(214, 220, 219, 0.05)'; // #D6DCDB alpha
-  ctx.lineWidth = 1;
-  const gridSpacing = 40;
-  for (let x = 0; x < w; x += gridSpacing) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = 0; y < h; y += gridSpacing) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-  
-  // Draw tech circular radar ring
-  ctx.strokeStyle = 'rgba(192, 176, 162, 0.08)'; // #C0B0A2 alpha
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(w / 2, h / 2, Math.min(w, h) * 0.38, 0, Math.PI * 2);
-  ctx.stroke();
-}
-
-function drawSkeletonJoint(ctx, x, y, size = 6, color = '#A1B0AD') {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(x, y, size, 0, Math.PI * 2);
-  ctx.fill();
-  
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(x, y, size + 2, 0, Math.PI * 2);
-  ctx.stroke();
-}
-
-function drawSkeletonBone(ctx, p1, p2, color = '#82898D', width = 3) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.beginPath();
-  ctx.moveTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.stroke();
-}
-
-// ------------------- PLAYING POSE SIMULATION -------------------
-function drawPlayingSkeleton() {
-  const w = playingCanvas.width;
-  const h = playingCanvas.height;
-  if (w === 0 || h === 0) return;
-  
-  const ctx = playingCtx;
-  drawHudBackground(ctx, w, h);
-  
-  // Breathing/movement factor
-  const t = animFrameCount * 0.05;
-  const breath = Math.sin(t) * 4;
-  const instrument = currentProfile ? currentProfile.instrument : '小提琴';
-  
-  // Define base coordinates (front view center)
-  const neckY = h * 0.35 + breath * 0.2;
-  const spineMidX = w / 2;
-  const shoulderWidth = w * 0.22;
-  
-  let head = { x: w / 2, y: h * 0.22 + breath * 0.4 };
-  let neck = { x: w / 2, y: neckY };
-  
-  // Default values
-  let lShoulder = { x: w / 2 - shoulderWidth / 2, y: neckY + 5 };
-  let rShoulder = { x: w / 2 + shoulderWidth / 2, y: neckY + 5 };
-  let lElbow = { x: lShoulder.x - 40, y: lShoulder.y + 80 };
-  let rElbow = { x: rShoulder.x + 40, y: rShoulder.y + 80 };
-  let lWrist = { x: lElbow.x - 20, y: lElbow.y + 60 };
-  let rWrist = { x: rElbow.x + 20, y: rElbow.y + 60 };
-  
-  let lHip = { x: w / 2 - shoulderWidth * 0.4, y: h * 0.75 };
-  let rHip = { x: w / 2 + shoulderWidth * 0.4, y: h * 0.75 };
-  
-  // Adjust posture based on selected step & instrument
-  if (selectedPlayingStep === 'relax') {
-    // Relaxation state: Arms rest comfortably down
-    lElbow = { x: lShoulder.x - 25, y: lShoulder.y + 90 + breath * 0.3 };
-    rElbow = { x: rShoulder.x + 25, y: rShoulder.y + 90 + breath * 0.3 };
-    lWrist = { x: lElbow.x + 10, y: lElbow.y + 70 };
-    rWrist = { x: rElbow.x - 10, y: rElbow.y + 70 };
-  } 
-  else if (selectedPlayingStep === 'prepare') {
-    if (instrument === '小提琴') {
-      // Violin prep: Hold violin with left arm near neck, right arm holding bow down
-      lElbow = { x: lShoulder.x - 70, y: lShoulder.y + 30 };
-      lWrist = { x: head.x - 35, y: head.y + 15 }; // holding scroll
-      
-      rElbow = { x: rShoulder.x + 40, y: rShoulder.y + 70 };
-      rWrist = { x: rElbow.x - 10, y: rElbow.y + 50 }; // holding bow near waist
-    } else {
-      // Cello prep: Arms wider, encircling cello
-      lElbow = { x: lShoulder.x - 80, y: lShoulder.y + 50 };
-      lWrist = { x: w / 2 - 50, y: h * 0.55 };
-      
-      rElbow = { x: rShoulder.x + 80, y: rShoulder.y + 50 };
-      rWrist = { x: w / 2 + 50, y: h * 0.55 };
-    }
-  } 
-  else if (selectedPlayingStep === 'playing') {
-    // Dynamic bowing simulation!
-    const bowCycle = Math.sin(t * 0.8); // faster bowing movement
-    
-    if (instrument === '小提琴') {
-      // Violin Playing: Left hand fixed at scroll, right arm moving back and forth (bowing)
-      lElbow = { x: lShoulder.x - 75, y: lShoulder.y + 25 + Math.sin(t)*2 };
-      lWrist = { x: head.x - 30, y: head.y + 10 }; 
-      
-      // Right bowing arm
-      rElbow = { x: rShoulder.x + 50 + bowCycle * 15, y: rShoulder.y + 30 - bowCycle * 8 };
-      rWrist = { x: w / 2 - 20 + bowCycle * 45, y: h * 0.38 - bowCycle * 10 };
-      
-      // Draw violin vector wireframe (very premium aesthetic)
-      ctx.strokeStyle = '#8D6B61'; // Instrument color
-      ctx.fillStyle = 'rgba(141, 107, 97, 0.15)';
-      ctx.lineWidth = 2.5;
-      
-      // Draw Violin body near shoulder/chin
-      ctx.beginPath();
-      ctx.ellipse(head.x - 20, head.y + 25, 20, 35, -Math.PI / 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      // Neck/fingerboard extending left
-      ctx.beginPath();
-      ctx.moveTo(head.x - 25, head.y + 28);
-      ctx.lineTo(lWrist.x, lWrist.y);
-      ctx.stroke();
-      
-      // Draw Bow line
-      ctx.strokeStyle = '#82898D';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(rWrist.x - 50, rWrist.y - 10);
-      ctx.lineTo(rWrist.x + 80, rWrist.y + 20);
-      ctx.stroke();
-    } else {
-      // Cello Playing: Left hand on cello fingerboard, right arm bowing across strings
-      lElbow = { x: lShoulder.x - 75, y: lShoulder.y + 40 };
-      lWrist = { x: w / 2 - 20, y: h * 0.45 + Math.sin(t) * 5 };
-      
-      // Bowing arm
-      rElbow = { x: rShoulder.x + 80 + bowCycle * 10, y: rShoulder.y + 50 + bowCycle * 15 };
-      rWrist = { x: w / 2 + 10 + bowCycle * 40, y: h * 0.6 + bowCycle * 5 };
-      
-      // Draw Cello wireframe
-      ctx.strokeStyle = '#8D6B61';
-      ctx.fillStyle = 'rgba(141, 107, 97, 0.15)';
-      ctx.lineWidth = 3;
-      // Body
-      ctx.beginPath();
-      ctx.ellipse(w / 2 - 5, h * 0.65, 35, 65, 0.08, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      // Neck
-      ctx.beginPath();
-      ctx.moveTo(w / 2 - 5, h * 0.52);
-      ctx.lineTo(w / 2 - 15, h * 0.35);
-      ctx.stroke();
-      
-      // Bow line
-      ctx.strokeStyle = '#82898D';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(rWrist.x - 90, rWrist.y - 15);
-      ctx.lineTo(rWrist.x + 40, rWrist.y + 10);
-      ctx.stroke();
-    }
-  }
-  
-  // Draw Body Joints and Bones
-  // Head
-  ctx.strokeStyle = 'rgba(161, 176, 173, 0.8)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(head.x, head.y, 25, 0, Math.PI * 2);
-  ctx.stroke();
-  
-  // Bones
-  drawSkeletonBone(ctx, head, neck, '#82898D', 4);
-  drawSkeletonBone(ctx, lShoulder, rShoulder, '#8D6B61', 5); // highlighted shoulder line
-  drawSkeletonBone(ctx, neck, { x: w/2, y: neckY+5 }, '#82898D', 4);
-  drawSkeletonBone(ctx, { x: w/2, y: neckY+5 }, { x: w/2, y: h*0.75 }, '#82898D', 4); // spine
-  
-  drawSkeletonBone(ctx, lShoulder, lElbow, '#82898D', 3);
-  drawSkeletonBone(ctx, lElbow, lWrist, '#82898D', 3);
-  drawSkeletonBone(ctx, rShoulder, rElbow, '#82898D', 3);
-  drawSkeletonBone(ctx, rElbow, rWrist, '#82898D', 3);
-  
-  drawSkeletonBone(ctx, lHip, rHip, '#82898D', 4);
-  drawSkeletonBone(ctx, { x: w/2, y: h*0.75 }, lHip, '#82898D', 3);
-  drawSkeletonBone(ctx, { x: w/2, y: h*0.75 }, rHip, '#82898D', 3);
-  
-  // Joint Nodes
-  drawSkeletonJoint(ctx, head.x, head.y, 5, '#C0B0A2');
-  drawSkeletonJoint(ctx, neck.x, neck.y, 6, '#C0B0A2');
-  drawSkeletonJoint(ctx, lShoulder.x, lShoulder.y, 7, '#8D6B61');
-  drawSkeletonJoint(ctx, rShoulder.x, rShoulder.y, 7, '#8D6B61');
-  drawSkeletonJoint(ctx, lElbow.x, lElbow.y, 6, '#A1B0AD');
-  drawSkeletonJoint(ctx, rElbow.x, rElbow.y, 6, '#A1B0AD');
-  drawSkeletonJoint(ctx, lWrist.x, lWrist.y, 6, '#A1B0AD');
-  drawSkeletonJoint(ctx, rWrist.x, rWrist.y, 6, '#A1B0AD');
-  
-  // Visual indicators Overlay (e.g. angle text on joints)
-  ctx.fillStyle = '#C6CCC0';
-  ctx.font = '10px monospace';
-  ctx.fillText('L_SH: 0.0°', lShoulder.x - 60, lShoulder.y - 10);
-  ctx.fillText('R_SH: 0.0°', rShoulder.x + 10, rShoulder.y - 10);
-  
-  const lElbowAngle = Math.round(Math.abs(Math.atan2(lWrist.y - lElbow.y, lWrist.x - lElbow.x) * 180 / Math.PI));
-  ctx.fillText(`ELB_L: ${lElbowAngle}°`, lElbow.x - 30, lElbow.y + 20);
-}
-
-// ------------------- STANDARD POSE SIMULATION -------------------
-function drawStandardSkeleton() {
-  const w = standardCanvas.width;
-  const h = standardCanvas.height;
-  if (w === 0 || h === 0) return;
-  
-  const ctx = standardCtx;
-  drawHudBackground(ctx, w, h);
-  
-  const t = animFrameCount * 0.03;
-  const breath = Math.sin(t) * 3;
-  
-  ctx.strokeStyle = 'rgba(161, 176, 173, 0.8)';
-  
-  if (selectedDiagnostic === 'uneven-shoulders') {
-    // High-low shoulders simulation (Front view, tilted shoulders)
-    const spineX = w / 2;
-    const neckY = h * 0.38 + breath * 0.2;
-    const shoulderWidth = w * 0.24;
-    
-    // Tilted shoulders coordinates (Right shoulder is 18px lower than left shoulder)
-    const tiltOffset = 18; 
-    let head = { x: w / 2, y: h * 0.24 + breath * 0.3 };
-    let neck = { x: w / 2, y: neckY };
-    
-    // Uneven shoulders: Left is higher, Right is lower
-    let lShoulder = { x: spineX - shoulderWidth / 2, y: neckY - tiltOffset / 2 };
-    let rShoulder = { x: spineX + shoulderWidth / 2, y: neckY + tiltOffset / 2 };
-    
-    let lElbow = { x: lShoulder.x - 20, y: lShoulder.y + 100 };
-    let rElbow = { x: rShoulder.x + 20, y: rShoulder.y + 90 };
-    let lWrist = { x: lElbow.x + 5, y: lElbow.y + 80 };
-    let rWrist = { x: rElbow.x - 5, y: rElbow.y + 80 };
-    
-    // Draw bones
-    drawSkeletonBone(ctx, head, neck, '#82898D', 4);
-    drawSkeletonBone(ctx, lShoulder, rShoulder, '#C39289', 5); // Tilted bone - color-danger
-    drawSkeletonBone(ctx, neck, { x: spineX, y: h * 0.78 }, '#82898D', 4);
-    
-    drawSkeletonBone(ctx, lShoulder, lElbow, '#82898D', 3);
-    drawSkeletonBone(ctx, lElbow, lWrist, '#82898D', 3);
-    drawSkeletonBone(ctx, rShoulder, rElbow, '#82898D', 3);
-    drawSkeletonBone(ctx, rElbow, rWrist, '#82898D', 3);
-    
-    // Draw Joints
-    drawSkeletonJoint(ctx, head.x, head.y, 5, '#C0B0A2');
-    drawSkeletonJoint(ctx, neck.x, neck.y, 5, '#C0B0A2');
-    drawSkeletonJoint(ctx, lShoulder.x, lShoulder.y, 7, '#C39289'); // Uneven highlight
-    drawSkeletonJoint(ctx, rShoulder.x, rShoulder.y, 7, '#C39289'); // Uneven highlight
-    
-    // Draw Diagnostic Helper Line: Perfectly horizontal dashed guide line
-    ctx.strokeStyle = '#C6CCC0'; // green helper line
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.moveTo(lShoulder.x - 20, lShoulder.y);
-    ctx.lineTo(rShoulder.x + 20, lShoulder.y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    
-    // Angle indicator text
-    ctx.fillStyle = '#C39289';
-    ctx.font = '11px Outfit, Noto Sans TC, monospace';
-    ctx.fillText('傾斜偏差: 4.8° (異常)', spineX - 50, neckY - 25);
-    ctx.fillText('高度差: 1.4 cm', rShoulder.x + 10, rShoulder.y + 5);
-  }
-  
-  else if (selectedDiagnostic === 'forward-head') {
-    // Forward head diagnostic (Side view skeleton)
-    const spineX = w / 2 - 20;
-    const spineY = h * 0.45;
-    
-    // Forward Head shifted head position
-    const neckX = spineX + 25;
-    const neckY = spineY - 30;
-    const headX = neckX + 35; // Head shifted forward significantly
-    const headY = neckY - 45;
-    
-    let hip = { x: spineX - 10, y: h * 0.78 };
-    let backSpine = { x: spineX, y: spineY };
-    let neck = { x: neckX, y: neckY };
-    let head = { x: headX, y: headY };
-    
-    // Side view arms/legs
-    let shoulder = { x: neckX - 5, y: neckY + 10 };
-    let elbow = { x: shoulder.x - 15, y: shoulder.y + 90 };
-    let wrist = { x: elbow.x + 25, y: elbow.y + 50 };
-    
-    // Draw bones
-    drawSkeletonBone(ctx, hip, backSpine, '#82898D', 5);
-    drawSkeletonBone(ctx, backSpine, neck, '#82898D', 5);
-    drawSkeletonBone(ctx, neck, head, '#C39289', 5); // Head tilt bone - color-danger
-    
-    drawSkeletonBone(ctx, shoulder, elbow, '#82898D', 3);
-    drawSkeletonBone(ctx, elbow, wrist, '#82898D', 3);
-    
-    // Head circle
-    ctx.beginPath();
-    ctx.arc(head.x, head.y, 25, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // Draw Joints
-    drawSkeletonJoint(ctx, head.x, head.y, 6, '#C0B0A2');
-    drawSkeletonJoint(ctx, neck.x, neck.y, 6, '#C39289');
-    drawSkeletonJoint(ctx, shoulder.x, shoulder.y, 7, '#8D6B61');
-    
-    // Vertical reference line from shoulder/neck root
-    ctx.strokeStyle = '#C6CCC0';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.moveTo(neck.x, neck.y + 100);
-    ctx.lineTo(neck.x, neck.y - 70);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    
-    // Deviation line
-    ctx.strokeStyle = '#C39289';
-    ctx.beginPath();
-    ctx.moveTo(neck.x, neck.y);
-    ctx.lineTo(head.x, head.y);
-    ctx.stroke();
-    
-    ctx.fillStyle = '#C39289';
-    ctx.font = '11px Outfit, Noto Sans TC, monospace';
-    ctx.fillText('頸椎夾角: 23.5° (標準 < 15°)', head.x + 10, head.y);
-    ctx.fillText('前傾偏位 (烏龜頸)', head.x + 10, head.y + 18);
-  }
-  
-  else if (selectedDiagnostic === 'arm-raise') {
-    // Arm raise test (Front view raising arms over head)
-    const spineX = w / 2;
-    const neckY = h * 0.38 + breath * 0.2;
-    const shoulderWidth = w * 0.22;
-    
-    let head = { x: w / 2, y: h * 0.24 + breath * 0.3 };
-    let neck = { x: w / 2, y: neckY };
-    
-    let lShoulder = { x: spineX - shoulderWidth / 2, y: neckY };
-    let rShoulder = { x: spineX + shoulderWidth / 2, y: neckY };
-    
-    // Raised arms (left raised normal, right restricted/lower)
-    let lElbow = { x: lShoulder.x - 20, y: lShoulder.y - 75 };
-    let lWrist = { x: lElbow.x + 15, y: lElbow.y - 75 }; // Straight up (approx. 170 deg)
-    
-    let rElbow = { x: rShoulder.x + 40, y: rShoulder.y - 50 };
-    let rWrist = { x: rElbow.x - 5, y: rElbow.y - 65 }; // Restricted arm, can't lift straight (approx. 135 deg)
-    
-    // Draw bones
-    drawSkeletonBone(ctx, head, neck, '#82898D', 4);
-    drawSkeletonBone(ctx, lShoulder, rShoulder, '#8D6B61', 5);
-    drawSkeletonBone(ctx, neck, { x: spineX, y: h * 0.78 }, '#82898D', 4);
-    
-    // Left arm raised
-    drawSkeletonBone(ctx, lShoulder, lElbow, '#C6CCC0', 4); // healthy normal
-    drawSkeletonBone(ctx, lElbow, lWrist, '#C6CCC0', 4);
-    
-    // Right arm restricted
-    drawSkeletonBone(ctx, rShoulder, rElbow, '#E1AA8D', 4); // warning
-    drawSkeletonBone(ctx, rElbow, rWrist, '#E1AA8D', 4);
-    
-    // Draw Joints
-    drawSkeletonJoint(ctx, head.x, head.y, 5, '#C0B0A2');
-    drawSkeletonJoint(ctx, lShoulder.x, lShoulder.y, 7, '#8D6B61');
-    drawSkeletonJoint(ctx, rShoulder.x, rShoulder.y, 7, '#8D6B61');
-    drawSkeletonJoint(ctx, lElbow.x, lElbow.y, 5, '#C6CCC0');
-    drawSkeletonJoint(ctx, rElbow.x, rElbow.y, 5, '#E1AA8D');
-    drawSkeletonJoint(ctx, lWrist.x, lWrist.y, 5, '#C6CCC0');
-    drawSkeletonJoint(ctx, rWrist.x, rWrist.y, 5, '#E1AA8D');
-    
-    // Head circle
-    ctx.beginPath();
-    ctx.arc(head.x, head.y, 25, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // Helper angles arcs
-    ctx.fillStyle = '#C6CCC0';
-    ctx.fillText('左手抬起: 172° (良好)', lWrist.x - 90, lWrist.y - 10);
-    ctx.fillStyle = '#E1AA8D';
-    ctx.fillText('右手抬起: 138° (受限)', rWrist.x + 10, rWrist.y - 10);
-  }
-}
-
-// ----------------------------------------------------
-// 4. CVA DETECTION MODULE
-// (JS port of fhp_monitor.py + process_fhp_data.py + visualize_fhp.py)
-// ----------------------------------------------------
-
-const CVA_IDX = { LEFT_EAR: 7, RIGHT_EAR: 8, LEFT_SHLD: 11, RIGHT_SHLD: 12 };
-const CVA_THRESHOLD = 60;
-
-function cvaMidpoint(a, b) {
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-}
-
-function calcCVA(landmarks) {
-  const head = cvaMidpoint(landmarks[CVA_IDX.LEFT_EAR], landmarks[CVA_IDX.RIGHT_EAR]);
-  const shld = cvaMidpoint(landmarks[CVA_IDX.LEFT_SHLD], landmarks[CVA_IDX.RIGHT_SHLD]);
-  const yDiff = Math.abs(head.y - shld.y);
-  const xDiff = Math.abs(head.x - shld.x);
-  return Math.atan2(yDiff, xDiff) * (180 / Math.PI);
-}
-
-/**
- * Shoulder tilt: angle of the line connecting both shoulders to horizontal.
- * Based on Rodríguez-Gude et al. / Piatek et al. — horizontal angle of shoulders.
- * Formula: arctan2(|L_shld.y - R_shld.y|, |L_shld.x - R_shld.x|) × (180/π)
- * Ideal = 0° (level shoulders). Higher value = greater tilt (uneven shoulders).
- */
-function calcShoulderTilt(landmarks) {
-  const ls = landmarks[11]; // LEFT_SHOULDER
-  const rs = landmarks[12]; // RIGHT_SHOULDER
-  return Math.atan2(Math.abs(ls.y - rs.y), Math.abs(ls.x - rs.x)) * (180 / Math.PI);
-}
-
-/**
- * Elbow angle: 3-point joint angle at elbow (shoulder–elbow–wrist).
- * Based on Yagisan et al. (2009) — acromion, lateral epicondyle, ulnar styloid.
- * MediaPipe approximation: shoulder(11/12), elbow(13/14), wrist(15/16).
- * Formula: arccos(dot(A,B) / (|A|×|B|)) × (180/π) where A = shoulder–elbow, B = wrist–elbow
- */
-function calcElbowAngle(shoulder, elbow, wrist) {
-  const ax = shoulder.x - elbow.x, ay = shoulder.y - elbow.y;
-  const bx = wrist.x   - elbow.x, by = wrist.y   - elbow.y;
-  const dot = ax * bx + ay * by;
-  const magA = Math.sqrt(ax * ax + ay * ay);
-  const magB = Math.sqrt(bx * bx + by * by);
-  if (magA === 0 || magB === 0) return NaN;
-  return Math.acos(Math.min(1, Math.max(-1, dot / (magA * magB)))) * (180 / Math.PI);
-}
-
-/** Compute all three parameters from a single frame of landmarks */
-function calcAllParams(landmarks) {
-  const cva          = calcCVA(landmarks);
-  const shoulderTilt = calcShoulderTilt(landmarks);
-  const leftElbow    = calcElbowAngle(landmarks[11], landmarks[13], landmarks[15]);
-  const rightElbow   = calcElbowAngle(landmarks[12], landmarks[14], landmarks[16]);
-  return { cva, shoulderTilt, leftElbow, rightElbow };
-}
-
-function syncOverlaySize(canvas) {
-  const rect = canvas.getBoundingClientRect();
-  if (canvas.width !== rect.width || canvas.height !== rect.height) {
-    canvas.width  = rect.width;
-    canvas.height = rect.height;
-  }
-}
-
-function drawCvaOverlay(canvas, landmarks, rawAngle, delta) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-
-  const lm = landmarks;
-  const head = cvaMidpoint(lm[CVA_IDX.LEFT_EAR], lm[CVA_IDX.RIGHT_EAR]);
-  const shld = cvaMidpoint(lm[CVA_IDX.LEFT_SHLD], lm[CVA_IDX.RIGHT_SHLD]);
-
-  // ── CVA line (ear mid → shoulder mid) ──────────────────────
-  const hx = head.x * w, hy = head.y * h;
-  const sx = shld.x * w, sy = shld.y * h;
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(sx, sy); ctx.stroke();
-
-  // Horizontal reference at shoulder
-  ctx.strokeStyle = 'rgba(161,176,173,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
-  ctx.beginPath(); ctx.moveTo(sx - 70, sy); ctx.lineTo(sx + 70, sy); ctx.stroke();
-  ctx.setLineDash([]);
-
-  const isWarning = Math.abs(delta) > 10;
-  ctx.fillStyle = isWarning ? '#C39289' : '#C6CCC0';
-  ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.stroke();
-
-  ctx.fillStyle = '#8D6B61';
-  ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke();
-
-  // CVA label
-  const mx = (hx + sx) / 2, my = (hy + sy) / 2;
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.beginPath(); ctx.roundRect(mx + 6, my - 11, 90, 20, 4); ctx.fill();
-  ctx.fillStyle = isWarning ? '#C39289' : '#C6CCC0';
-  ctx.font = 'bold 11px monospace';
-  ctx.fillText(`CVA ${rawAngle.toFixed(1)}°`, mx + 10, my + 3);
-
-  // ── Shoulder tilt line (L_shoulder → R_shoulder) ───────────
-  const ls = lm[11], rs = lm[12];
-  const lsx = ls.x * w, lsy = ls.y * h;
-  const rsx = rs.x * w, rsy = rs.y * h;
-  const shTilt = calcShoulderTilt(lm);
-  const shColor = shTilt > 5 ? '#E1AA8D' : '#C6CCC0';
-
-  ctx.strokeStyle = shColor; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(lsx, lsy); ctx.lineTo(rsx, rsy); ctx.stroke();
-
-  [{ x: lsx, y: lsy }, { x: rsx, y: rsy }].forEach(p => {
-    ctx.fillStyle = shColor;
-    ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.stroke();
-  });
-
-  // Shoulder tilt label
-  const smx = (lsx + rsx) / 2, smy = (lsy + rsy) / 2 - 14;
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.beginPath(); ctx.roundRect(smx - 40, smy - 11, 80, 18, 4); ctx.fill();
-  ctx.fillStyle = shColor; ctx.font = 'bold 10px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(`肩膀 ${shTilt.toFixed(1)}°`, smx, smy + 2);
-  ctx.textAlign = 'left';
-
-  // ── Elbow angles ────────────────────────────────────────────
-  [
-    { sh: lm[11], el: lm[13], wr: lm[15], label: 'L' },
-    { sh: lm[12], el: lm[14], wr: lm[16], label: 'R' }
-  ].forEach(({ sh, el, wr, label }) => {
-    const ex = el.x * w, ey = el.y * h;
-    const angle = calcElbowAngle(sh, el, wr);
-    if (isNaN(angle)) return;
-
-    const elColor = (angle < 70 || angle > 160) ? '#E1AA8D' : '#A1B0AD';
-
-    // Arm lines
-    ctx.strokeStyle = elColor; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(sh.x * w, sh.y * h); ctx.lineTo(ex, ey); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(wr.x * w, wr.y * h); ctx.stroke();
-
-    // Elbow dot
-    ctx.fillStyle = elColor;
-    ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.stroke();
-
-    // Label
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath(); ctx.roundRect(ex + 6, ey - 10, 64, 16, 3); ctx.fill();
-    ctx.fillStyle = elColor; ctx.font = 'bold 10px monospace';
-    ctx.fillText(`${label} ${angle.toFixed(0)}°`, ex + 9, ey + 2);
-  });
-}
-
-async function initCvaPose() {
-  if (cvaState.modelReady) return true;
-  if (typeof Pose === 'undefined') {
-    showToast('MediaPipe 模型載入中，請稍後再試…', 'warning');
-    return false;
-  }
-  const pose = new Pose({
-    locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`
-  });
-  pose.setOptions({
-    modelComplexity: 1,
-    smoothLandmarks: true,
-    enableSegmentation: false,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
-  });
-
-  pose.onResults((results) => {
-    if (!cvaState.activeStage) return;
-    if (!results.poseLandmarks) return;
-
-    const params = calcAllParams(results.poseLandmarks);
-    if (isNaN(params.cva)) return;
-
-    // Always draw overlay while camera is open
-    const overlayCanvas = document.getElementById('cva-overlay-canvas');
-    if (overlayCanvas) {
-      syncOverlaySize(overlayCanvas);
-      const delta = cvaState.referenceAngle !== null ? params.cva - cvaState.referenceAngle : 0;
-      drawCvaOverlay(overlayCanvas, results.poseLandmarks, params.cva, delta);
-    }
-
-    // ── Calibration sampling ─────────────────────────────────
-    if (cvaState.isCalibrating) {
-      cvaState.calibFrames.push(params.cva);
-      cvaState.calibShoulderFrames.push(params.shoulderTilt);
-      return;
-    }
-
-    // ── Active recording ─────────────────────────────────────
-    if (!cvaState.isRecording) return;
-    if (cvaState.referenceAngle === null) return;
-
-    const cvaDelta = params.cva - cvaState.referenceAngle;
-    const shDelta  = cvaState.refShoulderTilt !== null
-      ? params.shoulderTilt - cvaState.refShoulderTilt
-      : params.shoulderTilt;
-
-    const stage = cvaState.activeStage;
-    cvaState.frameBuffers[stage].push({
-      cva:          cvaDelta,
-      shoulderTilt: shDelta,
-      leftElbow:    params.leftElbow,
-      rightElbow:   params.rightElbow
-    });
-    const frameCount = cvaState.frameBuffers[stage].length;
-
-    // Update live badge (CVA delta as primary indicator)
-    const angleEl  = document.getElementById(`cva-angle-${stage}`);
-    const framesEl = document.getElementById(`cva-frames-${stage}`);
-    if (angleEl)  angleEl.textContent  = `CVA Δ ${cvaDelta >= 0 ? '+' : ''}${cvaDelta.toFixed(1)}°`;
-    if (framesEl) framesEl.textContent = `${frameCount} 幀`;
-
-    // Update in-frame overlay
-    const overlayAngleEl = document.getElementById('cva-live-overlay-angle');
-    if (overlayAngleEl) {
-      overlayAngleEl.textContent =
-        `CVA Δ${cvaDelta >= 0 ? '+' : ''}${cvaDelta.toFixed(1)}°  肩${params.shoulderTilt.toFixed(1)}°`;
-      overlayAngleEl.style.color = Math.abs(cvaDelta) > 10 ? '#C39289' : '#C6CCC0';
-    }
-
-    document.getElementById('playing-hud-text').innerHTML =
-      `STATUS: RECORDING [${stage.toUpperCase()}] | FRAME: ${frameCount}<br>` +
-      `CVA Δ${cvaDelta >= 0 ? '+' : ''}${cvaDelta.toFixed(1)}° | 肩 ${params.shoulderTilt.toFixed(1)}° | ` +
-      `L肘 ${isNaN(params.leftElbow) ? '--' : params.leftElbow.toFixed(0)}° | ` +
-      `R肘 ${isNaN(params.rightElbow) ? '--' : params.rightElbow.toFixed(0)}°`;
-  });
-
-  await pose.initialize();
-  cvaState.pose = pose;
-  cvaState.modelReady = true;
-  return true;
-}
-
-// ── ① 啟動攝影機 ──────────────────────────────────────────────────
-async function openCamera(stage, event) {
-  if (event) event.stopPropagation();
-  if (!currentProfile) {
-    showToast('請先填寫個資再開始偵測！', 'warning');
-    switchSection('profile');
+function renderDashboardTrendChart() {
+  const canvas = document.getElementById('dashboardTrendChart');
+  const empty = document.getElementById('dashboard-trend-empty');
+  const list = App.records.filter(r => r.type === 'playing').slice(0, 10).reverse().map(recordMetrics);
+  if (!list.length) {
+    ChartRegistry.destroy('dashTrend');
+    canvas.parentElement.style.display = 'none';
+    empty.style.display = 'block';
     return;
   }
-
-  // 若另一個 stage 正在使用，先關閉
-  if (cvaState.activeStage && cvaState.activeStage !== stage) {
-    closeCamera(cvaState.activeStage);
-  }
-
-  const openBtn = document.getElementById(`cva-btn-${stage}`);
-  if (openBtn) { openBtn.disabled = true; openBtn.innerHTML = '載入中…'; }
-
-  const ready = await initCvaPose();
-  if (!ready) {
-    if (openBtn) { openBtn.disabled = false; openBtn.innerHTML = '<i data-lucide="video"></i> 啟動攝影機'; lucide.createIcons(); }
-    return;
-  }
-
-  try {
-    cvaState.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-  } catch {
-    showToast('無法存取攝影機，請確認瀏覽器權限。', 'danger');
-    if (openBtn) { openBtn.disabled = false; openBtn.innerHTML = '<i data-lucide="video"></i> 啟動攝影機'; lucide.createIcons(); }
-    return;
-  }
-
-  // 嵌入黑色框
-  const video = document.getElementById('cva-video');
-  const overlayCanvas = document.getElementById('cva-overlay-canvas');
-  const simCanvas = document.getElementById('playingCanvas');
-  video.srcObject = cvaState.stream;
-  video.style.display = 'block';
-  overlayCanvas.style.display = 'block';
-  simCanvas.style.display = 'none';
-  document.getElementById('cva-live-overlay-angle').style.display = 'block';
-  document.getElementById('cva-ref-badge').style.display = 'block';
-  document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
-  document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
-
-  cvaState.activeStage = stage;
-  cvaState.isCalibrating = false;
-  cvaState.isRecording = false;
-  cvaState.frameBuffers[stage] = [];
-
-  cvaState.camera = new Camera(video, {
-    onFrame: async () => {
-      if (cvaState.pose) await cvaState.pose.send({ image: video });
-    },
-    width: 640, height: 480
-  });
-  cvaState.camera.start();
-
-  selectStep(stage);
-
-  // 顯示校準按鈕
-  if (openBtn) openBtn.style.display = 'none';
-  const calibBtn    = document.getElementById(`cva-calib-btn-${stage}`);
-  const calibStatus = document.getElementById(`cva-calib-status-${stage}`);
-  const recBtn      = document.getElementById(`cva-rec-btn-${stage}`);
-  calibBtn.style.display = 'inline-flex';
-
-  // 若已有基準值（重開攝影機的情況），顯示並解鎖錄製
-  if (cvaState.referenceAngle !== null) {
-    document.getElementById('cva-ref-badge').textContent = `基準: ${cvaState.referenceAngle.toFixed(1)}°`;
-    calibStatus.style.display = 'block';
-    calibStatus.textContent = `基準: ${cvaState.referenceAngle.toFixed(1)}° (可重新校準)`;
-    recBtn.style.display = 'inline-flex';
-    recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製';
-  } else {
-    document.getElementById('cva-ref-badge').textContent = '基準: 未校準';
-    calibStatus.style.display = 'none';
-    recBtn.style.display = 'none';
-  }
-
-  lucide.createIcons();
-  document.getElementById('playing-hud-text').innerHTML =
-    `STATUS: CAMERA READY [${stage.toUpperCase()}]<br>請按「校準歸零」後再錄製`;
-}
-
-// ── ② 校準歸零（手動觸發，收集 1.5 秒取平均）────────────────────
-async function runCalibration(stage, event) {
-  if (event) event.stopPropagation();
-  if (cvaState.activeStage !== stage || !cvaState.camera) return;
-  if (cvaState.isRecording) {
-    showToast('請先停止錄製再重新校準。', 'warning');
-    return;
-  }
-
-  const calibBtn    = document.getElementById(`cva-calib-btn-${stage}`);
-  const calibStatus = document.getElementById(`cva-calib-status-${stage}`);
-  const recBtn      = document.getElementById(`cva-rec-btn-${stage}`);
-
-  calibBtn.disabled = true;
-  calibBtn.innerHTML = '<i data-lucide="loader"></i> 取樣中…';
-  if (recBtn) recBtn.style.display = 'none';
-  calibStatus.style.display = 'block';
-  calibStatus.textContent = '正在取樣基準姿勢…（請保持不動）';
-
-  document.getElementById('video-status-text').textContent = 'CALIBRATING…';
-  document.getElementById('video-overlay-dot-el').style.background = '#E1AA8D';
-  document.getElementById('playing-hud-text').innerHTML =
-    'STATUS: CALIBRATING…<br>HOLD YOUR NEUTRAL POSTURE STILL';
-
-  cvaState.calibFrames = [];
-  cvaState.calibShoulderFrames = [];
-  cvaState.isCalibrating = true;
-  await new Promise(r => setTimeout(r, 1500));
-  cvaState.isCalibrating = false;
-
-  if (cvaState.calibFrames.length === 0) {
-    showToast('未偵測到姿勢，請確認攝影機視角並重試。', 'danger');
-    calibBtn.disabled = false;
-    calibBtn.innerHTML = '<i data-lucide="crosshair"></i> 校準歸零';
-    calibStatus.textContent = '校準失敗，請重試';
-    lucide.createIcons();
-    return;
-  }
-
-  const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-  cvaState.referenceAngle  = avg(cvaState.calibFrames);
-  cvaState.refShoulderTilt = avg(cvaState.calibShoulderFrames);
-
-  const refText = `基準: ${cvaState.referenceAngle.toFixed(1)}° (${cvaState.calibFrames.length} 幀)`;
-  calibStatus.textContent = `✓ ${refText}`;
-  document.getElementById('cva-ref-badge').textContent = refText;
-  document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
-  document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
-  document.getElementById('playing-hud-text').innerHTML =
-    `STATUS: CALIBRATED ✓<br>基準 ${cvaState.referenceAngle.toFixed(1)}° — 可開始錄製`;
-
-  calibBtn.disabled = false;
-  calibBtn.innerHTML = '<i data-lucide="crosshair"></i> 重新校準';
-  recBtn.style.display = 'inline-flex';
-  recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製';
-  recBtn.style.background = '';
-  recBtn.style.borderColor = '';
-
-  lucide.createIcons();
-  showToast(`校準完成！基準角度 ${cvaState.referenceAngle.toFixed(1)}°，可開始錄製。`, 'success');
-}
-
-// ── ③ 開始 / 停止錄製切換 ────────────────────────────────────────
-function toggleRecording(stage, event) {
-  if (event) event.stopPropagation();
-  if (cvaState.activeStage !== stage) return;
-
-  if (!cvaState.isRecording) {
-    // 開始錄製
-    if (cvaState.referenceAngle === null) {
-      showToast('請先完成「校準歸零」再錄製！', 'warning');
-      return;
-    }
-    cvaState.frameBuffers[stage] = [];
-    cvaState.isRecording = true;
-
-    const recBtn = document.getElementById(`cva-rec-btn-${stage}`);
-    recBtn.innerHTML = '<i data-lucide="square"></i> 停止錄製';
-    recBtn.style.background = 'var(--color-danger)';
-    recBtn.style.borderColor = 'var(--color-danger)';
-
-    document.getElementById(`cva-calib-btn-${stage}`).disabled = true;
-    document.getElementById(`cva-live-${stage}`).style.display = 'flex';
-    document.getElementById(`label-${stage}`).textContent = '錄製中…';
-    document.getElementById('video-status-text').textContent = `● REC [${stage.toUpperCase()}]`;
-    document.getElementById('video-overlay-dot-el').style.background = '#C39289';
-
-    lucide.createIcons();
-    showToast(`「${getStateChineseName(stage)}」開始錄製！`, 'info');
-
-  } else {
-    // 停止錄製
-    cvaState.isRecording = false;
-    const frames = cvaState.frameBuffers[stage];
-    const recBtn = document.getElementById(`cva-rec-btn-${stage}`);
-    document.getElementById(`cva-calib-btn-${stage}`).disabled = false;
-    document.getElementById(`cva-live-${stage}`).style.display = 'none';
-
-    if (frames.length < 5) {
-      showToast('幀數太少，請重新錄製。', 'warning');
-      recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製';
-      recBtn.style.background = '';
-      recBtn.style.borderColor = '';
-      document.getElementById(`label-${stage}`).textContent = '未錄製';
-      document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
-      document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
-      lucide.createIcons();
-      return;
-    }
-
-    // ── Compute per-parameter summaries ────────────────────────
-    const avg     = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-    const minVal  = arr => Math.min(...arr);
-    const maxVal  = arr => Math.max(...arr);
-
-    const cvaFrames   = frames.map(f => f.cva);
-    const shFrames    = frames.map(f => f.shoulderTilt);
-    const leFrames    = frames.map(f => f.leftElbow).filter(v => !isNaN(v));
-    const reFrames    = frames.map(f => f.rightElbow).filter(v => !isNaN(v));
-
-    const cvaSummary = {
-      frames:    cvaFrames,
-      referenceAngle: parseFloat(cvaState.referenceAngle?.toFixed(2) ?? 0),
-      avg:       parseFloat(avg(cvaFrames).toFixed(2)),
-      min:       parseFloat(minVal(cvaFrames).toFixed(2)),
-      max:       parseFloat(maxVal(cvaFrames).toFixed(2)),
-      abovePct:  parseFloat(((cvaFrames.filter(d => d < -10).length / cvaFrames.length) * 100).toFixed(1)),
-      frameCount: cvaFrames.length
-    };
-
-    const shoulderSummary = {
-      frames:    shFrames,
-      referenceAngle: parseFloat(cvaState.refShoulderTilt?.toFixed(2) ?? 0),
-      avg:       parseFloat(avg(shFrames).toFixed(2)),
-      min:       parseFloat(minVal(shFrames).toFixed(2)),
-      max:       parseFloat(maxVal(shFrames).toFixed(2)),
-      abovePct:  parseFloat(((shFrames.filter(d => Math.abs(d) > 3).length / shFrames.length) * 100).toFixed(1)),
-      frameCount: shFrames.length
-    };
-
-    const elbowSummary = {
-      leftFrames:  leFrames,
-      rightFrames: reFrames,
-      leftAvg:     leFrames.length ? parseFloat(avg(leFrames).toFixed(1)) : null,
-      rightAvg:    reFrames.length ? parseFloat(avg(reFrames).toFixed(1)) : null,
-      leftMin:     leFrames.length ? parseFloat(minVal(leFrames).toFixed(1)) : null,
-      rightMin:    reFrames.length ? parseFloat(minVal(reFrames).toFixed(1)) : null,
-      leftMax:     leFrames.length ? parseFloat(maxVal(leFrames).toFixed(1)) : null,
-      rightMax:    reFrames.length ? parseFloat(maxVal(reFrames).toFixed(1)) : null,
-      frameCount:  frames.length
-    };
-
-    if (!playingRecords[stage]) {
-      playingRecords[stage] = generateMockPoseData(stage, currentProfile?.instrument || '小提琴');
-    }
-    // Store real measurements (override mock values)
-    playingRecords[stage].cva          = cvaSummary;
-    playingRecords[stage].shoulderData = shoulderSummary;
-    playingRecords[stage].elbowData    = elbowSummary;
-    // Sync individual fields used by existing dashboard logic
-    playingRecords[stage].neckAngle        = parseFloat(Math.max(0, -cvaSummary.avg + 12).toFixed(2));
-    playingRecords[stage].shoulderTilt     = parseFloat(Math.abs(shoulderSummary.avg).toFixed(2));
-    if (elbowSummary.leftAvg  !== null) playingRecords[stage].leftElbow  = elbowSummary.leftAvg;
-    if (elbowSummary.rightAvg !== null) playingRecords[stage].rightElbow = elbowSummary.rightAvg;
-
-    recBtn.innerHTML = '<i data-lucide="refresh-cw"></i> 重新錄製';
-    recBtn.style.background = '';
-    recBtn.style.borderColor = '';
-    document.getElementById(`label-${stage}`).textContent =
-      `已完成 ✓ (${frames.length} 幀)`;
-    document.getElementById(`step-${stage}`).classList.add('captured');
-    document.getElementById('video-status-text').textContent = `攝影機 [${stage.toUpperCase()}]`;
-    document.getElementById('video-overlay-dot-el').style.background = '#A1B0AD';
-    document.getElementById('playing-hud-text').innerHTML =
-      `STATUS: RECORDED ✓ [${stage.toUpperCase()}]<br>` +
-      `CVA Δ${cvaSummary.avg >= 0 ? '+' : ''}${cvaSummary.avg.toFixed(1)}° | ` +
-      `肩 ${shoulderSummary.avg.toFixed(1)}° | ` +
-      `L肘 ${elbowSummary.leftAvg ?? '--'}° R肘 ${elbowSummary.rightAvg ?? '--'}°`;
-
-    lucide.createIcons();
-    showToast(
-      `「${getStateChineseName(stage)}」錄製完成！CVA Δ${cvaSummary.avg >= 0 ? '+' : ''}${cvaSummary.avg.toFixed(1)}°，` +
-      `肩膀傾斜 ${shoulderSummary.avg.toFixed(1)}°`,
-      'success'
-    );
-    checkAndRenderPlayingDashboard();
-  }
-}
-
-// ── 關閉攝影機（不清除已存資料）────────────────────────────────────
-function closeCamera(stage) {
-  cvaState.isRecording   = false;
-  cvaState.isCalibrating = false;
-  cvaState.activeStage   = null;
-  if (cvaState.camera) { cvaState.camera.stop(); cvaState.camera = null; }
-  if (cvaState.stream)  { cvaState.stream.getTracks().forEach(t => t.stop()); cvaState.stream = null; }
-
-  const video = document.getElementById('cva-video');
-  const overlayCanvas = document.getElementById('cva-overlay-canvas');
-  const simCanvas = document.getElementById('playingCanvas');
-  if (video) { video.style.display = 'none'; video.srcObject = null; }
-  if (overlayCanvas) overlayCanvas.style.display = 'none';
-  if (simCanvas) simCanvas.style.display = 'block';
-  const liveAngle = document.getElementById('cva-live-overlay-angle');
-  const refBadge  = document.getElementById('cva-ref-badge');
-  const calibOv   = document.getElementById('cva-calibration-overlay');
-  if (liveAngle) liveAngle.style.display = 'none';
-  if (refBadge)  refBadge.style.display  = 'none';
-  if (calibOv)   calibOv.style.display   = 'none';
-  const statusText = document.getElementById('video-status-text');
-  const statusDot  = document.getElementById('video-overlay-dot-el');
-  if (statusText) statusText.textContent = 'POSE ESTIMATOR SIMULATOR';
-  if (statusDot)  statusDot.style.background = '';
-  startPlayingCanvas();
-}
-
-// ── 向後相容 ──────────────────────────────────────────────────────
-function startCvaRecording(stage, event) { return openCamera(stage, event); }
-async function stopCvaRecording(stage, event) {
-  if (event) event.stopPropagation();
-  if (cvaState.isRecording) toggleRecording(stage);
-  closeCamera(stage);
-}
-
-
-// ----------------------------------------------------
-// 4-B. CAPTURING / DIAGNOSING (SIMULATED DATA GENERATION)
-// (kept for "載入模擬示範數據" fallback)
-// ----------------------------------------------------
-function captureState(state, event) {
-  if (event) event.stopPropagation(); // prevent card click bubbling
-  
-  if (!currentProfile) {
-    showToast('請先完成個資填寫再進行錄製！', 'warning');
-    switchSection('profile');
-    return;
-  }
-  
-  // Set current selecting step card active visual
-  selectStep(state);
-  
-  // Update HUD text
-  document.getElementById('playing-hud-text').innerHTML = `
-    STATUS: CAPTURING...<br>
-    STATE: ${state.toUpperCase()}
-  `;
-  
-  // Visual countdown simulation
-  let count = 0;
-  const labelId = `label-${state}`;
-  const labelEl = document.getElementById(labelId);
-  const btn = document.getElementById(`cva-btn-${state}`);
-  
-  if (btn) btn.disabled = true;
-  labelEl.textContent = '計算中...';
-  
-  const timer = setInterval(() => {
-    count += 20;
-    document.getElementById('playing-hud-text').innerHTML = `
-      STATUS: ESTIMATING POSE ${count}%<br>
-      STATE: ${state.toUpperCase()}
-    `;
-    
-    if (count >= 100) {
-      clearInterval(timer);
-      
-      // Generate pose data based on instrument & state
-      playingRecords[state] = generateMockPoseData(state, currentProfile.instrument);
-      
-      labelEl.textContent = '已錄製 ✓';
-      document.getElementById(`step-${state}`).classList.add('captured');
-      if (btn) { btn.disabled = false; }
-      
-      document.getElementById('playing-hud-text').innerHTML = `
-        STATUS: CAPTURE COMPLETE<br>
-        STATE: ${state.toUpperCase()}<br>
-        KEYPOINTS: 17 ACTIVE
-      `;
-      
-      showToast(`「${getStateChineseName(state)}」擷取成功！`, 'success');
-      
-      // Check if all states are captured to render dashboard
-      checkAndRenderPlayingDashboard();
-    }
-  }, 200);
-}
-
-function selectStep(step) {
-  selectedPlayingStep = step;
-  
-  // Toggle card class
-  document.querySelectorAll('.capture-steps .step-card').forEach(card => {
-    card.classList.remove('active');
-  });
-  document.getElementById(`step-${step}`).classList.add('active');
-}
-
-function getStateChineseName(state) {
-  if (state === 'relax') return '演奏前放鬆姿勢';
-  if (state === 'prepare') return '準備演奏的姿勢';
-  if (state === 'playing') return '演奏中的動作';
-  return '';
-}
-
-function generateMockPoseData(state, instrument) {
-  // Base healthy offsets
-  let neckAngle = 10 + Math.random() * 4;
-  let shoulderTilt = 1 + Math.random() * 2;
-  let shoulderSymmetry = 95 + Math.random() * 4;
-  let leftElbow = 80 + Math.random() * 10;
-  let rightElbow = 90 + Math.random() * 10;
-  let wristFlexion = 15 + Math.random() * 10;
-  let spineTilt = 1 + Math.random() * 2;
-  
-  if (state === 'relax') {
-    // Relaxed posture is highly symmetric and close to standard
-    neckAngle = 8 + Math.random() * 3;
-    shoulderTilt = 0.5 + Math.random() * 1.5;
-    shoulderSymmetry = 97 + Math.random() * 2.5;
-    leftElbow = 150 + Math.random() * 10;
-    rightElbow = 150 + Math.random() * 10;
-    wristFlexion = 5 + Math.random() * 5;
-    spineTilt = 0.5 + Math.random() * 1;
-  } 
-  else if (state === 'prepare') {
-    if (instrument === '小提琴') {
-      neckAngle = 14 + Math.random() * 3;
-      shoulderTilt = 3.5 + Math.random() * 2;
-      shoulderSymmetry = 93 + Math.random() * 3;
-      leftElbow = 75 + Math.random() * 8;
-      rightElbow = 90 + Math.random() * 8;
-      wristFlexion = 25 + Math.random() * 8;
-    } else { // Cello
-      neckAngle = 11 + Math.random() * 3;
-      shoulderTilt = 2 + Math.random() * 1.5;
-      shoulderSymmetry = 96 + Math.random() * 2.5;
-      leftElbow = 100 + Math.random() * 8;
-      rightElbow = 105 + Math.random() * 8;
-      wristFlexion = 15 + Math.random() * 8;
-    }
-  } 
-  else if (state === 'playing') {
-    if (instrument === '小提琴') {
-      // playing violin usually forces some head/neck flexion and shoulder tilt
-      neckAngle = 16 + Math.random() * 5; // potential warning
-      shoulderTilt = 5.2 + Math.random() * 3; // tilt!
-      shoulderSymmetry = 89 + Math.random() * 5; // asymmetrical
-      leftElbow = 65 + Math.random() * 12;
-      rightElbow = 85 + Math.random() * 12;
-      wristFlexion = 32 + Math.random() * 10;
-      spineTilt = 3.5 + Math.random() * 2;
-    } else { // Cello playing
-      neckAngle = 12 + Math.random() * 4;
-      shoulderTilt = 3.0 + Math.random() * 2;
-      shoulderSymmetry = 94 + Math.random() * 4;
-      leftElbow = 95 + Math.random() * 12;
-      rightElbow = 110 + Math.random() * 12;
-      wristFlexion = 22 + Math.random() * 8;
-      spineTilt = 2.8 + Math.random() * 2;
-    }
-  }
-  
-  return {
-    neckAngle,
-    shoulderTilt,
-    shoulderSymmetry,
-    leftElbow,
-    rightElbow,
-    wristFlexion,
-    spineTilt
-  };
-}
-
-function checkAndRenderPlayingDashboard() {
-  if (playingRecords.relax && playingRecords.prepare && playingRecords.playing) {
-    // All 3 states recorded! Calculate and show dashboard.
-    calculatePlayingResults();
-    
-    document.getElementById('playing-waiting-panel').style.display = 'none';
-    document.getElementById('playing-results-panel').style.display = 'block';
-    document.getElementById('playing-charts-grid').style.display = 'grid';
-    
-    renderPlayingCharts();
-  }
-}
-
-function calculatePlayingResults() {
-  // Aggregate scores (playing state is the key diagnostic)
-  const p = playingRecords.playing;
-  
-  // Deductions from perfect 100
-  let score = 100;
-  
-  // Neck angle penalty (> 15 deg is bad)
-  if (p.neckAngle > 15) score -= (p.neckAngle - 15) * 1.5;
-  // Shoulder tilt penalty (> 5 deg is bad)
-  if (p.shoulderTilt > 5) score -= (p.shoulderTilt - 5) * 2;
-  // Shoulder symmetry penalty (< 90% is bad)
-  if (p.shoulderSymmetry < 90) score -= (90 - p.shoulderSymmetry) * 2;
-  // Spine tilt (> 3 deg)
-  if (p.spineTilt > 3) score -= (p.spineTilt - 3) * 1;
-  
-  score = Math.max(30, Math.min(100, Math.round(score)));
-  
-  // Update UI Elements
-  document.getElementById('playing-score-val').textContent = score;
-  
-  const badge = document.getElementById('playing-score-badge');
-  const ratingText = document.getElementById('playing-rating-text');
-  const descText = document.getElementById('playing-result-desc');
-  
-  badge.className = 'score-badge-large';
-  if (score >= 90) {
-    badge.classList.add('optimal');
-    ratingText.textContent = '姿勢評定：優良';
-    descText.textContent = '您的演奏動作姿態非常優良，肩部對稱性佳，頸椎前傾度小，有助於預防職業肌肉疲勞。';
-  } else if (score >= 75) {
-    badge.classList.add('warning');
-    ratingText.textContent = '姿勢評定：輕微偏位';
-    descText.textContent = '演奏中有些微的肌肉代償，左右肩膀有些微高低肩或脊椎側傾現象，建議增加拉伸休息。';
-  } else {
-    badge.classList.add('danger');
-    ratingText.textContent = '姿勢評定：注意警告';
-    descText.textContent = '檢測到顯著的高低肩與頭部過度前傾（烏龜頸），極易造成肩頸慢性疼痛。強烈建議調整演奏坐姿與站姿，或尋求物理治療師協助。';
-  }
-  
-  // Set metrics text and fill bars
-  updateMetricBar('neck', p.neckAngle, '°', 15, true);
-  updateMetricBar('shoulder-tilt', p.shoulderTilt, '°', 5, true);
-  updateMetricBar('shoulder-sym', p.shoulderSymmetry, '%', 90, false);
-  
-  document.getElementById('val-left-elbow').textContent = `${Math.round(p.leftElbow)}°`;
-  document.getElementById('bar-left-elbow').style.width = `${Math.min(100, p.leftElbow / 1.8)}%`;
-  
-  document.getElementById('val-right-elbow').textContent = `${Math.round(p.rightElbow)}°`;
-  document.getElementById('bar-right-elbow').style.width = `${Math.min(100, p.rightElbow / 1.8)}%`;
-  
-  // 模擬產生動態異常姿勢及頻率 statistics
-  const anomalies = [];
-  if (score < 75) {
-    anomalies.push({ name: '頭部過度前傾 (Forward Head)', count: Math.round(12 + Math.random() * 4), frequency: Math.round(35 + Math.random() * 10) });
-    anomalies.push({ name: '聳肩/提肩 (Shoulder Shrugging)', count: Math.round(6 + Math.random() * 3), frequency: Math.round(18 + Math.random() * 6) });
-    anomalies.push({ name: '駝背/圓肩 (Slouching)', count: Math.round(8 + Math.random() * 4), frequency: Math.round(25 + Math.random() * 8) });
-  } else if (score < 90) {
-    anomalies.push({ name: '頭部過度前傾 (Forward Head)', count: Math.round(4 + Math.random() * 3), frequency: Math.round(12 + Math.random() * 5) });
-    anomalies.push({ name: '聳肩/提肩 (Shoulder Shrugging)', count: Math.round(2 + Math.random() * 2), frequency: Math.round(6 + Math.random() * 4) });
-    anomalies.push({ name: '駝背/圓肩 (Slouching)', count: Math.round(3 + Math.random() * 3), frequency: Math.round(9 + Math.random() * 5) });
-  } else {
-    anomalies.push({ name: '頭部過度前傾 (Forward Head)', count: 0, frequency: 0 });
-    anomalies.push({ name: '聳肩/提肩 (Shoulder Shrugging)', count: 1, frequency: 2 });
-    anomalies.push({ name: '駝背/圓肩 (Slouching)', count: 0, frequency: 0 });
-  }
-  
-  playingRecords.anomalies = anomalies;
-  
-  // Render anomalies to DOM list
-  const listEl = document.getElementById('playing-anomalies-list');
-  if (listEl) {
-    listEl.innerHTML = '';
-    anomalies.forEach(anomaly => {
-      const isNormal = anomaly.count === 0;
-      const barColor = isNormal ? 'var(--color-success)' : (anomaly.frequency > 20 ? 'var(--color-danger)' : 'var(--color-warning)');
-      const rowEl = document.createElement('div');
-      rowEl.style.cssText = 'display: flex; align-items: center; gap: 1rem; font-size: 0.85rem;';
-      rowEl.innerHTML = `
-        <div style="width: 170px; font-weight: 500; color: var(--text-dark);">${anomaly.name}</div>
-        <div style="flex: 1; height: 8px; background-color: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
-          <div style="width: ${anomaly.frequency}%; height: 100%; background-color: ${barColor}; border-radius: 4px; transition: width 1s ease-out;"></div>
-        </div>
-        <div style="width: 90px; text-align: right; color: var(--text-secondary); font-family: monospace;">
-          ${anomaly.count} 次 (${anomaly.frequency}%)
-        </div>
-      `;
-      listEl.appendChild(rowEl);
-    });
-  }
-}
-
-function updateMetricBar(id, val, unit, threshold, lesserIsBetter) {
-  const roundedVal = Math.round(val * 10) / 10;
-  const valEl = document.getElementById(`val-${id}`);
-  const barEl = document.getElementById(`bar-${id}`);
-  
-  valEl.textContent = `${roundedVal}${unit} (標準: ${lesserIsBetter ? '<' : '>'} ${threshold}${unit})`;
-  
-  // Determine color class based on threshold
-  barEl.className = 'metric-bar-fill';
-  
-  let pct = 0;
-  let status = 'success';
-  
-  if (lesserIsBetter) {
-    pct = Math.max(10, 100 - (val / (threshold * 2)) * 100);
-    if (val > threshold * 1.5) {
-      status = 'danger';
-    } else if (val > threshold) {
-      status = 'warning';
-    }
-  } else { // Greater is better (e.g. symmetry)
-    pct = val;
-    if (val < threshold - 10) {
-      status = 'danger';
-    } else if (val < threshold) {
-      status = 'warning';
-    }
-  }
-  
-  barEl.classList.add(status);
-  barEl.style.width = `${pct}%`;
-}
-
-function resetPlayingCapture() {
-  // Stop any active CVA recording
-  if (cvaState.isRecording || cvaState.isCalibrating) {
-    cvaState.isRecording = false;
-    cvaState.isCalibrating = false;
-    cvaState.activeStage = null;
-    if (cvaState.camera) { cvaState.camera.stop(); cvaState.camera = null; }
-    if (cvaState.stream) { cvaState.stream.getTracks().forEach(t => t.stop()); cvaState.stream = null; }
-
-    // Restore black frame
-    const video = document.getElementById('cva-video');
-    const overlayCanvas = document.getElementById('cva-overlay-canvas');
-    const simCanvas = document.getElementById('playingCanvas');
-    if (video) { video.style.display = 'none'; video.srcObject = null; }
-    if (overlayCanvas) overlayCanvas.style.display = 'none';
-    if (simCanvas) simCanvas.style.display = 'block';
-    const liveAngle = document.getElementById('cva-live-overlay-angle');
-    const refBadge  = document.getElementById('cva-ref-badge');
-    const calibOv   = document.getElementById('cva-calibration-overlay');
-    if (liveAngle) liveAngle.style.display = 'none';
-    if (refBadge)  refBadge.style.display  = 'none';
-    if (calibOv)   calibOv.style.display   = 'none';
-    const statusText = document.getElementById('video-status-text');
-    const statusDot  = document.getElementById('video-overlay-dot-el');
-    if (statusText) statusText.textContent = 'POSE ESTIMATOR SIMULATOR';
-    if (statusDot)  statusDot.style.background = '';
-  }
-  // Reset CVA frame buffers and baselines
-  cvaState.frameBuffers        = { relax: [], prepare: [], playing: [] };
-  cvaState.referenceAngle      = null;
-  cvaState.refShoulderTilt     = null;
-  cvaState.calibFrames         = [];
-  cvaState.calibShoulderFrames = [];
-
-  playingRecords = { relax: null, prepare: null, playing: null };
-  selectedPlayingStep = 'relax';
-  
-  // Reset step cards
-  document.querySelectorAll('.capture-steps .step-card').forEach(card => {
-    card.classList.remove('captured', 'active');
-  });
-  document.getElementById('step-relax').classList.add('active');
-  
-  ['relax', 'prepare', 'playing'].forEach(stage => {
-    document.getElementById(`label-${stage}`).textContent = '未錄製';
-
-    const openBtn    = document.getElementById(`cva-btn-${stage}`);
-    const calibBtn   = document.getElementById(`cva-calib-btn-${stage}`);
-    const calibStatus = document.getElementById(`cva-calib-status-${stage}`);
-    const recBtn     = document.getElementById(`cva-rec-btn-${stage}`);
-    const liveBadge  = document.getElementById(`cva-live-${stage}`);
-
-    if (openBtn)    { openBtn.style.display = 'inline-flex'; openBtn.disabled = false; openBtn.innerHTML = '<i data-lucide="video"></i> 啟動攝影機'; }
-    if (calibBtn)   { calibBtn.style.display = 'none'; calibBtn.disabled = false; calibBtn.innerHTML = '<i data-lucide="crosshair"></i> 校準歸零'; }
-    if (calibStatus) calibStatus.style.display = 'none';
-    if (recBtn)     { recBtn.style.display = 'none'; recBtn.style.background = ''; recBtn.style.borderColor = ''; recBtn.innerHTML = '<i data-lucide="circle"></i> 開始錄製'; }
-    if (liveBadge)  liveBadge.style.display = 'none';
-  });
-  lucide.createIcons();
-
-  document.getElementById('playing-waiting-panel').style.display = 'flex';
-  document.getElementById('playing-results-panel').style.display = 'none';
-  document.getElementById('playing-charts-grid').style.display = 'none';
-  
-  document.getElementById('playing-hud-text').innerHTML = `
-    STATUS: WAITING FOR CAPTURE<br>
-    KEYPOINTS: 0 ACTIVE
-  `;
-  
-  if (playingRadarChartRef) playingRadarChartRef.destroy();
-  if (playingSymmetryChartRef) playingSymmetryChartRef.destroy();
-  if (cvaTrendChartRef) { cvaTrendChartRef.destroy(); cvaTrendChartRef = null; }
-  
-  showToast('評估流程已重置。', 'info');
-}
-
-// ----------------------------------------------------
-// 5. CHART RENDERING
-// ----------------------------------------------------
-function renderPlayingCharts() {
-  const relax = playingRecords.relax;
-  const prep = playingRecords.prepare;
-  const play = playingRecords.playing;
-  
-  if (!relax || !prep || !play) return;
-  
-  // 1. Line Chart Setup (Comparing joint angles across states)
-  const radarCtx = document.getElementById('playingRadarChart').getContext('2d');
-  if (playingRadarChartRef) playingRadarChartRef.destroy();
-  
-  playingRadarChartRef = new Chart(radarCtx, {
+  canvas.parentElement.style.display = 'block';
+  empty.style.display = 'none';
+  const labels = list.map(m => fmtDate(m.ms).slice(5));
+  ChartRegistry.set('dashTrend', () => new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: {
-      labels: ['1. 放鬆姿勢', '2. 準備姿勢', '3. 演奏中動作'],
-      datasets: [
-        {
-          label: '頸椎前傾角 (°)',
-          data: [relax.neckAngle, prep.neckAngle, play.neckAngle],
-          borderColor: '#8D6B61',
-          backgroundColor: 'rgba(141, 107, 97, 0.1)',
-          borderWidth: 3,
-          tension: 0.2,
-          pointRadius: 4
-        },
-        {
-          label: '雙肩傾斜度 (°)',
-          data: [relax.shoulderTilt, prep.shoulderTilt, play.shoulderTilt],
-          borderColor: '#82898D',
-          backgroundColor: 'rgba(130, 137, 141, 0.1)',
-          borderWidth: 3,
-          tension: 0.2,
-          pointRadius: 4
-        },
-        {
-          label: '左手肘夾角 (°)',
-          data: [relax.leftElbow, prep.leftElbow, play.leftElbow],
-          borderColor: '#A1B0AD',
-          backgroundColor: 'rgba(161, 176, 173, 0.1)',
-          borderWidth: 3,
-          tension: 0.2,
-          pointRadius: 4
-        },
-        {
-          label: '右手肘夾角 (°)',
-          data: [relax.rightElbow, prep.rightElbow, play.rightElbow],
-          borderColor: '#C0B0A2',
-          backgroundColor: 'rgba(192, 176, 162, 0.1)',
-          borderWidth: 3,
-          tension: 0.2,
-          pointRadius: 4
-        },
-        {
-          label: '脊椎傾斜度 (°)',
-          data: [relax.spineTilt, prep.spineTilt, play.spineTilt],
-          borderColor: '#C39289',
-          backgroundColor: 'rgba(195, 146, 137, 0.1)',
-          borderWidth: 3,
-          tension: 0.2,
-          pointRadius: 4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          grid: { color: 'rgba(130, 137, 141, 0.1)' },
-          ticks: { color: '#82898D' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: '#82898D', font: { family: 'Noto Sans TC' } }
-        }
-      },
-      plugins: {
-        legend: { labels: { color: '#3A3533', font: { family: 'Noto Sans TC' } } }
-      }
-    }
-  });
-
-  // 2. Line Chart for symmetry percentage
-  const barCtx = document.getElementById('playingSymmetryChart').getContext('2d');
-  if (playingSymmetryChartRef) playingSymmetryChartRef.destroy();
-  
-  playingSymmetryChartRef = new Chart(barCtx, {
-    type: 'line',
-    data: {
-      labels: ['1. 放鬆姿勢', '2. 準備姿勢', '3. 演奏中動作'],
-      datasets: [
-        {
-          label: '左右肩水平對稱度 (%)',
-          data: [relax.shoulderSymmetry, prep.shoulderSymmetry, play.shoulderSymmetry],
-          borderColor: '#C6CCC0',
-          backgroundColor: 'rgba(198, 204, 192, 0.2)',
-          borderWidth: 4,
-          tension: 0.15,
-          fill: true,
-          pointRadius: 6,
-          pointBackgroundColor: '#C6CCC0',
-          pointBorderColor: '#fff',
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          min: 50,
-          max: 100,
-          grid: { color: 'rgba(130, 137, 141, 0.1)' },
-          ticks: { color: '#82898D' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: '#82898D', font: { family: 'Noto Sans TC' } }
-        }
-      },
-      plugins: {
-        legend: { display: false }
-      }
-    }
-  });
-
-  // 3. CVA trend chart
-  renderCvaChart();
-
-/**
- * Render CVA per-frame line chart (equivalent to visualize_fhp.py generate_fhp_report).
- * Three datasets (relax / prepare / playing) concatenated with stage separators.
- * Red background bands mark frames where CVA < CVA_THRESHOLD (60°).
- */
-function renderCvaChart() {
-  const r = playingRecords.relax?.cva;
-  const p = playingRecords.prepare?.cva;
-  const pl = playingRecords.playing?.cva;
-
-  // Hide chart card if no CVA data at all
-  const card = document.getElementById('cva-chart-card');
-  if (!r && !p && !pl) { if (card) card.style.display = 'none'; return; }
-  if (card) card.style.display = 'block';
-
-  if (cvaTrendChartRef) cvaTrendChartRef.destroy();
-
-  // Build per-stage datasets; x-axis is a unified frame index with stage labels
-  const labels = [];
-  const relaxData = [], prepData = [], playData = [];
-
-  const buildDataset = (cva, stageLabel, offset) => {
-    if (!cva) return offset;
-    cva.frames.forEach((angle, i) => {
-      if (i === 0) labels.push(stageLabel);
-      else if (i === Math.floor(cva.frames.length / 2)) labels.push(`${stageLabel} 中`);
-      else labels.push('');
-    });
-    return offset + cva.frames.length;
-  };
-
-  let offset = 0;
-  offset = buildDataset(r, '① 放鬆', offset);
-  const relaxEnd = offset;
-  offset = buildDataset(p, '② 準備', offset);
-  const prepEnd = offset;
-  buildDataset(pl, '③ 演奏中', offset);
-
-  // Fill arrays with null outside their own range
-  const total = labels.length;
-  let ri = 0, pi = relaxEnd, pli = prepEnd;
-  for (let i = 0; i < total; i++) {
-    relaxData.push(i < relaxEnd ? (r?.frames[ri++] ?? null) : null);
-    prepData.push(i >= relaxEnd && i < prepEnd ? (p?.frames[pi++ - relaxEnd] ?? null) : null);
-    playData.push(i >= prepEnd ? (pl?.frames[pli++ - prepEnd] ?? null) : null);
-  }
-
-  // Background plugin to draw red bands for delta < -10° (forward lean)
-  const warningBandPlugin = {
-    id: 'cvaWarningBands',
-    beforeDraw(chart) {
-      const { ctx, chartArea: { top, bottom }, scales: { x, y } } = chart;
-      if (!x || !y) return;
-      ctx.save();
-      const allFrames = [
-        ...(r?.frames || []).map((d, i) => ({ i, d })),
-        ...(p?.frames || []).map((d, i) => ({ i: i + relaxEnd, d })),
-        ...(pl?.frames || []).map((d, i) => ({ i: i + prepEnd, d })),
-      ];
-      let inBand = false, bandStart = 0;
-      ctx.fillStyle = 'rgba(195,146,137,0.18)';
-      allFrames.forEach(({ i, d }) => {
-        const xPos = x.getPixelForValue(i);
-        if (d < -10 && !inBand) { bandStart = xPos; inBand = true; }
-        else if (d >= -10 && inBand) {
-          ctx.fillRect(bandStart, top, xPos - bandStart, bottom - top); inBand = false;
-        }
-      });
-      if (inBand) {
-        const lastX = x.getPixelForValue(total - 1);
-        ctx.fillRect(bandStart, top, lastX - bandStart, bottom - top);
-      }
-      // Threshold dashed line at -10°
-      const yPos = chart.scales.y.getPixelForValue(-10);
-      ctx.strokeStyle = 'rgba(195,146,137,0.7)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath(); ctx.moveTo(chart.chartArea.left, yPos); ctx.lineTo(chart.chartArea.right, yPos); ctx.stroke();
-      // Zero reference line
-      const y0 = chart.scales.y.getPixelForValue(0);
-      ctx.strokeStyle = 'rgba(161,176,173,0.5)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.moveTo(chart.chartArea.left, y0); ctx.lineTo(chart.chartArea.right, y0); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-    }
-  };
-
-  const ctx = document.getElementById('cvaTrendChart').getContext('2d');
-  cvaTrendChartRef = new Chart(ctx, {
-    type: 'line',
-    plugins: [warningBandPlugin],
     data: {
       labels,
       datasets: [
-        {
-          label: '放鬆姿勢 CVA (°)',
-          data: relaxData,
-          borderColor: '#A1B0AD',
-          backgroundColor: 'rgba(161,176,173,0.08)',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.2,
-          spanGaps: false
-        },
-        {
-          label: '準備姿勢 CVA (°)',
-          data: prepData,
-          borderColor: '#8D6B61',
-          backgroundColor: 'rgba(141,107,97,0.08)',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.2,
-          spanGaps: false
-        },
-        {
-          label: '演奏中 CVA (°)',
-          data: playData,
-          borderColor: '#C39289',
-          backgroundColor: 'rgba(195,146,137,0.08)',
-          borderWidth: 2.5,
-          pointRadius: 0,
-          tension: 0.2,
-          spanGaps: false
-        }
+        { label: tApp('chart_score'), data: list.map(m => m.score), borderColor: CHART_COLORS.score, backgroundColor: 'rgba(54,86,60,0.08)', borderWidth: 2.5, tension: 0.25, fill: true, yAxisID: 'y', pointRadius: 4 },
+        { label: tApp('chart_cva_below_pct'), data: list.map(m => m.cvaBelowPct), borderColor: CHART_COLORS.threshold, borderDash: [5, 4], borderWidth: 2, tension: 0.25, yAxisID: 'y1', pointRadius: 3, spanGaps: true }
       ]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 600 },
+    options: baseChartOptions({
       scales: {
-        y: {
-          min: -40,
-          max: 40,
-          grid: { color: 'rgba(130,137,141,0.1)' },
-          ticks: { color: '#82898D', callback: v => `${v > 0 ? '+' : ''}${v}°` }
-        },
-        x: {
-          grid: { display: false },
-          ticks: {
-            color: '#82898D',
-            maxRotation: 0,
-            font: { family: 'Noto Sans TC', size: 10 },
-            autoSkip: false,
-            callback(val, idx) { return labels[idx] || ''; }
-          }
-        }
-      },
-      plugins: {
-        legend: { labels: { color: '#3A3533', font: { family: 'Noto Sans TC', size: 11 }, boxWidth: 16 } },
-        tooltip: {
-          callbacks: {
-            label: ctx => `CVA Δ: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw?.toFixed(1)}°`,
-            afterLabel: ctx => ctx.raw < -10 ? '⚠ 前傾超過警戒' : ''
-          }
-        }
+        x: { grid: { display: false }, ticks: { color: CHART_COLORS.tick } },
+        y: { min: 0, max: 100, grid: { color: CHART_COLORS.grid }, ticks: { color: CHART_COLORS.tick }, title: { display: true, text: tApp('chart_score'), color: CHART_COLORS.tick } },
+        y1: { min: 0, max: 100, position: 'right', grid: { display: false }, ticks: { color: CHART_COLORS.tick, callback: v => v + '%' } }
       }
-    }
+    })
+  }));
+}
+
+// =================================================================
+// 演奏者：歷史紀錄
+// =================================================================
+let selectedRecordIds = new Set();
+
+function recordSummaryText(r) {
+  if (r.type === 'static') return escapeHtml(r.details && r.details.textSummary || '');
+  const m = recordMetrics(r);
+  const parts = [];
+  if (m.cvaAvg !== null) parts.push(`CVA ${fmtNum(m.cvaAvg)}°`);
+  if (m.cvaBelowPct !== null) parts.push(tApp('summary_cva_below', { pct: fmtNum(m.cvaBelowPct, 0) }));
+  if (m.leftElbowAvg !== null) parts.push(`${tApp('elbow_short')} ${fmtNum(m.leftElbowAvg, 0)}° / ${fmtNum(m.rightElbowAvg, 0)}°`);
+  return parts.join(' · ');
+}
+
+function typeLabel(r) {
+  return r.type === 'playing' ? tApp('type_playing') : tApp('type_static');
+}
+
+function filterHistory() {
+  const search = (document.getElementById('search-name').value || '').toLowerCase().trim();
+  const level = document.getElementById('filter-level').value;
+  const type = document.getElementById('filter-type').value;
+  const rows = App.records.filter(r => {
+    const text = `${fmtDateTime(docTimeMs(r))} ${r.projectName || ''} ${r.instrument || ''} ${recordSummaryText(r)}`.toLowerCase();
+    return (!search || text.includes(search)) &&
+      (level === 'All' || normalizeLevel(r.level) === level) &&
+      (type === 'All' || r.type === type);
   });
-
-  // Render summary stat chips below chart (mirrors above_pct print in visualize_fhp.py)
-  const statsRow = document.getElementById('cva-stats-row');
-  if (statsRow) {
-    const makeChip = (label, value, sub, color) => `
-      <div style="background:var(--bg-secondary);border-radius:8px;padding:0.6rem 1rem;min-width:110px;border-left:3px solid ${color};">
-        <div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:0.15rem;">${label}</div>
-        <div style="font-size:1.1rem;font-weight:700;color:var(--text-primary);font-family:monospace;">${value}</div>
-        <div style="font-size:0.7rem;color:var(--text-secondary);">${sub}</div>
-      </div>`;
-    const stages = [
-      { key: 'relax', label: '放鬆', cva: r, color: '#A1B0AD' },
-      { key: 'prepare', label: '準備', cva: p, color: '#8D6B61' },
-      { key: 'playing', label: '演奏中', cva: pl, color: '#C39289' }
-    ];
-    statsRow.innerHTML = stages
-      .filter(s => s.cva)
-      .map(s => {
-        const warn = s.cva.abovePct > 0 ? `⚠ ${s.cva.abovePct}% 超過警戒` : '✓ 無顯著前傾';
-        const sign = s.cva.avg >= 0 ? '+' : '';
-        return makeChip(
-          `${s.label} — 平均 CVA Δ`,
-          `${sign}${s.cva.avg.toFixed(1)}°`,
-          warn,
-          s.cva.abovePct > 0 ? '#C39289' : '#C6CCC0'
-        );
-      })
-      .join('');
-  }
-}
+  updateHistoryTable(rows);
 }
 
-function selectDiag(diagId) {
-  selectedDiagnostic = diagId;
-  
-  // Toggle UI
-  document.querySelectorAll('.diag-selector-grid .diag-option').forEach(opt => {
-    opt.classList.remove('active');
-  });
-  document.getElementById(`diag-${diagId}`).classList.add('active');
-  
-  // Change overlay title
-  const overlayTitle = document.getElementById('standard-overlay-title');
-  const hudText = document.getElementById('standard-hud-text');
-  
-  if (diagId === 'uneven-shoulders') {
-    overlayTitle.textContent = '高低肩檢測模擬中';
-    hudText.innerHTML = 'STATUS: WAITING TO DIAGNOSE<br>DIAGNOSTIC: UNEVEN SHOULDERS';
-  } else if (diagId === 'forward-head') {
-    overlayTitle.textContent = '頭部前傾檢測模擬中';
-    hudText.innerHTML = 'STATUS: WAITING TO DIAGNOSE<br>DIAGNOSTIC: FORWARD HEAD';
-  } else if (diagId === 'arm-raise') {
-    overlayTitle.textContent = '抬手檢測模擬中';
-    hudText.innerHTML = 'STATUS: WAITING TO DIAGNOSE<br>DIAGNOSTIC: ARM RAISE TEST';
-  }
-}
-
-function startStandardDiagnosis() {
-  if (!currentProfile) {
-    showToast('請先完成個資填寫再進行診斷！', 'warning');
-    switchSection('profile');
-    return;
-  }
-  
-  isDiagnosingStandard = true;
-  document.getElementById('btn-start-standard').disabled = true;
-  document.getElementById('btn-reset-standard').disabled = true;
-  
-  let countdown = 3;
-  const overlay = document.getElementById('standard-hud-text');
-  
-  const timer = setInterval(() => {
-    overlay.innerHTML = `
-      STATUS: DIAGNOSING IN ${countdown}...<br>
-      KEEP POSE STEADY
-    `;
-    
-    countdown--;
-    
-    if (countdown < 0) {
-      clearInterval(timer);
-      
-      overlay.innerHTML = `
-        STATUS: ANALYZING IMAGE...<br>
-        EXTRACTING POINT VECTORS
-      `;
-      
-      setTimeout(() => {
-        // Complete diagnosis
-        renderStandardDiagnosticResult();
-        
-        document.getElementById('btn-start-standard').disabled = false;
-        document.getElementById('btn-reset-standard').disabled = false;
-        
-        showToast('靜態姿勢診斷完成！', 'success');
-      }, 1000);
-    }
-  }, 1000);
-}
-
-// Global cached result for saving
-let currentStandardResult = null;
-
-function renderStandardDiagnosticResult() {
-  const panelWait = document.getElementById('standard-waiting-panel');
-  const panelRes = document.getElementById('standard-results-panel');
-  
-  panelWait.style.display = 'none';
-  panelRes.style.display = 'block';
-  
-  const scoreVal = document.getElementById('standard-score-val');
-  const scoreLabel = document.getElementById('standard-score-label');
-  const ratingText = document.getElementById('standard-rating-text');
-  const descText = document.getElementById('standard-result-desc');
-  const badge = document.getElementById('standard-score-badge');
-  const adviceText = document.getElementById('standard-advice-text');
-  
-  const detailsTitle = document.getElementById('standard-details-title');
-  const m1Name = document.getElementById('standard-m1-name');
-  const m1Val = document.getElementById('standard-m1-val');
-  const m1Bar = document.getElementById('standard-m1-bar');
-  
-  const m2Name = document.getElementById('standard-m2-name');
-  const m2Val = document.getElementById('standard-m2-val');
-  const m2Bar = document.getElementById('standard-m2-bar');
-  
-  // Set different values and text based on type
-  badge.className = 'score-badge-large';
-  
-  const rNum = Math.random(); // Add variance
-  
-  if (selectedDiagnostic === 'uneven-shoulders') {
-    const heightDiff = (1.2 + rNum * 0.5).toFixed(1); // 1.2 to 1.7 cm
-    const angle = (4.2 + rNum * 1.5).toFixed(1); // deg
-    const symmetry = Math.round(86 + rNum * 4); // 86% to 90%
-    
-    scoreVal.textContent = symmetry;
-    scoreLabel.textContent = '對稱分數';
-    
-    detailsTitle.textContent = '高低肩檢測指標數值';
-    m1Name.textContent = '雙肩水平高度差';
-    m1Val.textContent = `${heightDiff} cm (標準 < 1.0 cm)`;
-    m1Bar.style.width = `${Math.max(10, 100 - heightDiff * 45)}%`;
-    m1Bar.className = 'metric-bar-fill warning';
-    
-    m2Name.textContent = '左右肩峰斜率夾角';
-    m2Val.textContent = `${angle}° (標準 < 3.0°)`;
-    m2Bar.style.width = `${Math.max(10, 100 - angle * 12)}%`;
-    m2Bar.className = 'metric-bar-fill warning';
-    
-    badge.classList.add('warning');
-    ratingText.textContent = '評定：輕微高低肩';
-    descText.textContent = `您的右側肩峰線比左側偏低約 ${heightDiff} cm。可能為演奏習慣（單側偏重）造成的提肩胛肌及斜方肌張力不平衡。`;
-    
-    adviceText.textContent = '建議每日練習前進行 10 分鐘「落肩伸展操」，並避免長時間維持提琴姿勢。演奏大提琴時，確保大提琴琴身中央對齊胸骨，避免傾斜上半身遷就琴體。';
-    
-    currentStandardResult = {
-      score: symmetry,
-      projectName: '高低肩檢測',
-      level: '注意',
-      details: `右側肩峰偏低 ${heightDiff}cm，雙肩夾角 ${angle}°`
-    };
-  } 
-  else if (selectedDiagnostic === 'forward-head') {
-    const angle = (22.4 + rNum * 4).toFixed(1); // 22.4 to 26.4 deg
-    const score = Math.round(100 - (angle - 15) * 2.5); // 70 to 80
-    
-    scoreVal.textContent = Math.round(score);
-    scoreLabel.textContent = '姿勢評分';
-    
-    detailsTitle.textContent = '頭部前傾檢測指標';
-    m1Name.textContent = '耳垂至肩峰水平距離';
-    m1Val.textContent = `${(angle * 0.15).toFixed(1)} cm (標準 < 2.5 cm)`;
-    m1Bar.style.width = `${Math.max(10, 100 - angle * 2.5)}%`;
-    m1Bar.className = 'metric-bar-fill danger';
-    
-    m2Name.textContent = '頸椎鉛垂線夾角';
-    m2Val.textContent = `${angle}° (標準 < 15.0°)`;
-    m2Bar.style.width = `${Math.max(10, 100 - angle * 3)}%`;
-    m2Bar.className = 'metric-bar-fill danger';
-    
-    badge.classList.add('danger');
-    ratingText.textContent = '評定：顯著前傾 (烏龜頸)';
-    descText.textContent = `您的頸椎前傾夾角達 ${angle}°，長期以此姿勢看譜或演奏，會對頸椎關節與上背部肌群造成三倍的負荷。`;
-    
-    adviceText.textContent = '請調整譜架至與視線水平高度，避免低頭看譜。日常可進行「收下巴運動」（Chin Tucks）：保持視線水平，向後平行收縮下巴，每次停留 5 秒，重複 10 次以鍛鍊頸椎深層穩定肌群。';
-    
-    currentStandardResult = {
-      score: Math.round(score),
-      projectName: '頭部前傾檢測',
-      level: '警示',
-      details: `頸部前傾角 ${angle}°，水偏移 ${(angle * 0.15).toFixed(1)}cm`
-    };
-  } 
-  else if (selectedDiagnostic === 'arm-raise') {
-    const lAngle = Math.round(170 + rNum * 5); // 170 to 175 (Good)
-    const rAngle = Math.round(135 + rNum * 10); // 135 to 145 (Restricted)
-    const score = Math.round((lAngle + rAngle) / 2 - 60); // 90ish
-    
-    scoreVal.textContent = score;
-    scoreLabel.textContent = '活動度分數';
-    
-    detailsTitle.textContent = '抬手活動度指標';
-    m1Name.textContent = '左側肩關節屈曲角度';
-    m1Val.textContent = `${lAngle}° (正常活動度 > 165°)`;
-    m1Bar.style.width = `${(lAngle / 180) * 100}%`;
-    m1Bar.className = 'metric-bar-fill success';
-    
-    m2Name.textContent = '右側肩關節屈曲角度';
-    m2Val.textContent = `${rAngle}° (正常活動度 > 165°)`;
-    m2Bar.style.width = `${(rAngle / 180) * 100}%`;
-    m2Bar.className = 'metric-bar-fill warning';
-    
-    badge.classList.add('warning');
-    ratingText.textContent = '評定：右肩活動受限';
-    descText.textContent = `您的左手能正常上舉，但右手在舉高過頭時，角度受限於 ${rAngle}°，且伴隨輕微的斜肩代償。這可能是肩胛下肌或肩袖肌群緊繃引起。`;
-    
-    adviceText.textContent = '右手持弓或拉琴長期處於內旋位置，應加強「肩關節外旋拉伸」。站立於牆邊，曲肘 90 度，手臂貼牆壁做水平外展，拉伸胸大肌與肩前側肌肉。每次拉伸 20 秒。';
-    
-    currentStandardResult = {
-      score: score,
-      projectName: '抬手檢測',
-      level: '注意',
-      details: `左肩上舉 ${lAngle}°，右肩上舉 ${rAngle}°`
-    };
-  }
-  
-  document.getElementById('standard-hud-text').innerHTML = `
-    STATUS: ANALYSIS DONE<br>
-    DIAGNOSTIC: ${selectedDiagnostic.toUpperCase()}<br>
-    SCORE: ${scoreVal.textContent}
-  `;
-}
-
-function resetStandardDiagnosis() {
-  document.getElementById('standard-waiting-panel').style.display = 'flex';
-  document.getElementById('standard-results-panel').style.display = 'none';
-  document.getElementById('btn-reset-standard').disabled = true;
-  
-  const text = selectedDiagnostic === 'uneven-shoulders' ? 'UNEVEN SHOULDERS' : (selectedDiagnostic === 'forward-head' ? 'FORWARD HEAD' : 'ARM RAISE TEST');
-  document.getElementById('standard-hud-text').innerHTML = `
-    STATUS: WAITING TO DIAGNOSE<br>
-    DIAGNOSTIC: ${text}
-  `;
-  
-  currentStandardResult = null;
-  showToast('診斷已重置，可重新開始檢測。', 'info');
-}
-
-// ----------------------------------------------------
-// 7. DATA PERSISTENCE & HISTORY LIST
-// ----------------------------------------------------
-async function savePlayingRecord() {
-  if (!currentProfile) return;
-  if (!playingRecords.relax || !playingRecords.prepare || !playingRecords.playing) return;
-  
-  const score = parseInt(document.getElementById('playing-score-val').textContent);
-  let level = '良好';
-  if (score < 75) level = '警示';
-  else if (score < 90) level = '注意';
-  
-  const p = playingRecords.playing;
-
-  // Build CVA summary for storage (compact: store frames + stats per stage)
-  const cvaSummary = {};
-  ['relax', 'prepare', 'playing'].forEach(stage => {
-    const cva = playingRecords[stage]?.cva;
-    if (cva) cvaSummary[stage] = cva; // includes frames[], avg, min, max, abovePct
-  });
-  
-  const newRecord = {
-    id: Date.now(),
-    timestamp: new Date().toLocaleString('zh-TW', { hour12: false }),
-    username: currentProfile.username,
-    instrument: currentProfile.instrument,
-    type: 'playing',
-    projectName: '演奏動作評估',
-    score: score,
-    level: level,
-    details: {
-      neckAngle: p.neckAngle,
-      shoulderTilt: p.shoulderTilt,
-      shoulderSymmetry: p.shoulderSymmetry,
-      leftElbow: p.leftElbow,
-      rightElbow: p.rightElbow,
-      wristFlexion: p.wristFlexion,
-      spineTilt: p.spineTilt,
-      anomalies: playingRecords.anomalies || [],
-      cva: Object.keys(cvaSummary).length > 0 ? cvaSummary : null,
-      raw: playingRecords
-    }
-  };
-  
-  await addRecordToFirestore(newRecord);
-
-  showToast('演奏動作評估資料已成功儲存至歷史紀錄！', 'success');
-  resetPlayingCapture();
-  await refreshHistory();
-  setTimeout(() => { switchSection('history'); }, 500);
-}
-
-async function saveStandardRecord() {
-  if (!currentProfile || !currentStandardResult) return;
-  
-  const newRecord = {
-    id: Date.now(),
-    timestamp: new Date().toLocaleString('zh-TW', { hour12: false }),
-    username: currentProfile.username,
-    instrument: currentProfile.instrument,
-    type: 'static',
-    projectName: currentStandardResult.projectName,
-    score: currentStandardResult.score,
-    level: currentStandardResult.level,
-    details: {
-      textSummary: currentStandardResult.details,
-      diagnosticType: selectedDiagnostic
-    }
-  };
-  
-  await addRecordToFirestore(newRecord);
-
-  showToast('靜態動作診斷紀錄已成功儲存！', 'success');
-  resetStandardDiagnosis();
-  await refreshHistory();
-  setTimeout(() => { switchSection('history'); }, 500);
-}
-
-// ── Firestore 歷史紀錄存取 ────────────────────────────────────────
-// 每位使用者的紀錄存在 Firestore：
-// collection: users/{uid}/records/{recordId}
-
-async function getHistoryFromStorage() {
-  try {
-    const user = auth.currentUser;
-    if (!user) return [];
-    const snapshot = await db
-      .collection('users').doc(user.uid)
-      .collection('records')
-      .orderBy('createdAt', 'desc')
-      .get();
-    return snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
-  } catch (err) {
-    console.error('Firestore 讀取失敗，改用 localStorage：', err);
-    const data = localStorage.getItem('musician_records');
-    return data ? JSON.parse(data) : [];
-  }
-}
-
-async function saveHistoryToStorage(records) {
-  // saveHistoryToStorage 在舊架構是整包覆蓋，
-  // Firestore 改用 addRecord / deleteRecord 單筆操作，
-  // 這裡保留作為相容層（匯入時批次寫入用）
-  try {
-    const user = auth.currentUser;
-    if (!user) return;
-    const batch = db.batch();
-    const colRef = db.collection('users').doc(user.uid).collection('records');
-    records.forEach(record => {
-      const ref = record.firestoreId ? colRef.doc(record.firestoreId) : colRef.doc();
-      batch.set(ref, { ...record, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-    await batch.commit();
-  } catch (err) {
-    console.error('Firestore 寫入失敗：', err);
-  }
-  await refreshHistory();
-}
-
-async function addRecordToFirestore(record) {
-  const user = auth.currentUser;
-  if (!user) return;
-  await db.collection('users').doc(user.uid)
-    .collection('records')
-    .add({ ...record, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-}
-
-async function deleteRecordFromFirestore(firestoreId) {
-  const user = auth.currentUser;
-  if (!user) return;
-  await db.collection('users').doc(user.uid)
-    .collection('records').doc(firestoreId).delete();
-}
-
-async function refreshHistory() {
-  const records = await getHistoryFromStorage();
-  updateHistoryTable(records);
-  updateDashboardStats(records);
-  renderDashboardTrendChart(records);
-}
-
-function updateComparisonButton() {
-  const btn = document.getElementById('btn-compare-records');
-  const countEl = document.getElementById('selected-count');
-  if (countEl) countEl.textContent = selectedRecordIds.size;
-  if (btn) btn.style.display = selectedRecordIds.size >= 2 ? 'inline-flex' : 'none';
-}
-
-function updateHistoryTable(filteredRecords = null) {
-  const records = filteredRecords || getHistoryFromStorage();
+function updateHistoryTable(records) {
   const tbody = document.getElementById('history-table-body');
-  
-  // Reset select-all state
   const checkAll = document.getElementById('check-all-records');
   if (checkAll) checkAll.checked = false;
   selectedRecordIds.clear();
   updateComparisonButton();
-  
-  if (records.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 3rem;">
-          <i data-lucide="inbox" style="width: 48px; height: 48px; margin: 0 auto 0.5rem auto; opacity: 0.5; display: block;"></i>
-          查無歷史評估紀錄。請填寫個資並開始進行評估！
-        </td>
-      </tr>
-    `;
+
+  if (!records.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="inbox"></i>${tApp('history_empty')}</div></td></tr>`;
     lucide.createIcons();
     return;
   }
-  
-  tbody.innerHTML = '';
-  
-  records.forEach(r => {
-    const row = document.createElement('tr');
-    const rid = r.firestoreId || r.id;  // Firestore doc ID
-
-    // Status Badge
-    let lvlClass = 'badge-success';
-    if (r.level === '注意' || r.level === 'Caution') lvlClass = 'badge-warning';
-    if (r.level === '警示' || r.level === 'Alert')   lvlClass = 'badge-danger';
-
-    const typeLabel = r.type === 'playing' ? '演奏動作' : '標準檢測';
-
-    row.innerHTML = `
-      <td style="text-align: center; vertical-align: middle;">
-        <input type="checkbox" class="record-checkbox" data-id="${rid}" onchange="toggleRecordSelection('${rid}', this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
-      </td>
-      <td>${r.timestamp}</td>
-      <td><strong>${r.username}</strong></td>
-      <td><span class="badge badge-info">${r.instrument}</span></td>
-      <td>${typeLabel}</td>
-      <td>
-        <div style="font-weight:600;">${r.projectName}</div>
-        <div style="font-size:0.75rem; color:var(--text-secondary);">${r.type === 'static' ? r.details.textSummary : `綜合健康分數: ${r.score}`}</div>
-      </td>
-      <td><span class="badge ${lvlClass}">${r.level}</span></td>
+  tbody.innerHTML = records.map(r => {
+    const rid = r.firestoreId;
+    const practice = r.practice ? `${fmtMinutes(r.practice.durationSec)} ${tApp('unit_min')}` : '--';
+    return `<tr>
+      <td style="text-align:center;"><input type="checkbox" class="record-checkbox" data-id="${rid}" onchange="toggleRecordSelection('${rid}', this.checked)" ${r.type !== 'playing' ? 'disabled' : ''}></td>
+      <td>${fmtDateTime(docTimeMs(r))}</td>
+      <td><span class="badge badge-info">${escapeHtml(instrumentLabel(r.instrument))}</span></td>
+      <td>${typeLabel(r)}</td>
+      <td><div style="font-weight:600;">${r.score ?? '--'}</div><div class="muted small">${recordSummaryText(r)}</div></td>
+      <td>${practice}</td>
+      <td>${levelBadge(r.level)}</td>
       <td class="actions-cell">
-        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="viewHistoryDetail('${rid}')">
-          <i data-lucide="eye" style="width: 14px; height: 14px;"></i> 檢視
-        </button>
-        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; color:var(--color-danger); border-color:rgba(195,146,137,0.4);" onclick="deleteHistoryRecord('${rid}')">
-          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-        </button>
+        <button class="btn btn-outline btn-sm" onclick="viewHistoryDetail('${rid}')"><i data-lucide="eye"></i>${tApp('btn_view')}</button>
+        <button class="btn btn-danger-outline btn-sm" onclick="deleteHistoryRecord('${rid}')" title="${tApp('btn_delete')}"><i data-lucide="trash-2"></i></button>
       </td>
-    `;
-
-    tbody.appendChild(row);
-  });
-  
+    </tr>`;
+  }).join('');
   lucide.createIcons();
 }
 
-async function filterHistory() {
-  const searchVal = document.getElementById('search-name').value.toLowerCase().trim();
-  const instVal = document.getElementById('filter-instrument').value;
-  const typeVal = document.getElementById('filter-type').value;
-
-  const allRecords = await getHistoryFromStorage();
-  
-  const filtered = allRecords.filter(r => {
-    const matchesSearch = r.username.toLowerCase().includes(searchVal) || r.projectName.toLowerCase().includes(searchVal);
-    const matchesInst = instVal === 'All' || r.instrument === instVal;
-    const matchesType = typeVal === 'All' || r.type === typeVal;
-    return matchesSearch && matchesInst && matchesType;
+function toggleRecordSelection(id, checked) {
+  if (checked) selectedRecordIds.add(id); else selectedRecordIds.delete(id);
+  updateComparisonButton();
+}
+function toggleSelectAll(box) {
+  document.querySelectorAll('.record-checkbox:not(:disabled)').forEach(cb => {
+    cb.checked = box.checked;
+    toggleRecordSelection(cb.dataset.id, box.checked);
   });
-  
-  updateHistoryTable(filtered);
+}
+function updateComparisonButton() {
+  const btn = document.getElementById('btn-compare-records');
+  document.getElementById('selected-count').textContent = selectedRecordIds.size;
+  btn.style.display = selectedRecordIds.size >= 2 ? 'inline-flex' : 'none';
 }
 
-async function deleteHistoryRecord(firestoreId) {
-  if (confirm('確定要刪除這筆評估紀錄嗎？')) {
-    try {
-      await deleteRecordFromFirestore(firestoreId);
-      showToast('紀錄已成功刪除。', 'info');
-      await refreshHistory();
-    } catch (err) {
-      showToast('刪除失敗，請稍後再試。', 'danger');
-    }
+async function deleteHistoryRecord(id) {
+  if (!confirm(tApp('confirm_delete_record'))) return;
+  try {
+    await DataAPI.deleteSub(App.user.uid, 'records', id);
+    // 一併刪除該次評估的練習前後人體圖與練習時間紀錄
+    for (const m of App.bodyMaps.filter(m => m.recordId === id)) await DataAPI.deleteSub(App.user.uid, 'bodyMaps', m.firestoreId);
+    for (const p of App.practiceLogs.filter(p => p.recordId === id)) await DataAPI.deleteSub(App.user.uid, 'practiceSessions', p.firestoreId);
+    await Promise.all([refreshPerformerSub('records', 'records'), refreshPerformerSub('bodyMaps', 'bodyMaps'), refreshPerformerSub('practiceSessions', 'practiceLogs')]);
+    showToast(tApp('toast_deleted'), 'info');
+    filterHistory();
+  } catch (err) {
+    console.error(err);
+    showToast(tApp('toast_delete_fail'), 'danger');
   }
 }
 
 async function clearAllHistory() {
-  if (confirm('⚠️ 警告：確定要清空所有的歷史評估紀錄嗎？此動作無法復原！')) {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-      const snapshot = await db.collection('users').doc(user.uid)
-        .collection('records').get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-      showToast('歷史紀錄已全部清空。', 'warning');
-      await refreshHistory();
-    } catch (err) {
-      showToast('清空失敗，請稍後再試。', 'danger');
-    }
+  if (!confirm(tApp('confirm_clear_records'))) return;
+  try {
+    await DataAPI.clearSub(App.user.uid, 'records');
+    await refreshPerformerSub('records', 'records');
+    showToast(tApp('toast_cleared'), 'warning');
+    filterHistory();
+  } catch (err) {
+    showToast(tApp('toast_delete_fail'), 'danger');
   }
 }
 
-// ----------------------------------------------------
-// 8. DETAIL VIEW MODAL
-// ----------------------------------------------------
-async function viewHistoryDetail(firestoreId) {
-  const records = await getHistoryFromStorage();
-  const r = records.find(item => (item.firestoreId || item.id) == firestoreId);
-  if (!r) return;
-  
-  const modal = document.getElementById('detail-modal');
-  const content = document.getElementById('modal-content');
-  
-  modal.style.display = 'flex';
-  
-  if (r.type === 'playing') {
-    const p = r.details;
-    content.innerHTML = `
-      <div style="margin-bottom: 1.5rem;">
-        <span class="badge badge-info" style="font-size: 0.85rem; margin-bottom: 0.5rem;">演奏動作評估</span>
-        <h2 style="color: var(--text-primary); font-size: 1.5rem;">${r.username} 的詳細動作報告</h2>
-        <p style="color: var(--text-secondary); font-size: 0.85rem;">評估時間: ${r.timestamp} | 樂器: ${r.instrument}</p>
-      </div>
-      
-      <div class="grid-2" style="margin-bottom: 1.5rem;">
-        <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-          <div class="score-badge-large ${r.score >= 90 ? 'optimal' : (r.score >= 75 ? 'warning' : 'danger')}">
-            <span class="score-value">${r.score}</span>
-            <span class="score-label">健康度評分</span>
-          </div>
-          <h3 style="color: var(--text-primary); margin-top: 1rem;">姿勢狀態: ${r.level}</h3>
-        </div>
-        
-        <div class="card">
-          <h4 style="color: var(--text-primary); margin-bottom: 0.75rem;">量測點位細節 (演奏中)</h4>
-          <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem;">
-            <li><strong>頸椎前傾角度</strong>: ${Math.round(p.neckAngle)}° (標準 < 15°)</li>
-            <li><strong>雙肩傾斜度</strong>: ${Math.round(p.shoulderTilt)}° (標準 < 5°)</li>
-            <li><strong>左右肩對稱程度</strong>: ${Math.round(p.shoulderSymmetry)}% (標準 > 90%)</li>
-            <li><strong>左肘夾角 / 右肘夾角</strong>: ${Math.round(p.leftElbow)}° / ${Math.round(p.rightElbow)}°</li>
-            <li><strong>手腕彎曲度 / 脊椎傾斜</strong>: ${Math.round(p.wristFlexion)}° / ${Math.round(p.spineTilt)}°</li>
-          </ul>
-        </div>
-      </div>
-      
-      <div class="grid-2">
-        <div class="card">
-          <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">三狀態折線夾角</h4>
-          <div style="height: 250px; position:relative;">
-            <canvas id="modalRadarChart"></canvas>
-          </div>
-        </div>
-        <div class="card">
-          <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">肩膀水平對稱折線圖</h4>
-          <div style="height: 250px; position:relative;">
-            <canvas id="modalSymmetryChart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      ${p.cva ? `
-      <div class="card" style="margin-top:1.5rem;">
-        <div class="card-header">
-          <div class="card-title" style="font-size:0.95rem;">
-            <i data-lucide="scan-face"></i> CVA 頸椎角逐幀折線圖（三階段）
-          </div>
-        </div>
-        <div style="height:220px; position:relative;">
-          <canvas id="modalCvaChart"></canvas>
-        </div>
-        <div style="display:flex; gap:1rem; margin-top:0.75rem; flex-wrap:wrap;" id="modal-cva-stats">
-        </div>
-        <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.5rem;">
-          紅色色帶區間表示 CVA &lt; 60°（頭部前傾警戒）。角度越小，頸椎承受壓力越大。
-        </p>
-      </div>
-      ` : ''}
-    `;
-    
-    // We must wait a tiny bit for the DOM elements inside the modal to render before building charts
-    setTimeout(() => {
-      const raw = p.raw;
-      const modalRadarCtx = document.getElementById('modalRadarChart').getContext('2d');
-      new Chart(modalRadarCtx, {
-        type: 'line',
-        data: {
-          labels: ['1. 放鬆姿勢', '2. 準備姿勢', '3. 演奏中動作'],
-          datasets: [
-            {
-              label: '頸椎前傾角 (°)',
-              data: [raw.relax.neckAngle, raw.prep.neckAngle, p.neckAngle],
-              borderColor: '#8D6B61',
-              backgroundColor: 'rgba(141, 107, 97, 0.1)',
-              borderWidth: 3
-            },
-            {
-              label: '雙肩傾斜度 (°)',
-              data: [raw.relax.shoulderTilt, raw.prep.shoulderTilt, p.shoulderTilt],
-              borderColor: '#82898D',
-              backgroundColor: 'rgba(130, 137, 141, 0.1)',
-              borderWidth: 3
-            },
-            {
-              label: '左手肘夾角 (°)',
-              data: [raw.relax.leftElbow, raw.prep.leftElbow, p.leftElbow],
-              borderColor: '#A1B0AD',
-              backgroundColor: 'rgba(161, 176, 173, 0.1)',
-              borderWidth: 3
-            },
-            {
-              label: '右手肘夾角 (°)',
-              data: [raw.relax.rightElbow, raw.prep.rightElbow, p.rightElbow],
-              borderColor: '#C0B0A2',
-              backgroundColor: 'rgba(192, 176, 162, 0.1)',
-              borderWidth: 3
-            },
-            {
-              label: '脊椎傾斜度 (°)',
-              data: [raw.relax.spineTilt, raw.prep.spineTilt, p.spineTilt],
-              borderColor: '#C39289',
-              backgroundColor: 'rgba(195, 146, 137, 0.1)',
-              borderWidth: 3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { grid: { color: 'rgba(130, 137, 141, 0.1)' } }
-          }
-        }
-      });
-      
-      const modalSymmetryCtx = document.getElementById('modalSymmetryChart').getContext('2d');
-      new Chart(modalSymmetryCtx, {
-        type: 'line',
-        data: {
-          labels: ['放鬆', '準備', '演奏中'],
-          datasets: [{
-            label: '左右肩水平對稱度 (%)',
-            data: [raw.relax.shoulderSymmetry, raw.prep.shoulderSymmetry, p.shoulderSymmetry],
-            borderColor: '#C6CCC0',
-            backgroundColor: 'rgba(198, 204, 192, 0.2)',
-            borderWidth: 3,
-            fill: true,
-            pointRadius: 5
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { min: 50, max: 100 } }
-        }
-      });
-
-      // CVA modal chart — rendered only when real CVA data was recorded
-      if (p.cva && document.getElementById('modalCvaChart')) {
-        const cvaData = p.cva;
-        const stageColors = { relax: '#A1B0AD', prepare: '#8D6B61', playing: '#C39289' };
-        const stageLabels = { relax: '① 放鬆', prepare: '② 準備', playing: '③ 演奏中' };
-        const allLabels = [];
-        const datasets = [];
-
-        let offset = 0;
-        ['relax', 'prepare', 'playing'].forEach(stage => {
-          const stageCva = cvaData[stage];
-          if (!stageCva) return;
-          const stageData = new Array(allLabels.length).fill(null);
-          stageCva.frames.forEach((angle, i) => {
-            allLabels.push(i === 0 ? stageLabels[stage] : (i === Math.floor(stageCva.frames.length / 2) ? `${stageLabels[stage]} 中` : ''));
-            stageData.push(angle);
-          });
-          // Pad earlier datasets
-          datasets.forEach(ds => { while (ds.data.length < allLabels.length) ds.data.push(null); });
-          datasets.push({
-            label: `${stageLabels[stage]} CVA`,
-            data: stageData,
-            borderColor: stageColors[stage],
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0.2,
-            spanGaps: false
-          });
-          offset += stageCva.frames.length;
-        });
-
-        const cvaWarnPlugin = {
-          id: 'modalCvaWarnBands',
-          beforeDraw(chart) {
-            const { ctx, chartArea: { top, bottom }, scales: { x, y } } = chart;
-            if (!x || !y) return;
-            ctx.save();
-            // Threshold line
-            const yPos = y.getPixelForValue(CVA_THRESHOLD);
-            ctx.strokeStyle = 'rgba(195,146,137,0.7)'; ctx.lineWidth = 1.5;
-            ctx.setLineDash([6,4]);
-            ctx.beginPath(); ctx.moveTo(chart.chartArea.left, yPos); ctx.lineTo(chart.chartArea.right, yPos); ctx.stroke();
-            ctx.setLineDash([]);
-            // Red bands
-            ctx.fillStyle = 'rgba(195,146,137,0.15)';
-            let inBand = false, bandStart = 0;
-            allLabels.forEach((_, i) => {
-              const allAngles = datasets.map(ds => ds.data[i]).filter(v => v !== null);
-              if (!allAngles.length) return;
-              const angle = allAngles[0];
-              const xPos = x.getPixelForValue(i);
-              if (angle < CVA_THRESHOLD && !inBand) { bandStart = xPos; inBand = true; }
-              else if (angle >= CVA_THRESHOLD && inBand) { ctx.fillRect(bandStart, top, xPos - bandStart, bottom - top); inBand = false; }
-            });
-            if (inBand) { const lx = x.getPixelForValue(allLabels.length - 1); ctx.fillRect(bandStart, top, lx - bandStart, bottom - top); }
-            ctx.restore();
-          }
-        };
-
-        new Chart(document.getElementById('modalCvaChart').getContext('2d'), {
-          type: 'line',
-          plugins: [cvaWarnPlugin],
-          data: { labels: allLabels, datasets },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: {
-              y: { min: 20, max: 90, ticks: { color: '#82898D', callback: v => `${v}°` }, grid: { color: 'rgba(130,137,141,0.1)' } },
-              x: { grid: { display: false }, ticks: { color: '#82898D', font: { size: 10 }, autoSkip: false, callback(v, i) { return allLabels[i] || ''; } } }
-            },
-            plugins: { legend: { labels: { color: '#3A3533', font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => `CVA: ${ctx.raw?.toFixed(1)}°` } } }
-          }
-        });
-
-        // Stats chips
-        const statsEl = document.getElementById('modal-cva-stats');
-        if (statsEl) {
-          statsEl.innerHTML = ['relax','prepare','playing'].filter(s => cvaData[s]).map(s => {
-            const d = cvaData[s];
-            const warn = d.abovePct > 0 ? `⚠ ${d.abovePct}% 低於警戒` : '✓ 全程正常';
-            const color = d.abovePct > 0 ? '#C39289' : '#C6CCC0';
-            return `<div style="background:var(--bg-secondary);border-radius:8px;padding:0.5rem 0.9rem;border-left:3px solid ${color};min-width:100px;">
-              <div style="font-size:0.7rem;color:var(--text-secondary);">${stageLabels[s]} 平均 CVA</div>
-              <div style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:monospace;">${d.avg.toFixed(1)}°</div>
-              <div style="font-size:0.7rem;color:${color};">${warn}</div>
-            </div>`;
-          }).join('');
-        }
-        lucide.createIcons();
-      }
-    }, 100);
-    
-  } 
-  else { // Static Record view
-    content.innerHTML = `
-      <div style="margin-bottom: 1.5rem;">
-        <span class="badge badge-info" style="font-size: 0.85rem; margin-bottom: 0.5rem;">靜態動作診斷</span>
-        <h2 style="color: var(--text-primary); font-size: 1.5rem;">${r.projectName} 診斷報告</h2>
-        <p style="color: var(--text-secondary); font-size: 0.85rem;">評估時間: ${r.timestamp} | 演奏者: ${r.username} (${r.instrument})</p>
-      </div>
-      
-      <div class="card" style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 2rem; padding: 2rem;">
-        <div class="score-badge-large ${r.level === '良好' ? 'optimal' : (r.level === '注意' ? 'warning' : 'danger')}">
-          <span class="score-value">${r.score}</span>
-          <span class="score-label">${r.projectName.includes('頭') || r.projectName.includes('抬') ? '姿勢評分' : '對稱分數'}</span>
-        </div>
-        <div style="text-align:left;">
-          <h3 style="color:var(--text-primary); font-size:1.3rem;">診斷評定: ${r.level}</h3>
-          <p style="color:var(--text-dark); margin-top:0.5rem; font-size:0.95rem;">指標數值: <strong>${r.details.textSummary}</strong></p>
-        </div>
-      </div>
-      
-      <div class="card" style="background-color: var(--bg-secondary); border-left:4px solid var(--color-interactive); padding: 1.25rem;">
-        <h4 style="color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
-          <i data-lucide="info"></i> 針對您的復健與防護建議
-        </h4>
-        <p style="margin-top:0.5rem; font-size:0.9rem; line-height:1.5; color:var(--text-dark);">
-          ${getAdviceFromDiagnosisType(r.projectName)}
-        </p>
-      </div>
-    `;
-    
-    setTimeout(() => {
-      lucide.createIcons();
-    }, 50);
-  }
-}
-
-function getAdviceFromDiagnosisType(projectName) {
-  if (projectName.includes('肩')) {
-    return '日常練習前可進行 10 分鐘落肩牽拉，拉伸斜方肌。演奏小提琴每 45 分鐘建議休息 10 分鐘，並做水平轉頭動作放鬆頸部，避免單側重力壓迫導致一側肩胛緊繃。';
-  } else if (projectName.includes('頭')) {
-    return '演奏時應調整譜架高度與眼睛齊平，防範頭部前傾。可利用「靠牆收下巴」練習，改善烏龜頸與肩頸疲勞。';
-  } else if (projectName.includes('抬')) {
-    return '加強肩關節外旋拉伸動作（例如靠牆肘對貼）。上舉角度受限的肩膀（多為持弓手或按弦手之肩關節受壓過大）應在演奏前後進行肩袖肌群的低強度熱身與拉伸。';
-  }
-  return '請保持規律的演奏姿勢檢測，維持身體對稱性。';
-}
-
-function closeDetailModal() {
-  document.getElementById('detail-modal').style.display = 'none';
-}
-
-// ----------------------------------------------------
-// 9. IMPORT / EXPORT DATA
-// ----------------------------------------------------
 function exportHistoryData() {
-  const records = getHistoryFromStorage();
-  if (records.length === 0) {
-    showToast('目前無任何紀錄可供匯出。', 'warning');
-    return;
-  }
-  
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `musician_health_records_${Date.now()}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-  
-  showToast('歷史紀錄匯出成功！', 'success');
-}
-
-function importHistoryData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (!Array.isArray(imported)) {
-        throw new Error('資料格式不正確，應為陣列型式。');
-      }
-      
-      // Merge with existing
-      const existing = getHistoryFromStorage();
-      
-      // Filter out duplicates by ID
-      const merged = [...imported, ...existing];
-      const uniqueMerged = [];
-      const idsSeen = new Set();
-      
-      merged.forEach(r => {
-        if (r.id && !idsSeen.has(r.id)) {
-          idsSeen.add(r.id);
-          uniqueMerged.push(r);
-        }
-      });
-      
-      saveHistoryToStorage(uniqueMerged);
-      showToast(`成功匯入 ${imported.length} 筆評估紀錄！`, 'success');
-      
-      // Reset file input
-      event.target.value = '';
-    } catch (err) {
-      showToast(`匯入失敗: ${err.message}`, 'danger');
-      event.target.value = '';
-    }
+  if (!App.records.length) { showToast(tApp('toast_nothing_export'), 'warning'); return; }
+  const data = {
+    exportedAt: new Date().toISOString(),
+    profile: App.profile,
+    records: App.records,
+    bodyMaps: App.bodyMaps,
+    questionnaires: App.questionnaires,
+    practiceSessions: App.practiceLogs,
+    medicalLogs: App.medicalLogs,
+    notes: App.notes
   };
-  reader.readAsText(file);
+  const blob = new Blob([JSON.stringify(data, (k, v) => (v && typeof v.toMillis === 'function') ? v.toMillis() : v, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `performer_care_${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  showToast(tApp('toast_exported'), 'success');
 }
 
-// ----------------------------------------------------
-// 10. WELCOME DASHBOARD TREND CHART & STATS
-// ----------------------------------------------------
-async function updateDashboardStats() {
-  const records = await getHistoryFromStorage();
-  
-  // Count
-  document.getElementById('stat-total-count').textContent = records.length;
-  
-  // Last score
-  const playingRecordsOnly = records.filter(r => r.type === 'playing');
-  if (playingRecordsOnly.length > 0) {
-    document.getElementById('stat-last-score').textContent = playingRecordsOnly[0].score;
-  } else if (records.length > 0) {
-    document.getElementById('stat-last-score').textContent = records[0].score;
-  } else {
-    document.getElementById('stat-last-score').textContent = '--';
-  }
-  
-  // Instrument
-  if (currentProfile) {
-    document.getElementById('stat-instrument').textContent = currentProfile.instrument;
-  } else {
-    document.getElementById('stat-instrument').textContent = tApp('stat_none');
-  }
-  
-  // Render recommendations tips
-  const tipsEl = document.getElementById('dashboard-tips');
-  if (records.length === 0) {
-    tipsEl.innerHTML = `
-      <p style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; padding: 2rem 0;">
-        暫無足夠的評估紀錄。請至少完成一次動作評估以獲得個人化的健康改善建議。
-      </p>
-    `;
+// ── 單筆詳細內容（演奏者與照護端共用） ───────────────────────────
+function viewHistoryDetail(id, ctx) {
+  const records = ctx ? ctx.records : App.records;
+  const maps = ctx ? ctx.bodyMaps : App.bodyMaps;
+  const gender = ctx ? (ctx.profile && ctx.profile.gender) : (App.profile && App.profile.gender);
+  const r = records.find(x => x.firestoreId === id);
+  if (!r) return;
+  const m = recordMetrics(r);
+
+  if (r.type !== 'playing') {
+    openModal(`
+      <span class="badge badge-muted">${tApp('type_static')}</span>
+      <h2 class="modal-title" style="margin-top:0.5rem;">${escapeHtml(r.projectName || '')}</h2>
+      <p class="muted">${fmtDateTime(m.ms)}</p>
+      <div class="sample-flag" style="margin-top:1rem;">${tApp('legacy_static_note')}</div>
+      <div class="card"><p>${escapeHtml(r.details && r.details.textSummary || '')}</p></div>`);
     return;
   }
-  
-  // Custom smart recommendations
-  const worstRecord = [...records].sort((a,b) => a.score - b.score)[0];
-  let tipHtml = '';
-  
-  if (worstRecord.score < 80) {
-    tipHtml += `
-      <div style="background-color:rgba(195,146,137,0.1); border-left:4px solid var(--color-danger); padding:1rem; border-radius:4px;">
-        <strong style="color:var(--text-primary); font-size:0.9rem;">⚠️ 注意：肌肉骨骼壓力高</strong>
-        <p style="font-size:0.8rem; color:var(--text-dark); margin-top:0.25rem;">在您的「${worstRecord.projectName}」檢測中得分偏低 (${worstRecord.score} 分)。這代表肩頸與脊椎代償壓力較大，建議每演奏 40 分鐘即休息並進行肩頸對稱放鬆。</p>
+
+  const pre = maps.find(x => x.recordId === id && x.context === 'pre');
+  const post = maps.find(x => x.recordId === id && x.context === 'post');
+  const scoreCls = { good: 'optimal', caution: 'warning', alert: 'danger' }[m.level];
+  const pct = v => v === null ? '--' : `${fmtNum(v, 0)}%`;
+  openModal(`
+    <span class="badge badge-info">${tApp('type_playing')}</span>
+    <h2 class="modal-title" style="margin-top:0.5rem;">${tApp('detail_title')}</h2>
+    <p class="muted">${fmtDateTime(m.ms)} · ${escapeHtml(instrumentLabel(r.instrument))}${r.details && !r.details.summary ? ' · ' + tApp('legacy_record') : ''}</p>
+    <div class="grid-2" style="margin-top:1.25rem;">
+      <div class="card" style="display:flex; align-items:center; gap:1.25rem;">
+        <div class="score-badge-large ${scoreCls}"><span class="score-value">${r.score ?? '--'}</span><span class="score-label">${tApp('score_label')}</span></div>
+        <div>
+          <div style="margin-bottom:0.4rem;">${levelBadge(r.level)}</div>
+          <div class="muted small">${tApp('ps_duration')}：${r.practice ? fmtClock(r.practice.durationSec) : '--'}</div>
+          <div class="muted small">${tApp('ps_bad')}：${r.practice ? fmtClock(r.practice.badPostureSec) : '--'}</div>
+          <div class="muted small">${tApp('ps_alerts')}：${r.practice ? r.practice.alertCount : '--'}</div>
+        </div>
       </div>
-    `;
-  } else {
-    tipHtml += `
-      <div style="background-color:rgba(198,204,192,0.15); border-left:4px solid var(--color-success); padding:1rem; border-radius:4px;">
-        <strong style="color:#43523f; font-size:0.9rem;">✓ 良好：姿勢維持優良</strong>
-        <p style="font-size:0.8rem; color:var(--text-dark); margin-top:0.25rem;">您最近期的動作評估表現良好，請繼續維持標準的視譜高度，並於提琴練習前後進行溫和暖身與伸展。</p>
+      <div class="card">
+        <h4 style="color:var(--primary); margin-bottom:0.6rem; font-size:0.92rem;">${tApp('metrics_title')}</h4>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:0.4rem; font-size:0.87rem;">
+          <li><strong>CVA</strong>：${fmtNum(m.cvaAvg)}°（${tApp('below_threshold_ratio')} ${pct(m.cvaBelowPct)}）</li>
+          <li><strong>${tApp('metric_shoulder')}</strong>：Δ ${fmtNum(m.shoulderAvg)}°（${tApp('over_ratio')} ${pct(m.shoulderOverPct)}）</li>
+          <li><strong>${tApp('metric_left_elbow')} / ${tApp('metric_right_elbow')}</strong>：${fmtNum(m.leftElbowAvg, 0)}° / ${fmtNum(m.rightElbowAvg, 0)}°（${tApp('over_ratio')} ${pct(m.elbowOverPct)}）</li>
+          <li class="muted small">${tApp('metrics_pending_note')}</li>
+        </ul>
       </div>
-    `;
-  }
-  
-  // Add another general tips
-  tipHtml += `
-    <div style="background-color:var(--bg-secondary); border-left:4px solid var(--color-accent); padding:1rem; border-radius:4px;">
-      <strong style="color:var(--text-primary); font-size:0.9rem;">💡 物理治療小叮嚀</strong>
-      <p style="font-size:0.8rem; color:var(--text-dark); margin-top:0.25rem;">
-        小提琴演奏者：注意夾琴時下巴不要過度用力向左壓，肩膀應放鬆。
-        <br>大提琴演奏者：注意腰椎與骨盆垂直對中，背部不要駝背前傾。
-      </p>
     </div>
-  `;
-  
-  tipsEl.innerHTML = tipHtml;
-}
-
-async function renderDashboardTrendChart() {
-  const records = await getHistoryFromStorage();
-  const canvas = document.getElementById('dashboardTrendChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  
-  if (dashboardTrendChartRef) {
-    dashboardTrendChartRef.destroy();
-  }
-  
-  // Sort records chronologically (oldest first) for trend line
-  const chronological = [...records].reverse().slice(-10); // last 10 records
-  
-  if (chronological.length === 0) {
-    // Draw empty state info in chart placeholder
-    ctx.clearRect(0,0, canvas.width, canvas.height);
-    ctx.fillStyle = '#82898D';
-    ctx.font = '14px Noto Sans TC, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('尚無歷史檢測數據可繪製趨勢圖', canvas.width / 2, canvas.height / 2);
-    return;
-  }
-  
-  const labels = chronological.map(r => r.timestamp.split(' ')[0].substring(5)); // Show MM/DD only
-  const data = chronological.map(r => r.score);
-
-  dashboardTrendChartRef = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: '綜合評分趨勢',
-        data: data,
-        borderColor: '#8D6B61',
-        backgroundColor: 'rgba(141, 107, 97, 0.1)',
-        borderWidth: 3,
-        tension: 0.2,
-        fill: true,
-        pointRadius: 5,
-        pointBackgroundColor: '#C0B0A2',
-        pointBorderColor: '#8D6B61'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: { min: 40, max: 100, grid: { color: 'rgba(130,137,141,0.1)' }, ticks: { color: '#82898D' } },
-        x: { grid: { display: false }, ticks: { color: '#82898D' } }
-      },
-      plugins: { legend: { display: false } }
-    }
-  });
+    <div class="card" style="margin-top:1.25rem;">
+      <h4 style="color:var(--primary); margin-bottom:0.8rem; font-size:0.92rem;">${tApp('discomfort_title')}</h4>
+      <div class="bodymap-pair">
+        <div><h4>${tApp('sbm_pre')}</h4><div id="modal-map-pre"></div></div>
+        <div><h4>${tApp('sbm_post')}</h4><div id="modal-map-post"></div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.25rem;">
+      <h4 style="color:var(--primary); margin-bottom:0.6rem; font-size:0.92rem;">${tApp('chart_cva_title')}</h4>
+      <div style="height:230px; position:relative;"><canvas id="modalCvaChart"></canvas></div>
+    </div>`);
+  BodyMap.create(document.getElementById('modal-map-pre'), { marks: pre ? pre.marks : [], editable: false, gender });
+  BodyMap.create(document.getElementById('modal-map-post'), { marks: post ? post.marks : [], editable: false, gender });
+  if (typeof renderCvaFrameChart === 'function') renderCvaFrameChart('modalCvaChart', r.details, 'modal');
 }
 
 function showComparisonModal() {
-  if (selectedRecordIds.size < 2) {
-    showToast('請選取至少 2 筆紀錄進行比較！', 'warning');
-    return;
-  }
-
-  const records = getHistoryFromStorage();
-  const selectedRecords = records.filter(r => selectedRecordIds.has(r.id)).reverse();
-
-  const modal = document.getElementById('detail-modal');
-  const content = document.getElementById('modal-content');
-
-  modal.style.display = 'flex';
-
-  const allPlaying = selectedRecords.every(r => r.type === 'playing');
-  let mainChartTitle = "多次紀錄對比折線圖";
-  let chartDesc = allPlaying
-    ? "此折線圖比較了所選不同評估的演奏中（Playing）狀態下各個關鍵點位的關節夾角。"
-    : "此折線圖比較了所選不同評估的綜合健康度得分 / 姿勢分數。";
-  
-  content.innerHTML = `
-    <div style="margin-bottom: 1.5rem;">
-      <span class="badge badge-info" style="font-size: 0.85rem; margin-bottom: 0.5rem;">多筆紀錄比較分析</span>
-      <h2 style="color: var(--text-primary); font-size: 1.5rem;">姿態紀錄對比分析</h2>
-      <p style="color: var(--text-secondary); font-size: 0.85rem;">已選取 ${selectedRecords.length} 筆紀錄進行交叉比對</p>
-    </div>
-    
-    <div class="card" style="margin-bottom: 1.5rem;">
-      <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;" id="comparison-chart-title">${mainChartTitle}</h4>
-      <div style="height: 380px; position:relative;">
-        <canvas id="comparisonLineChart"></canvas>
-      </div>
-      <p style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 0.5rem;">
-        ${chartDesc}
-      </p>
-    </div>
-    
-    <div class="card">
-      <h4 style="color: var(--text-primary); margin-bottom: 0.75rem;">所選紀錄列表</h4>
-      <div style="overflow-x: auto;">
-        <table style="font-size: 0.85rem; width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="padding: 0.75rem;">評估時間</th>
-              <th style="padding: 0.75rem;">姓名 / 代號</th>
-              <th style="padding: 0.75rem;">樂器</th>
-              <th style="padding: 0.75rem;">類型</th>
-              <th style="padding: 0.75rem;">評估項目</th>
-              <th style="padding: 0.75rem;">綜合得分</th>
-              <th style="padding: 0.75rem;">健康等級</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${selectedRecords.map(r => `
-              <tr>
-                <td style="padding: 0.75rem;">${r.timestamp}</td>
-                <td style="padding: 0.75rem;"><strong>${r.username}</strong></td>
-                <td style="padding: 0.75rem;"><span class="badge badge-info" style="font-size: 0.7rem;">${r.instrument}</span></td>
-                <td style="padding: 0.75rem;">${r.type === 'playing' ? '演奏動作' : '標準檢測'}</td>
-                <td style="padding: 0.75rem;">${r.projectName}</td>
-                <td style="padding: 0.75rem;"><strong style="color: var(--text-primary);">${r.score}</strong></td>
-                <td style="padding: 0.75rem;"><span class="badge ${r.level === '良好' ? 'badge-success' : (r.level === '注意' ? 'badge-warning' : 'badge-danger')}" style="font-size: 0.7rem;">${r.level}</span></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-  
-  setTimeout(() => {
-    const comparisonCtx = document.getElementById('comparisonLineChart').getContext('2d');
-    
-    if (allPlaying) {
-      const labels = ['頸椎角度', '雙肩傾斜度', '左右肩對稱度', '左手肘夾角', '右手肘夾角', '脊椎傾斜度'];
-      const lineColors = [
-        '#8D6B61', '#A1B0AD', '#C0B0A2', '#C6CCC0', '#E1AA8D', '#82898D', '#C39289'
-      ];
-      
-      const datasets = selectedRecords.map((r, index) => {
-        const p = r.details;
-        const color = lineColors[index % lineColors.length];
-        return {
-          label: `${r.username} (${r.timestamp.split(' ')[0]}) - ${r.instrument}`,
-          data: [p.neckAngle, p.shoulderTilt, p.shoulderSymmetry, p.leftElbow, p.rightElbow, p.spineTilt],
-          borderColor: color,
-          backgroundColor: 'transparent',
-          borderWidth: 3,
-          tension: 0.15,
-          pointRadius: 5,
-          pointBackgroundColor: color
-        };
-      });
-      
-      new Chart(comparisonCtx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: datasets
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              grid: { color: 'rgba(130, 137, 141, 0.1)' },
-              ticks: { color: '#82898D' }
-            },
-            x: {
-              grid: { color: 'rgba(130, 137, 141, 0.1)' },
-              ticks: { color: '#82898D', font: { family: 'Noto Sans TC' } }
-            }
-          },
-          plugins: {
-            legend: { labels: { color: '#3A3533', font: { family: 'Noto Sans TC', size: 11 } } }
-          }
-        }
-      });
-    } else {
-      const labels = selectedRecords.map(r => `${r.username} (${r.timestamp.split(' ')[0].substring(5)})`);
-      const scores = selectedRecords.map(r => r.score);
-      
-      new Chart(comparisonCtx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: '綜合評分比對',
-            data: scores,
-            borderColor: '#8D6B61',
-            backgroundColor: 'rgba(141, 107, 97, 0.1)',
-            borderWidth: 4,
-            tension: 0.2,
-            fill: true,
-            pointRadius: 6,
-            pointBackgroundColor: '#C0B0A2',
-            pointBorderColor: '#8D6B61'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              min: 40,
-              max: 100,
-              grid: { color: 'rgba(130, 137, 141, 0.1)' },
-              ticks: { color: '#82898D' }
-            },
-            x: {
-              grid: { display: false },
-              ticks: { color: '#82898D' }
-            }
-          },
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
-    }
-    
-    lucide.createIcons();
-  }, 100);
-
+  const selected = App.records.filter(r => selectedRecordIds.has(r.firestoreId)).sort((a, b) => docTimeMs(a) - docTimeMs(b));
+  if (selected.length < 2) { showToast(tApp('toast_select_two'), 'warning'); return; }
+  const metrics = selected.map(recordMetrics);
+  const rows = [
+    ['score_label', m => m.score ?? '--'],
+    ['metric_cva_avg', m => fmtNum(m.cvaAvg) + '°'],
+    ['below_threshold_ratio', m => m.cvaBelowPct === null ? '--' : fmtNum(m.cvaBelowPct, 0) + '%'],
+    ['metric_shoulder', m => 'Δ ' + fmtNum(m.shoulderAvg) + '°'],
+    ['metric_left_elbow', m => fmtNum(m.leftElbowAvg, 0) + '°'],
+    ['metric_right_elbow', m => fmtNum(m.rightElbowAvg, 0) + '°'],
+    ['ps_duration', m => fmtClock(m.practiceSec)],
+    ['ps_bad', m => fmtClock(m.badSec)]
+  ];
+  openModal(`
+    <span class="badge badge-info">${tApp('compare_badge')}</span>
+    <h2 class="modal-title" style="margin-top:0.5rem;">${tApp('compare_title')}</h2>
+    <p class="muted">${tApp('compare_selected', { n: selected.length })}</p>
+    <div class="card" style="margin-top:1.25rem;"><div class="chart-container-large"><canvas id="comparisonLineChart"></canvas></div></div>
+    <div class="card" style="margin-top:1.25rem;"><div class="table-wrap"><table>
+      <thead><tr><th></th>${metrics.map(m => `<th>${fmtDate(m.ms)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(([k, f]) => `<tr><td><strong>${tApp(k)}</strong></td>${metrics.map(m => `<td>${f(m)}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div></div>`);
+  const labels = metrics.map(m => fmtDate(m.ms));
+  ChartRegistry.set('cmpLine', () => new Chart(document.getElementById('comparisonLineChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: tApp('metric_cva_avg'), data: metrics.map(m => m.cvaAvg), borderColor: CHART_COLORS.cva, tension: 0.2, borderWidth: 2.5 },
+        { label: tApp('metric_left_elbow'), data: metrics.map(m => m.leftElbowAvg), borderColor: CHART_COLORS.leftElbow, tension: 0.2, borderWidth: 2 },
+        { label: tApp('metric_right_elbow'), data: metrics.map(m => m.rightElbowAvg), borderColor: CHART_COLORS.rightElbow, tension: 0.2, borderWidth: 2 },
+        { label: tApp('below_threshold_ratio') + ' (%)', data: metrics.map(m => m.cvaBelowPct), borderColor: CHART_COLORS.threshold, borderDash: [5, 4], tension: 0.2, borderWidth: 2 }
+      ]
+    },
+    options: baseChartOptions()
+  }), 'modal');
 }
