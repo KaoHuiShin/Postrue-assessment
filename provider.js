@@ -44,11 +44,7 @@ async function loadProviderData() {
   updateCaseNavState();
 }
 
-function updateCaseNavState() {
-  const has = !!Prov.currentUid;
-  document.getElementById('nav-provider-case').classList.toggle('disabled', !has);
-  document.getElementById('nav-provider-advice').classList.toggle('disabled', !has);
-}
+function updateCaseNavState() { /* v2.6 起左側欄不再有個案專屬選單 */ }
 
 // =================================================================
 // 1. 個案總覽
@@ -91,7 +87,10 @@ function renderCaseList() {
       <td>${s.lastMs ? fmtDate(s.lastMs) : '--'}</td>
       <td>${s.overDaysPct === null || s.overDaysPct === undefined ? '--' : `${fmtNum(s.overDaysPct, 0)}% <span class="muted small">(${s.recordedDays} ${tApp('unit_days_recorded')})</span>`}</td>
       <td>${status}</td>
-      <td><button class="btn btn-outline btn-sm" onclick="openCase('${b.performerUid}')"><i data-lucide="line-chart"></i>${tApp('btn_view')}</button></td>
+      <td><div class="case-row-actions">
+        <button class="btn btn-primary btn-sm" onclick="openCase('${b.performerUid}', 'case')"><i data-lucide="line-chart"></i>${tApp('btn_case_dashboard')}</button>
+        <button class="btn btn-outline btn-sm" onclick="openCase('${b.performerUid}', 'advice')"><i data-lucide="file-pen-line"></i>${tApp('btn_case_advice')}</button>
+      </div></td>
     </tr>`;
   }).join('') : `<tr><td colspan="6"><div class="empty-state"><i data-lucide="users"></i>${tApp('pc_empty')}</div></td></tr>`;
   lucide.createIcons();
@@ -111,7 +110,7 @@ async function respondInvite(performerUid, status) {
 // =================================================================
 // 2–4. 個案儀表板
 // =================================================================
-async function openCase(uid) {
+async function openCase(uid, target = 'case') {
   if (!uid) return;
   const b = Prov.bindings.find(x => x.performerUid === uid && x.status === 'active');
   if (!b) { showToast(tApp('pc_no_access'), 'warning'); return; }
@@ -135,7 +134,7 @@ async function openCase(uid) {
   }
   Prov.period = { mode: 'lastVisit', from: null, to: null };
   updateCaseNavState();
-  switchSection('provider-case');
+  switchSection(target === 'advice' ? 'provider-advice' : 'provider-case');
 }
 
 function lastVisitMs() {
@@ -421,6 +420,7 @@ function renderAdvicePage() {
   if (!Prov.data) { switchSection('provider-cases'); return; }
   const d = Prov.data;
   document.getElementById('advice-case-name').textContent = d.profile.username || d.binding.performerName || '--';
+  document.getElementById('advice-case-switcher').innerHTML = Prov.bindings.filter(b => b.status === 'active').map(b => `<option value="${b.performerUid}" ${b.performerUid === d.uid ? 'selected' : ''}>${escapeHtml(b.performerName || b.performerUid)}</option>`).join('');
   const recs = caseInPeriod('records').filter(r => r.type === 'playing');
   document.getElementById('adv-related').innerHTML = recs.length ? recs.map(r => `
     <label class="check-row" style="margin-bottom:0.35rem;"><input type="checkbox" class="adv-rec" value="${r.firestoreId}">
@@ -609,4 +609,66 @@ async function regenerateInviteCode() {
     fillProviderProfileForm();
     showToast(tApp('toast_code_regen'), 'success');
   } catch (e) { console.error(e); showToast(tApp('toast_save_fail'), 'danger'); }
+}
+
+// =================================================================
+// 照護建議總覽（所有個案）
+// =================================================================
+Prov.overview = { items: [], archives: [] };
+
+async function renderAdviceOverview() {
+  const me = App.user.uid;
+  const active = Prov.bindings.filter(b => b.status === 'active');
+  const nameOf = uid => { const b = Prov.bindings.find(x => x.performerUid === uid); return b ? (b.performerName || uid) : uid; };
+  document.getElementById('pao-body').innerHTML = `<tr><td colspan="6"><div class="empty-state">${tApp('loading')}</div></td></tr>`;
+  const items = [];
+  await Promise.all(active.map(async b => {
+    try {
+      const list = await DataAPI.listSub(b.performerUid, 'notesFromProviders');
+      list.filter(a => a.providerUid === me).forEach(a => items.push({ ...a, kind: 'advice', patientUid: b.performerUid, patientName: nameOf(b.performerUid) }));
+    } catch (e) { console.warn(e); }
+  }));
+  let followups = [], archives = [];
+  try { followups = await DataAPI.listProviderSub(me, 'followups'); } catch (e) { console.warn(e); }
+  try { archives = await DataAPI.listProviderSub(me, 'archives'); } catch (e) { console.warn(e); }
+  followups.forEach(f => items.push({ ...f, kind: 'followup', patientName: f.patientName || nameOf(f.patientUid) }));
+  items.sort((a, b) => docTimeMs(b) - docTimeMs(a));
+  Prov.overview = { items, archives };
+
+  const sel = document.getElementById('pao-case');
+  const keep = sel.value || 'All';
+  sel.innerHTML = `<option value="All">${tApp('opt_all')}</option>` +
+    active.map(b => `<option value="${b.performerUid}">${escapeHtml(b.performerName || b.performerUid)}</option>`).join('');
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : 'All';
+  renderAdviceOverviewList();
+}
+
+function renderAdviceOverviewList() {
+  const { items, archives } = Prov.overview;
+  const caseSel = document.getElementById('pao-case').value || 'All';
+  const type = document.getElementById('pao-type').value;
+  const q = (document.getElementById('pao-search').value || '').toLowerCase().trim();
+  const activeUids = new Set(Prov.bindings.filter(b => b.status === 'active').map(b => b.performerUid));
+  const rows = items.filter(it =>
+    (caseSel === 'All' || it.patientUid === caseSel) &&
+    (type === 'All' || it.kind === type) &&
+    (!q || `${fmtDateTime(docTimeMs(it))} ${it.patientName || ''} ${it.diagnosis || ''} ${it.recommendation || ''}`.toLowerCase().includes(q)));
+  document.getElementById('pao-body').innerHTML = rows.length ? rows.map(it => `<tr>
+      <td style="white-space:nowrap;">${fmtDateTime(docTimeMs(it))}</td>
+      <td><strong>${escapeHtml(it.patientName || '--')}</strong></td>
+      <td><span class="badge ${it.kind === 'advice' ? 'badge-info' : 'badge-muted'}">${tApp(it.kind === 'advice' ? 'pao_type_advice' : 'pao_type_followup')}</span></td>
+      <td class="list-item-sub" style="max-width:260px;">${escapeHtml(it.diagnosis || '')}</td>
+      <td style="max-width:340px; white-space:pre-wrap;">${escapeHtml(it.recommendation || '')}</td>
+      <td class="actions-cell">${activeUids.has(it.patientUid) ? `<button class="btn btn-outline btn-sm" onclick="openCase('${it.patientUid}', 'advice')"><i data-lucide="file-pen-line"></i>${tApp('btn_case_advice')}</button>` : ''}</td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox"></i>${tApp('pao_empty')}</div></td></tr>`;
+
+  const arch = archives.filter(a => caseSel === 'All' || a.patientUid === caseSel);
+  document.getElementById('pao-archives').innerHTML = arch.length ? arch.map(a => `
+    <div class="list-item"><div class="list-item-main">
+      <div class="list-item-title">${escapeHtml(a.patientName || '--')} · ${fmtDate(a.periodFrom)} ~ ${fmtDate(a.periodTo)}</div>
+      <div class="list-item-sub">${tApp('archived_at', { date: fmtDateTime(docTimeMs(a)) })} · ${tApp('cs_count')} ${a.summary ? a.summary.count : '--'} · ${tApp('cs_over_days')} ${a.summary && a.summary.overDaysPct !== null && a.summary.overDaysPct !== undefined ? fmtNum(a.summary.overDaysPct, 0) + '%' : '--'}</div>
+    </div>
+    ${activeUids.has(a.patientUid) ? `<button class="btn btn-outline btn-sm" onclick="openCase('${a.patientUid}', 'advice')"><i data-lucide="file-pen-line"></i>${tApp('btn_case_advice')}</button>` : ''}
+    </div>`).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
+  lucide.createIcons();
 }

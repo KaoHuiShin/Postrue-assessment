@@ -144,7 +144,7 @@ aside {
   border-color: var(--border-color);
   box-shadow: var(--shadow-sm);
 }
-.nav-item.disabled { opacity: 0.45; pointer-events: none; }
+.nav-item.disabled { opacity: 0.45; }  /* 仍可點擊：點了會提示先選擇個案 */
 .nav-item i, .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 .nav-badge {
   margin-left: auto; background: var(--color-danger); color: #fff; font-size: 0.68rem;
@@ -487,7 +487,9 @@ th {
 }
 td { padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--border-color); font-size: 0.87rem; color: var(--text-dark); vertical-align: middle; }
 tr:hover td { background-color: var(--primary-soft); }
-.actions-cell { display: flex; gap: 0.4rem; }
+/* 操作欄維持表格格子（若設成 flex 會讓分隔線與其他欄位錯開） */
+td.actions-cell { white-space: nowrap; }
+td.actions-cell > .btn + .btn { margin-left: 0.4rem; }
 
 .filter-bar { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
 .filter-search { flex: 1; min-width: 200px; }
@@ -730,3 +732,9 @@ tr:hover td { background-color: var(--primary-soft); }
 #case-abnormal td:first-child { white-space: nowrap; }
 #case-abnormal th { white-space: normal; }
 .bodymap-pair .bodymap-wrap { grid-template-columns: minmax(120px, 150px) minmax(0, 1fr); }
+
+/* 照護端個案列表：姓名、樂器不換行；兩個按鈕上下排列 */
+#case-table-body td:nth-child(1), #case-table-body td:nth-child(2), #case-table-body td:nth-child(3) { white-space: nowrap; }
+#section-provider-cases th { white-space: normal; }
+.case-row-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
+.case-row-actions .btn { justify-content: flex-start; }

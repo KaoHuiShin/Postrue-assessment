@@ -1,0 +1,17 @@
+{
+  "name": "演奏者智能照護系統",
+  "short_name": "演奏者照護",
+  "description": "演奏者與照護端協作，追蹤演奏姿勢與肌肉骨骼健康",
+  "lang": "zh-Hant",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F6F4EF",
+  "theme_color": "#0D5661",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

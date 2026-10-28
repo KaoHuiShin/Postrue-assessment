@@ -15,7 +15,7 @@ const ALERT_THRESHOLDS = {
 const CVA_THRESHOLD = ALERT_THRESHOLDS.CVA_MIN; // 舊程式相容
 
 // 即時警示：連續不良姿勢 SUSTAIN_MS 後觸發；兩次警示至少間隔 COOLDOWN_MS
-const ALERT_RULES = { SUSTAIN_MS: 2000, COOLDOWN_MS: 8000, CLEAR_MS: 1000, VIBRATE_PATTERN: [200, 100, 200] };
+const ALERT_RULES = { SUSTAIN_MS: 2000, COOLDOWN_MS: 8000, CLEAR_MS: 1000 };
 // 練習時間提醒（示意門檻，待定）
 const PRACTICE_RULES = { REST_AFTER_MIN: 45, BAD_POSTURE_LIMIT_SEC: 300 };
 // 是否三個階段都錄完才產生報告
@@ -102,10 +102,9 @@ let sbmPre = null, sbmPost = null; // 人體圖元件
 // ── 頁面渲染 ─────────────────────────────────────────────────────
 function renderPlayingPage() {
   if (!document.querySelector('.capture-steps .step-card')) renderStageCards();
-  document.getElementById('alert-vibrate-toggle').checked = !App.alertSettings || App.alertSettings.vibrate !== false;
   document.getElementById('practice-rule-text').textContent = tApp('practice_rule', {
     min: PRACTICE_RULES.REST_AFTER_MIN, bad: Math.round(PRACTICE_RULES.BAD_POSTURE_LIMIT_SEC / 60)
-  }) + (navigator.vibrate ? '' : ' ' + tApp('vibrate_unsupported'));
+  });
   document.getElementById('cva-threshold-label').textContent = tApp('threshold_label', { v: ALERT_THRESHOLDS.CVA_MIN });
   document.getElementById('cva-desc').innerHTML = tApp('cva_desc', { v: ALERT_THRESHOLDS.CVA_MIN });
   refreshStageCards();
@@ -262,7 +261,7 @@ function onPoseResults(results) {
   if (now - practiceSession.lastUiT > 250) { practiceSession.lastUiT = now; updatePracticeUI(); }
 }
 
-// ── 即時警示（畫面＋震動，不使用聲音） ───────────────────────────
+// ── 即時警示（僅畫面顯示，不使用聲音或震動） ─────────────────────
 function handlePostureAlert(flags, now) {
   if (flags.any) {
     alertState.goodSince = null;
@@ -290,9 +289,6 @@ function triggerPostureAlert(flags) {
   el.classList.add('show');
   alertState.showing = true;
   practiceSession.alertCount++;
-  if (App.alertSettings && App.alertSettings.vibrate !== false && navigator.vibrate) {
-    try { navigator.vibrate(ALERT_RULES.VIBRATE_PATTERN); } catch (e) {}
-  }
   updatePracticeUI(true);
 }
 function hidePostureAlert() {
@@ -304,12 +300,10 @@ function checkPracticeReminders() {
   if (!practiceSession.restReminded && practiceSession.durationSec >= PRACTICE_RULES.REST_AFTER_MIN * 60) {
     practiceSession.restReminded = true;
     showPageAlert(tApp('remind_rest', { min: PRACTICE_RULES.REST_AFTER_MIN }), 'rest', 15000);
-    if (App.alertSettings.vibrate !== false && navigator.vibrate) navigator.vibrate([300, 150, 300]);
   }
   if (!practiceSession.badReminded && practiceSession.badSec >= PRACTICE_RULES.BAD_POSTURE_LIMIT_SEC) {
     practiceSession.badReminded = true;
     showPageAlert(tApp('remind_bad_posture', { min: Math.round(PRACTICE_RULES.BAD_POSTURE_LIMIT_SEC / 60) }), 'danger', 15000);
-    if (App.alertSettings.vibrate !== false && navigator.vibrate) navigator.vibrate([300, 150, 300]);
   }
 }
 

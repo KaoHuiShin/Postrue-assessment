@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="page_title">演奏者智能照護系統</title>
+  <!-- 網頁 App（加入主畫面、全螢幕開啟） -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0D5661">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="演奏者照護">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -328,13 +337,14 @@
         </div>
 
         <div id="auth-error" class="error-msg" style="display:none;"></div>
-        <p class="version-label">Version 2.0.0</p>
+        <p class="version-label">Version 2.6.0</p>
       </div>
     </div>
   </div>
 
 <script src="firebase-config.js"></script>
 <script src="bodymap.js"></script>
+<script src="install-hint.js"></script>
 <script>
 // ── i18n ─────────────────────────────────────────────────────────
 const i18n = {

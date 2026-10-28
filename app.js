@@ -252,7 +252,6 @@ async function loadAccount() {
       try { await DataAPI.setProvider(uid, App.providerDoc); } catch (e) { console.warn(e); }
     }
   }
-  App.alertSettings = doc.alertSettings || { visual: true, vibrate: true };
 }
 
 // ── 角色 ─────────────────────────────────────────────────────────
@@ -342,13 +341,21 @@ function switchSection(sectionId) {
   const target = document.getElementById(`section-${sectionId}`);
   if (!target) return;
   if (target.dataset.role && target.dataset.role !== App.activeRole) return;
+  // 照護端：尚未選擇個案時，個案儀表板／照護建議與報告先導回個案總覽
+  if ((sectionId === 'provider-case' || sectionId === 'provider-advice') && !(typeof Prov !== 'undefined' && Prov.currentUid)) {
+    showToast(tApp('toast_select_case_first'), 'info');
+    sectionId = 'provider-cases';
+    return switchSection(sectionId);
+  }
 
   if (App.currentSection === 'playing' && sectionId !== 'playing' && typeof onLeavePlaying === 'function') onLeavePlaying();
 
   document.querySelectorAll('main > section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   target.classList.add('active');
-  const nav = document.getElementById(`nav-${sectionId}`);
+  // 個案專屬頁面（個案儀表板、建議與報告）在左側欄歸屬於「個案總覽」
+  const navId = (sectionId === 'provider-case' || sectionId === 'provider-advice') ? 'provider-cases' : sectionId;
+  const nav = document.getElementById(`nav-${navId}`);
   if (nav) nav.classList.add('active');
   App.currentSection = sectionId;
   renderSection(sectionId);
@@ -367,6 +374,7 @@ function renderSection(id) {
     case 'provider-cases': if (typeof renderCaseList === 'function') renderCaseList(); break;
     case 'provider-case': if (typeof renderCaseDashboard === 'function') renderCaseDashboard(); break;
     case 'provider-advice': if (typeof renderAdvicePage === 'function') renderAdvicePage(); break;
+    case 'provider-advice-all': if (typeof renderAdviceOverview === 'function') renderAdviceOverview(); break;
     case 'provider-profile': if (typeof fillProviderProfileForm === 'function') fillProviderProfileForm(); break;
   }
   lucide.createIcons();
@@ -778,12 +786,6 @@ async function saveProfile(event) {
     console.error('個資寫入失敗：', err);
     showToast(tApp('toast_save_fail'), 'danger');
   }
-}
-
-async function saveAlertSettings() {
-  const vibrate = document.getElementById('alert-vibrate-toggle').checked;
-  App.alertSettings = { visual: true, vibrate };
-  try { await DataAPI.setUserDoc(App.user.uid, { alertSettings: App.alertSettings }); } catch (e) { console.warn(e); }
 }
 
 // =================================================================

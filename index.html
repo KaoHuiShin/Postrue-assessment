@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="brand_name">演奏者智能照護系統</title>
+  <!-- 網頁 App（加入主畫面、全螢幕開啟） -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0D5661">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="演奏者照護">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -72,8 +81,7 @@
     <!-- 照護端選單 -->
     <ul class="nav-links" id="nav-provider" hidden>
       <li><a id="nav-provider-cases" class="nav-item" onclick="switchSection('provider-cases')"><i data-lucide="users"></i><span data-i18n="nav_provider_cases">個案總覽</span><span class="nav-badge" id="nav-pending-badge" style="display:none;">0</span></a></li>
-      <li><a id="nav-provider-case" class="nav-item disabled" onclick="switchSection('provider-case')"><i data-lucide="line-chart"></i><span data-i18n="nav_provider_case">個案儀表板</span></a></li>
-      <li><a id="nav-provider-advice" class="nav-item disabled" onclick="switchSection('provider-advice')"><i data-lucide="file-pen-line"></i><span data-i18n="nav_provider_advice">照護建議與報告</span></a></li>
+      <li><a id="nav-provider-advice-all" class="nav-item" onclick="switchSection('provider-advice-all')"><i data-lucide="file-pen-line"></i><span data-i18n="nav_provider_advice_all">照護建議總覽</span></a></li>
       <li><a id="nav-provider-profile" class="nav-item" onclick="switchSection('provider-profile')"><i data-lucide="id-card"></i><span data-i18n="nav_provider_profile">照護者資料</span></a></li>
     </ul>
 
@@ -85,7 +93,7 @@
       </div>
       <button class="btn-logout" onclick="handleLogout()"><i data-lucide="log-out"></i><span data-i18n="nav_logout">登出</span></button>
       <p data-i18n="brand_name">演奏者智能照護系統</p>
-      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.0.0</p>
+      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.6.0</p>
     </div>
   </aside>
 
@@ -107,7 +115,7 @@
         <div class="hero-content">
           <div class="hero-text">
             <h2 data-i18n="dash_cta_title">開始今天的練習評估</h2>
-            <p data-i18n="dash_cta_desc">系統會在演奏時即時偵測頸椎角、雙肩傾斜與手肘角度，姿勢超過警戒值時以畫面與震動提醒；評估結束後可標記練習前後的不適部位。</p>
+            <p data-i18n="dash_cta_desc">系統會在演奏時即時偵測頸椎角、雙肩傾斜與手肘角度，姿勢超過警戒值時以畫面警示提醒；評估結束後可標記練習前後的不適部位。</p>
           </div>
           <button class="btn btn-primary" onclick="switchSection('playing')"><i data-lucide="play"></i><span data-i18n="dash_start">開始評估</span></button>
         </div>
@@ -254,7 +262,7 @@
       <div class="page-header">
         <div class="page-title">
           <h1 data-i18n="nav_playing">演奏動作評估</h1>
-          <p data-i18n="playing_sub">依序錄製三個狀態；錄製中姿勢超過警戒值會以畫面與震動提醒</p>
+          <p data-i18n="playing_sub">依序錄製三個狀態；錄製中姿勢超過警戒值會在畫面上跳出警示</p>
         </div>
         <div class="user-badge"><div class="user-badge-avatar" id="playing-avatar">?</div><span id="playing-username" data-i18n="guest">訪客</span></div>
       </div>
@@ -283,7 +291,6 @@
           <div class="card" style="padding: 1rem;">
             <div class="card-header" style="margin-bottom:0.75rem;">
               <div class="card-title" style="font-size:0.95rem;"><i data-lucide="timer"></i><span data-i18n="practice_title">本次練習時間紀錄</span></div>
-              <label class="toggle-line"><input type="checkbox" id="alert-vibrate-toggle" checked onchange="saveAlertSettings()"> <span data-i18n="alert_vibrate">警示時震動裝置</span></label>
             </div>
             <div class="practice-panel">
               <div class="practice-stat" id="ps-duration-box"><div class="lbl" data-i18n="ps_duration">錄製累計時間</div><div class="val" id="ps-duration">00:00</div></div>
@@ -430,7 +437,8 @@
             </select>
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <button class="btn btn-outline" onclick="exportHistoryData()"><i data-lucide="download"></i><span data-i18n="btn_export">匯出</span></button>
+            <button class="btn btn-primary" onclick="exportHistoryExcel()"><i data-lucide="file-spreadsheet"></i><span data-i18n="btn_export_excel">匯出 Excel</span></button>
+            <button class="btn btn-outline" onclick="exportHistoryData()"><i data-lucide="download"></i><span data-i18n="btn_export">匯出 JSON（備份）</span></button>
             <button class="btn btn-danger-outline" onclick="clearAllHistory()"><i data-lucide="trash-2"></i><span data-i18n="btn_clear">清空</span></button>
             <button class="btn btn-primary" id="btn-compare-records" onclick="showComparisonModal()" style="display:none;"><i data-lucide="git-compare"></i><span data-i18n="btn_compare">比較所選紀錄</span> (<span id="selected-count">0</span>)</button>
           </div>
@@ -708,7 +716,11 @@
           <h1><span data-i18n="nav_provider_case">個案儀表板</span>：<span id="case-title-name">--</span></h1>
           <p id="case-title-sub"></p>
         </div>
-        <select id="case-switcher" class="form-control" style="width:auto; min-width:200px;" onchange="openCase(this.value)"></select>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="switchSection('provider-cases')"><i data-lucide="arrow-left"></i><span data-i18n="btn_back_cases">個案總覽</span></button>
+          <select id="case-switcher" class="form-control" style="width:auto; min-width:180px;" onchange="openCase(this.value, 'case')"></select>
+          <button class="btn btn-primary btn-sm" onclick="openCase(Prov.currentUid, 'advice')"><i data-lucide="file-pen-line"></i><span data-i18n="btn_case_advice">建議與報告</span></button>
+        </div>
       </div>
 
       <div class="card" style="padding:1rem 1.25rem;">
@@ -778,7 +790,8 @@
 
       <div class="tab-panel" id="case-detail">
         <div class="card" style="padding:0; overflow:hidden; margin-bottom:1.5rem;">
-          <div class="card-header" style="padding:1rem 1.25rem 0.75rem; margin:0;"><div class="card-title"><i data-lucide="list"></i><span data-i18n="detail_records">評估紀錄</span></div></div>
+          <div class="card-header" style="padding:1rem 1.25rem 0.75rem; margin:0;"><div class="card-title"><i data-lucide="list"></i><span data-i18n="detail_records">評估紀錄</span></div>
+            <button class="btn btn-primary btn-sm" onclick="exportCaseExcel()"><i data-lucide="file-spreadsheet"></i><span data-i18n="btn_export_case_excel">匯出此期間 Excel</span></button></div>
           <div class="table-wrap">
             <table>
               <thead><tr>
@@ -807,8 +820,13 @@
     <section id="section-provider-advice" data-role="provider">
       <div class="page-header">
         <div class="page-title">
-          <h1><span data-i18n="nav_provider_advice">照護建議與報告</span>：<span id="advice-case-name">--</span></h1>
+          <h1><span data-i18n="btn_case_advice">建議與報告</span>：<span id="advice-case-name">--</span></h1>
           <p data-i18n="pa_sub">撰寫照護建議推送給個案、列印報告並歸檔</p>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="switchSection('provider-cases')"><i data-lucide="arrow-left"></i><span data-i18n="btn_back_cases">個案總覽</span></button>
+          <select id="advice-case-switcher" class="form-control" style="width:auto; min-width:180px;" onchange="openCase(this.value, 'advice')"></select>
+          <button class="btn btn-primary btn-sm" onclick="openCase(Prov.currentUid, 'case')"><i data-lucide="line-chart"></i><span data-i18n="btn_case_dashboard">個案儀表板</span></button>
         </div>
       </div>
       <div class="grid-main-side">
@@ -846,6 +864,55 @@
           <div class="card-header"><div class="card-title"><i data-lucide="bookmark"></i><span data-i18n="pa_followups_title">追蹤項目（不推送）</span></div></div>
           <div id="followup-history"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- 13b. 照護建議總覽（所有個案） -->
+    <section id="section-provider-advice-all" data-role="provider">
+      <div class="page-header">
+        <div class="page-title">
+          <h1 data-i18n="nav_provider_advice_all">照護建議總覽</h1>
+          <p data-i18n="pao_sub">您給所有個案的照護建議、追蹤項目與報告歸檔</p>
+        </div>
+      </div>
+      <div class="card" style="padding:1.25rem;">
+        <div class="filter-bar">
+          <div class="form-group filter-search" style="margin-bottom:0;">
+            <label for="pao-search" data-i18n="history_search">搜尋</label>
+            <input type="text" id="pao-search" class="form-control" data-i18n-ph="ph_search" placeholder="輸入日期或關鍵字" oninput="renderAdviceOverviewList()">
+          </div>
+          <div class="form-group" style="margin-bottom:0; min-width:170px;">
+            <label for="pao-case" data-i18n="th_case">個案</label>
+            <select id="pao-case" class="form-control" onchange="renderAdviceOverviewList()"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0; min-width:170px;">
+            <label for="pao-type" data-i18n="pao_filter_type">類型</label>
+            <select id="pao-type" class="form-control" onchange="renderAdviceOverviewList()">
+              <option value="All" data-i18n="opt_all">全部</option>
+              <option value="advice" data-i18n="pao_type_advice">已推送給個案</option>
+              <option value="followup" data-i18n="pao_type_followup">追蹤項目（不推送）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th data-i18n="th_datetime">時間</th>
+              <th data-i18n="th_case">個案</th>
+              <th data-i18n="pao_filter_type">類型</th>
+              <th data-i18n="label_assessment_note">評估重點</th>
+              <th data-i18n="label_recommendation">照護建議</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="pao-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i data-lucide="archive"></i><span data-i18n="pao_archives_title">報告歸檔紀錄</span></div></div>
+        <div id="pao-archives"></div>
       </div>
     </section>
 
@@ -954,5 +1021,7 @@
   <script src="detection.js"></script>
   <script src="features.js"></script>
   <script src="provider.js"></script>
+  <script src="export-excel.js"></script>
+  <script src="install-hint.js"></script>
 </body>
 </html>
