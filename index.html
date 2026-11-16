@@ -93,7 +93,7 @@
       </div>
       <button class="btn-logout" onclick="handleLogout()"><i data-lucide="log-out"></i><span data-i18n="nav_logout">登出</span></button>
       <p data-i18n="brand_name">演奏者智能照護系統</p>
-      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.6.0</p>
+      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.7.0</p>
     </div>
   </aside>
 
@@ -387,21 +387,68 @@
       <div class="page-header">
         <div class="page-title">
           <h1 data-i18n="nav_standard_movement">標準動作辨識</h1>
-          <p data-i18n="sm_sub">高低肩、頭部前傾、抬手三項標準動作的影像辨識</p>
+          <p data-i18n="sm_sub">用攝影機測量高低肩、頭部前傾與手臂上舉角度</p>
         </div>
       </div>
-      <div class="notice-card">
-        <i data-lucide="construction"></i>
-        <h3 data-i18n="sm_closed_title">此功能尚未開放</h3>
-        <p data-i18n="sm_closed_desc">三項辨識正在開發真實偵測程式，接入前不提供模擬結果，也不會寫入任何資料。</p>
+      <!-- 引導頁：先說明測量項目與步驟 -->
+      <div id="sm-guide">
+        <div class="card sm-guide-card">
+          <div class="card-header"><div class="card-title"><i data-lucide="clipboard-list"></i><span data-i18n="sm_guide_title">開始前：測量項目與步驟</span></div></div>
+          <p class="muted" data-i18n="sm_guide_intro">共 5 個項目，分成「面向鏡頭」與「側身對鏡頭」兩種站法。不需要一次做完全部項目，做完想做的項目即可儲存。</p>
+          <div class="grid-2" id="sm-guide-items" style="margin-top:1rem;"></div>
+          <div class="sm-guide-howto">
+            <div class="form-label" data-i18n="sm_guide_howto">操作步驟</div>
+            <ol id="sm-guide-steps"></ol>
+          </div>
+          <div class="sample-flag" data-i18n="sm_judgment_pending">判讀標準尚未訂定：目前只記錄角度，不判斷正常或異常、不評分。</div>
+          <div class="form-actions"><button class="btn btn-primary" onclick="smStartFromGuide()"><i data-lucide="play"></i><span data-i18n="sm_guide_start">我了解了，開始測量</span></button></div>
+        </div>
       </div>
-      <div class="diag-selector-grid">
-        <div class="diag-option disabled"><div class="diag-option-title"><span data-i18n="diag_uneven">高低肩辨識</span><span class="badge badge-muted" data-i18n="badge_dev">開發中</span></div><div class="diag-option-desc" data-i18n="diag_uneven_desc">辨識左右肩膀水平線的高度差。</div></div>
-        <div class="diag-option disabled"><div class="diag-option-title"><span data-i18n="diag_fhp">頭部前傾辨識</span><span class="badge badge-muted" data-i18n="badge_dev">開發中</span></div><div class="diag-option-desc" data-i18n="diag_fhp_desc">辨識耳垂與肩峰的相對位置。</div></div>
-        <div class="diag-option disabled"><div class="diag-option-title"><span data-i18n="diag_arm">抬手辨識</span><span class="badge badge-muted" data-i18n="badge_dev">開發中</span></div><div class="diag-option-desc" data-i18n="diag_arm_desc">辨識雙手上舉時的肩關節角度。</div></div>
-      </div>
-      <div style="display:flex; gap:1rem;">
-        <button class="btn btn-primary" id="btn-start-standard-movement" disabled><i data-lucide="play"></i><span data-i18n="btn_start_diag">開始辨識</span></button>
+
+      <!-- 測量畫面 -->
+      <div id="sm-main" style="display:none;">
+        <div class="grid-main-side">
+          <div class="capture-container">
+            <div class="card" style="padding:1rem;">
+              <div class="video-screen sm-video-screen">
+                <div class="video-placeholder" id="sm-placeholder"><i data-lucide="video-off"></i><span data-i18n="sm_placeholder">尚未啟動攝影機。請按下方「啟動攝影機」。</span></div>
+                <video id="sm-video" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;display:none;transform:scaleX(-1);" autoplay playsinline muted></video>
+                <canvas id="sm-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;transform:scaleX(-1);pointer-events:none;"></canvas>
+                <div class="video-overlay"><div class="video-overlay-dot" id="sm-status-dot"></div><span id="sm-status-text">CAMERA OFF</span></div>
+                <div class="sm-live" id="sm-live" style="display:none;"></div>
+                <div class="sm-view-warn" id="sm-view-warn" style="display:none;"></div>
+                <div class="sm-prompt" id="sm-prompt"></div>
+              </div>
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
+                <button class="btn btn-interactive" id="sm-cam-btn" onclick="smToggleCamera()"><i data-lucide="video"></i><span data-i18n="btn_open_camera">啟動攝影機</span></button>
+                <button class="btn btn-outline" id="sm-guide-btn" onclick="smShowGuide()"><i data-lucide="clipboard-list"></i><span data-i18n="sm_btn_guide">查看說明</span></button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="info"></i><span id="sm-ins-title"></span></div><span class="badge badge-info" id="sm-ins-view"></span></div>
+              <p id="sm-ins-text" style="line-height:1.7;"></p>
+              <p class="muted small" id="sm-ins-def" style="margin-top:0.5rem; line-height:1.6;"></p>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="list-checks"></i><span data-i18n="sm_items_title">測量項目</span></div></div>
+              <div id="sm-step-list" class="sm-step-list"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="clipboard-check"></i><span data-i18n="sm_result_title">本次結果</span></div></div>
+              <div class="table-wrap"><table>
+                <thead><tr><th data-i18n="sm_th_item">項目</th><th data-i18n="sm_th_value">結果</th><th data-i18n="sm_th_valid_short">有效幀</th></tr></thead>
+                <tbody id="sm-result-body"></tbody>
+              </table></div>
+              <p class="muted small" style="margin-top:0.6rem;" data-i18n="sm_judgment_pending">判讀標準尚未訂定：目前只記錄角度，不判斷正常或異常、不評分。</p>
+              <div class="form-actions">
+                <button class="btn btn-outline" id="sm-reset-btn" onclick="resetStandard()"><i data-lucide="rotate-ccw"></i><span data-i18n="sm_btn_reset">清除重測</span></button>
+                <button class="btn btn-primary" id="sm-save-btn" onclick="saveStandardRecord()"><i data-lucide="save"></i><span data-i18n="sm_btn_save">儲存結果</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -433,6 +480,7 @@
             <select id="filter-type" class="form-control" onchange="filterHistory()">
               <option value="All" data-i18n="opt_all">全部</option>
               <option value="playing" data-i18n="type_playing">演奏動作評估</option>
+              <option value="standard" data-i18n="type_standard">標準動作辨識</option>
               <option value="static" data-i18n="type_static">標準動作辨識（舊資料）</option>
             </select>
           </div>
@@ -801,6 +849,17 @@
             </table>
           </div>
         </div>
+        <div class="card" style="padding:0; overflow:hidden; margin-bottom:1.5rem;">
+          <div class="card-header" style="padding:1rem 1.25rem 0.75rem; margin:0;"><div class="card-title"><i data-lucide="person-standing"></i><span data-i18n="sm_case_title">標準動作辨識紀錄</span></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="th_time">評估時間</th><th data-i18n="sm_short_shoulderLevel">高低肩</th><th data-i18n="sm_short_abduction">外展</th><th data-i18n="sm_short_forwardHead">頭部前傾</th><th data-i18n="sm_short_flexionRight">右前屈</th><th data-i18n="sm_short_flexionLeft">左前屈</th><th></th>
+              </tr></thead>
+              <tbody id="case-standard-body"></tbody>
+            </table>
+          </div>
+        </div>
         <div class="grid-3">
           <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="notebook-pen"></i><span data-i18n="tab_notes">筆記</span></div></div><div id="case-notes"></div></div>
           <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="pill"></i><span data-i18n="tab_medical">就醫及用藥</span></div></div><div id="case-medical"></div></div>
@@ -1019,6 +1078,7 @@
   <script src="bodymap.js"></script>
   <script src="app.js"></script>
   <script src="detection.js"></script>
+  <script src="standard-movement.js"></script>
   <script src="features.js"></script>
   <script src="provider.js"></script>
   <script src="export-excel.js"></script>

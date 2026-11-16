@@ -738,3 +738,37 @@ td.actions-cell > .btn + .btn { margin-left: 0.4rem; }
 #section-provider-cases th { white-space: normal; }
 .case-row-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
 .case-row-actions .btn { justify-content: flex-start; }
+
+/* ── 標準動作辨識（v2.7） ─────────────────────────────────────── */
+.sm-video-screen { aspect-ratio: 4/3; }
+.sm-guide-card .grid-2 { gap: 1rem; }
+.sm-guide-group { border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 1rem; background-color: var(--bg-card); }
+.sm-guide-item { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.6rem 0; border-top: 1px dashed var(--border-color); }
+.sm-guide-item:first-of-type { border-top: none; }
+.sm-guide-item .step-icon { flex-shrink: 0; }
+.sm-guide-item .badge { margin-left: 0.35rem; vertical-align: middle; }
+.sm-guide-howto { margin: 1.25rem 0 1rem; }
+.sm-guide-howto ol { margin: 0.4rem 0 0 1.25rem; padding: 0; line-height: 1.8; font-size: 0.9rem; }
+.sm-view-head { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin: 0.75rem 0 0.4rem; }
+.sm-view-head:first-child { margin-top: 0; }
+.sm-view-head i, .sm-view-head svg { width: 15px; height: 15px; }
+.sm-step-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.sm-step { display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.75rem; border: 2px dashed var(--border-color); border-radius: var(--border-radius-md); cursor: pointer; transition: all var(--transition-fast); }
+.sm-step:hover { border-color: var(--primary); }
+.sm-step.active { border-color: var(--primary); background-color: var(--primary-soft); }
+.sm-step.captured { border-style: solid; border-color: var(--color-success); background-color: var(--color-success-bg); }
+.sm-step.active .step-icon { background-color: var(--primary); color: var(--text-light); }
+.sm-step.captured .step-icon { background-color: var(--color-success); color: #fff; }
+.sm-step-main { flex: 1; min-width: 0; }
+.sm-step-title { font-weight: 600; font-size: 0.88rem; }
+.sm-step .btn { flex-shrink: 0; }
+.sm-warn-text { color: var(--color-warning); font-weight: 600; }
+.sm-live { position: absolute; left: 0.75rem; bottom: 0.75rem; background: rgba(0,0,0,0.6); color: #E5ECE4; font-family: monospace; font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 6px; }
+.sm-view-warn { position: absolute; top: 3rem; left: 50%; transform: translateX(-50%); background: rgba(108,96,36,0.92); color: #fff; font-size: 0.85rem; padding: 0.4rem 0.9rem; border-radius: 6px; white-space: nowrap; }
+.sm-prompt { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; color: #fff; font-size: 1.15rem; font-weight: 600; text-align: center; background: rgba(31,35,36,0.35); pointer-events: none; }
+.sm-prompt.show { display: flex; }
+.sm-prompt.measure { justify-content: flex-end; padding-bottom: 2.5rem; background: transparent; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
+.sm-count { font-size: 4rem; line-height: 1; font-weight: 700; }
+.sm-progress { width: 60%; height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
+.sm-progress > div { height: 100%; background: var(--nc-moegi, #7BA23F); transition: width 0.1s linear; }
+@media (max-width: 720px) { .sm-view-warn { white-space: normal; width: 85%; text-align: center; } }

@@ -358,7 +358,8 @@ function renderCaseCompare() {
 
 function renderCaseDetail() {
   const d = Prov.data;
-  const recs = caseInPeriod('records');
+  const allRecs = caseInPeriod('records');
+  const recs = allRecs.filter(r => r.type === 'playing');
   const ctx = { records: d.records, bodyMaps: d.bodyMaps, profile: d.profile };
   window._caseCtx = ctx;
   document.getElementById('case-record-body').innerHTML = recs.length ? recs.map(r => {
@@ -376,6 +377,12 @@ function renderCaseDetail() {
     </tr>`;
   }).join('') : `<tr><td colspan="8"><div class="empty-state">${tApp('no_records_in_period')}</div></td></tr>`;
 
+  // 標準動作辨識紀錄
+  const stdRecs = allRecs.filter(r => r.type === 'standard');
+  const stdBody = document.getElementById('case-standard-body');
+  if (stdBody) stdBody.innerHTML = stdRecs.length ? stdRecs.map(r => standardRowHtml(r, true)).join('')
+    : `<tr><td colspan="7"><div class="empty-state">${tApp('no_records_in_period')}</div></td></tr>`;
+
   const notes = caseInPeriod('notes');
   document.getElementById('case-notes').innerHTML = notes.length ? notes.map(n => noteItemHtml(n, false)).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
   const med = caseInPeriod('medicalLogs');
@@ -386,6 +393,22 @@ function renderCaseDetail() {
       <div class="list-item-title">${x.type === 'ipaq' ? 'IPAQ' : tApp('scale_title')} · ${phaseLabel(x.phase)}</div>
       <div class="list-item-sub">${x.type === 'ipaq' ? `${x.score} MET-min/${tApp('unit_week')} · ${tApp('ipaq_cat_' + (x.result ? x.result.category : 'low'))}` : tApp('score_text', { score: x.score, max: x.maxScore || '--' })} · ${fmtDate(docTimeMs(x))}</div>
     </div></div>`).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
+}
+
+/** 標準動作辨識：一筆一列（照護端紀錄明細、列印報告共用） */
+function standardRowHtml(r, withButton) {
+  const it = (r.details && r.details.items) || {};
+  const cell = id => {
+    const x = it[id];
+    if (!x) return '--';
+    return `${smValueText(id, x)}${x.viewOk === false ? ` <span class="badge badge-warning">${tApp('sm_view_mismatch')}</span>` : ''}`;
+  };
+  return `<tr>
+    <td>${fmtDateTime(docTimeMs(r))}</td>
+    <td>${cell('shoulderLevel')}</td><td>${cell('abduction')}</td><td>${cell('forwardHead')}</td>
+    <td>${cell('flexionRight')}</td><td>${cell('flexionLeft')}</td>
+    ${withButton ? `<td><button class="btn btn-outline btn-sm" onclick="viewHistoryDetail('${r.firestoreId}', window._caseCtx)"><i data-lucide="eye"></i></button></td>` : ''}
+  </tr>`;
 }
 
 function renderCaseProfile() {
@@ -523,6 +546,8 @@ function buildCaseReportHtml() {
     <h2>${tApp('detail_records')}</h2>
     <table><thead><tr><th>${tApp('th_time')}</th><th>${tApp('score_label')}</th><th>CVA</th><th>${tApp('below_threshold_ratio')}</th><th>${tApp('th_shoulder')}</th><th>${tApp('th_elbow')}</th><th>${tApp('th_practice')}</th></tr></thead>
     <tbody>${pm.metrics.map(m => `<tr><td>${fmtDateTime(m.ms)}</td><td>${m.score ?? '--'}</td><td>${fmtNum(m.cvaAvg)}°</td><td>${pct(m.cvaBelowPct)}</td><td>${fmtNum(m.shoulderAvg)}°</td><td>${fmtNum(m.leftElbowAvg, 0)}° / ${fmtNum(m.rightElbowAvg, 0)}°</td><td>${fmtClock(m.practiceSec)}</td></tr>`).join('') || `<tr><td colspan="7">--</td></tr>`}</tbody></table>
+    <h2>${tApp('sm_case_title')}</h2>
+    ${(() => { const std = caseInPeriod('records').filter(r => r.type === 'standard'); return std.length ? `<table><thead><tr><th>${tApp('th_time')}</th><th>${tApp('sm_short_shoulderLevel')}</th><th>${tApp('sm_short_abduction')}</th><th>${tApp('sm_short_forwardHead')}</th><th>${tApp('sm_short_flexionRight')}</th><th>${tApp('sm_short_flexionLeft')}</th></tr></thead><tbody>${std.map(r => standardRowHtml(r, false)).join('')}</tbody></table><p style="font-size:0.75rem;">${tApp('sm_judgment_pending')}</p>` : '<p>--</p>'; })()}
     <h2>${tApp('pa_history_title')}</h2>
     ${advice.length ? `<ul>${advice.map(a => `<li>${fmtDate(docTimeMs(a))}　${escapeHtml(a.recommendation || '')}${a.diagnosis ? `（${escapeHtml(a.diagnosis)}）` : ''}</li>`).join('')}</ul>` : '<p>--</p>'}
     <h2>${tApp('tab_notes')}</h2>

@@ -349,6 +349,7 @@ function switchSection(sectionId) {
   }
 
   if (App.currentSection === 'playing' && sectionId !== 'playing' && typeof onLeavePlaying === 'function') onLeavePlaying();
+  if (App.currentSection === 'standard-movement' && sectionId !== 'standard-movement' && typeof onLeaveStandard === 'function') onLeaveStandard();
 
   document.querySelectorAll('main > section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -367,6 +368,7 @@ function renderSection(id) {
     case 'dashboard': renderDashboard(); break;
     case 'profile': fillProfileForm(); break;
     case 'playing': if (typeof renderPlayingPage === 'function') renderPlayingPage(); break;
+    case 'standard-movement': if (typeof renderStandardPage === 'function') renderStandardPage(); break;
     case 'history': filterHistory(); break;
     case 'records': if (typeof renderRecordsPage === 'function') renderRecordsPage(); break;
     case 'education': if (typeof renderEducationPage === 'function') renderEducationPage(); break;
@@ -492,6 +494,7 @@ function levelFromScore(score) {
   return 'alert';
 }
 function levelBadge(level) {
+  if (level === null || level === undefined || level === '') return '<span class="muted">--</span>';
   const l = normalizeLevel(level);
   const cls = { good: 'badge-success', caution: 'badge-warning', alert: 'badge-danger' }[l];
   return `<span class="badge ${cls}">${tApp('level_' + l)}</span>`;
@@ -868,6 +871,7 @@ function renderDashboardTrendChart() {
 let selectedRecordIds = new Set();
 
 function recordSummaryText(r) {
+  if (r.type === 'standard') return typeof standardSummaryText === 'function' ? escapeHtml(standardSummaryText(r)) : '';
   if (r.type === 'static') return escapeHtml(r.details && r.details.textSummary || '');
   const m = recordMetrics(r);
   const parts = [];
@@ -878,6 +882,7 @@ function recordSummaryText(r) {
 }
 
 function typeLabel(r) {
+  if (r.type === 'standard') return tApp('type_standard');
   return r.type === 'playing' ? tApp('type_playing') : tApp('type_static');
 }
 
@@ -888,7 +893,7 @@ function filterHistory() {
   const rows = App.records.filter(r => {
     const text = `${fmtDateTime(docTimeMs(r))} ${r.projectName || ''} ${r.instrument || ''} ${recordSummaryText(r)}`.toLowerCase();
     return (!search || text.includes(search)) &&
-      (level === 'All' || normalizeLevel(r.level) === level) &&
+      (level === 'All' || (r.level !== null && r.level !== undefined && normalizeLevel(r.level) === level)) &&
       (type === 'All' || r.type === type);
   });
   updateHistoryTable(rows);
@@ -1001,6 +1006,7 @@ function viewHistoryDetail(id, ctx) {
   if (!r) return;
   const m = recordMetrics(r);
 
+  if (r.type === 'standard') { openModal(standardDetailHtml(r)); return; }
   if (r.type !== 'playing') {
     openModal(`
       <span class="badge badge-muted">${tApp('type_static')}</span>

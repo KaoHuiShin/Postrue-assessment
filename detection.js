@@ -208,6 +208,8 @@ async function initCvaPose() {
 }
 
 function onPoseResults(results) {
+  // 標準動作辨識頁使用中 → 轉交 standard-movement.js
+  if (typeof SM !== 'undefined' && SM.active) { smOnPoseResults(results); return; }
   if (!cvaState.activeStage || !results.poseLandmarks) return;
   const params = calcAllParams(results.poseLandmarks);
   if (isNaN(params.cva)) return;

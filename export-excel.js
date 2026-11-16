@@ -67,6 +67,29 @@ function buildAssessmentRows(records, bodyMaps) {
   });
 }
 
+/** 標準動作辨識 → 每筆一列（判讀標準未定，只列角度） */
+function buildStandardRows(records) {
+  return records.filter(r => r.type === 'standard').slice().sort((a, b) => docTimeMs(a) - docTimeMs(b)).map(r => {
+    const ms = docTimeMs(r);
+    const s = standardSummary(r);
+    return {
+      [tApp('xl_date')]: xDate(ms),
+      [tApp('xl_time')]: xTime(ms),
+      [tApp('label_instrument')]: instrumentLabel(r.instrument),
+      [tApp('xl_sm_shoulder')]: xNum(s.shoulderTilt),
+      [tApp('xl_sm_higher')]: s.higherSide ? smSideLabel(s.higherSide) : '',
+      [tApp('xl_sm_abd_l')]: xNum(s.abdLeft),
+      [tApp('xl_sm_abd_r')]: xNum(s.abdRight),
+      [tApp('xl_sm_cva')]: xNum(s.cva),
+      [tApp('xl_sm_cva_side')]: s.cvaSide ? smSideLabel(s.cvaSide) : '',
+      [tApp('xl_sm_flex_r')]: xNum(s.flexRight),
+      [tApp('xl_sm_flex_l')]: xNum(s.flexLeft),
+      [tApp('xl_sm_mismatch')]: s.viewMismatch.map(id => tApp('sm_short_' + id)).join('、'),
+      recordId: r.firestoreId || ''
+    };
+  });
+}
+
 function buildPracticeRows(logs) {
   return logs.slice().sort((a, b) => docTimeMs(a) - docTimeMs(b)).map(p => ({
     [tApp('xl_date')]: p.dateKey || xDate(docTimeMs(p)),
@@ -135,6 +158,7 @@ function buildInfoRows(meta) {
     [tApp('xl_note_sh'), tApp('xl_note_sh_text', { v: T.SHOULDER_DELTA_MAX })],
     [tApp('xl_note_el'), tApp('xl_note_el_text', { a: T.ELBOW_MIN, b: T.ELBOW_MAX })],
     [tApp('xl_note_score'), tApp('xl_note_score_text')],
+    [tApp('xl_note_sm'), tApp('xl_note_sm_text', { s: SM_PROTOCOL.STATIC_SEC })],
     [tApp('xl_note_legacy'), tApp('xl_note_legacy_text')]
   ].map(([a, b]) => ({ [tApp('xl_field')]: a, [tApp('xl_value')]: b }));
 }
@@ -167,6 +191,7 @@ async function exportExcelWorkbook(src, meta = {}) {
   }
   const wb = XLSX.utils.book_new();
   addSheet(wb, buildAssessmentRows(src.records, src.bodyMaps), tApp('xl_sheet_assess'));
+  addSheet(wb, buildStandardRows(src.records), tApp('xl_sheet_standard'));
   addSheet(wb, buildPracticeRows(src.practiceLogs), tApp('xl_sheet_practice'));
   addSheet(wb, buildQuestionnaireRows(src.questionnaires), tApp('xl_sheet_quest'));
   addSheet(wb, buildMedicalRows(src.medicalLogs), tApp('xl_sheet_medical'));
