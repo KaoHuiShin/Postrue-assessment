@@ -714,13 +714,13 @@ td.actions-cell > .btn + .btn { margin-left: 0.4rem; }
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 768px) {
-  aside { width: 64px; padding: 1.25rem 0.4rem; align-items: center; }
-  .brand-name, .nav-item span, .nav-footer, .role-chip-text, .nav-badge { display: none; }
-  .role-chip { padding: 0.4rem; border-left-width: 3px; justify-content: center; }
-  .brand { justify-content: center; }
-  .nav-item { justify-content: center; padding: 0.7rem; }
-  main { margin-left: 64px; padding: 1.25rem 1rem; }
-  .page-alert-bar { left: 64px; }
+  /* 手機：側邊選單平常隱藏，按左上角選單鈕滑出 */
+  aside { transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: none; width: 270px; }
+  body.sidebar-open aside { transform: none; box-shadow: 0 0 24px rgba(0,0,0,0.18); }
+  body.sidebar-open .sidebar-backdrop { display: block; }
+  .mobile-menu-btn { display: flex; }
+  main { margin-left: 0; padding: 4rem 1rem 1.25rem; }
+  .page-alert-bar { left: 0; }
   .grid-2, .grid-3, .form-row, .form-row-3, .bodymap-pair, .role-options { grid-template-columns: 1fr; }
   .diag-selector-grid, .capture-steps, .practice-panel { grid-template-columns: 1fr; }
   .bodymap-wrap { grid-template-columns: 1fr; }
@@ -772,3 +772,111 @@ td.actions-cell > .btn + .btn { margin-left: 0.4rem; }
 .sm-progress { width: 60%; height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
 .sm-progress > div { height: 100%; background: var(--nc-moegi, #7BA23F); transition: width 0.1s linear; }
 @media (max-width: 720px) { .sm-view-warn { white-space: normal; width: 85%; text-align: center; } }
+
+/* ── 可收合側邊選單（v2.8） ───────────────────────────────────── */
+.brand { position: relative; }
+.sidebar-toggle {
+  margin-left: auto; flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.sidebar-toggle:hover { color: var(--primary); border-color: var(--primary); }
+.sidebar-toggle i, .sidebar-toggle svg { width: 16px; height: 16px; }
+.mobile-menu-btn {
+  display: none; position: fixed; top: 0.75rem; left: 0.75rem; z-index: 90;
+  width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--border-color);
+  background: var(--bg-card); color: var(--primary); align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm); cursor: pointer;
+}
+.sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(31,35,36,0.35); z-index: 99; }
+aside, main, .page-alert-bar { transition: width 0.2s ease, margin-left 0.2s ease, left 0.2s ease, padding 0.2s ease; }
+@media (min-width: 769px) {
+  body.sidebar-collapsed aside { width: 76px; padding: 1.5rem 0.6rem; }
+  body.sidebar-collapsed .brand { flex-direction: column; gap: 0.6rem; }
+  body.sidebar-collapsed .sidebar-toggle { margin-left: 0; }
+  body.sidebar-collapsed .brand-name,
+  body.sidebar-collapsed .nav-item span,
+  body.sidebar-collapsed .role-chip-text,
+  body.sidebar-collapsed .nav-footer p,
+  body.sidebar-collapsed .lang-toggle-bar-side,
+  body.sidebar-collapsed .btn-logout span { display: none; }
+  body.sidebar-collapsed .nav-badge { display: none !important; }
+  body.sidebar-collapsed .role-chip { padding: 0.4rem; justify-content: center; border-left-width: 3px; }
+  body.sidebar-collapsed .role-chip button { font-size: 0.65rem; padding: 0.2rem 0.3rem; }
+  body.sidebar-collapsed .nav-item { justify-content: center; padding: 0.7rem; }
+  body.sidebar-collapsed .btn-logout { justify-content: center; }
+  body.sidebar-collapsed main { margin-left: 76px; }
+  body.sidebar-collapsed .page-alert-bar { left: 76px; }
+}
+
+/* 首頁儀表板 */
+#section-dashboard .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 768px) { #section-dashboard .stat-grid { grid-template-columns: 1fr 1fr; } }
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.2rem 0.75rem; }
+.check-grid .check-row { margin-bottom: 0.25rem; }
+
+/* 浮動筆記 */
+.quick-note-fab {
+  position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 950;
+  width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(13,86,97,0.35);
+}
+.quick-note-fab:hover { filter: brightness(1.1); }
+.quick-note-panel {
+  position: fixed; right: 1.5rem; bottom: 5.5rem; z-index: 951; width: min(360px, calc(100vw - 2rem));
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 30px rgba(31,35,36,0.18); padding: 1rem; display: none; flex-direction: column; gap: 0.6rem;
+}
+.quick-note-panel.show { display: flex; }
+.qn-head { display: flex; align-items: center; justify-content: space-between; }
+.qn-head strong { display: flex; align-items: center; gap: 0.4rem; color: var(--primary); }
+.qn-head strong svg { width: 18px; height: 18px; }
+.qn-close { background: none; border: none; cursor: pointer; color: var(--text-secondary); display: flex; }
+.qn-actions { display: flex; justify-content: space-between; gap: 0.5rem; }
+body.role-provider .quick-note-fab, body.role-provider .quick-note-panel { display: none !important; }
+@media print { .quick-note-fab, .quick-note-panel, .mobile-menu-btn { display: none !important; } }
+@media (max-width: 768px) { .quick-note-fab { right: 1rem; bottom: 1rem; } .quick-note-panel { right: 1rem; bottom: 4.75rem; } }
+
+/* v2.8 人體圖：疼痛強度與感覺 */
+.bm-field-label { font-size: 0.76rem; color: var(--text-secondary); margin: 0.35rem 0 0.2rem; }
+.bm-int-val { font-weight: 600; color: #8E354A; margin-left: 0.3rem; }
+.bm-nrs { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 2px; }
+.bm-nrs button { border: 1px solid var(--border-color); background: #fff; border-radius: 4px; font-size: 0.72rem; padding: 0.22rem 0; cursor: pointer; color: var(--text-secondary); font-family: inherit; }
+.bm-nrs button.on { background: #8E354A; border-color: #8E354A; color: #fff; font-weight: 700; }
+.bm-hint { font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.15rem; }
+.bm-sens { display: flex; flex-wrap: wrap; gap: 0.25rem 0.7rem; font-size: 0.78rem; }
+.bm-sens label { display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer; }
+.bm-sens input { accent-color: #8E354A; }
+.bm-sens-other { width: 100%; margin-top: 0.3rem; font-size: 0.8rem; padding: 0.3rem 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; }
+.bodymap-note textarea { margin-top: 0.35rem; }
+
+/* 演奏動作評估：說明頁與倒數（v2.8） */
+#section-playing.show-guide > :not(.page-header):not(#playing-guide) { display: none !important; }
+#section-playing:not(.show-guide) #playing-guide { display: none; }
+.pg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+.pg-steps { margin: 0.4rem 0 0 1.25rem; padding: 0; line-height: 1.8; font-size: 0.9rem; }
+.pg-stage { border-left: 3px solid var(--primary); padding: 0.3rem 0 0.3rem 0.75rem; }
+.pg-stage p { margin-top: 0.2rem; line-height: 1.6; }
+.pg-views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 0.4rem; }
+.pg-view { border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 0.85rem 1rem; }
+.pg-view-title { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; font-size: 0.88rem; color: var(--primary); margin-bottom: 0.35rem; }
+.pg-view-title svg { width: 16px; height: 16px; }
+.pg-view p { font-size: 0.85rem; line-height: 1.6; }
+.pg-examples { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-top: 0.4rem; }
+.pg-example { margin: 0; }
+.pg-example img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
+.pg-img-pending { aspect-ratio: 4/3; border: 2px dashed var(--border-color); border-radius: var(--border-radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; color: var(--text-secondary); font-size: 0.8rem; background: var(--bg-secondary); }
+.pg-example figcaption { text-align: center; font-size: 0.82rem; margin-top: 0.35rem; color: var(--text-secondary); }
+.stage-ins { line-height: 1.5; }
+.pa-countdown { position: absolute; inset: 0; z-index: 8; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(31,35,36,0.55); color: #fff; text-align: center; padding: 1rem; }
+.pa-countdown.show { display: flex; }
+.pa-count-num { font-size: 5.5rem; font-weight: 700; line-height: 1; }
+.pa-count-text { font-size: 1.35rem; font-weight: 600; }
+.pa-count-sub { font-size: 0.9rem; opacity: 0.85; max-width: 80%; }
+@media (max-width: 768px) { .pg-grid, .pg-views { grid-template-columns: 1fr; } .pa-count-num { font-size: 3.5rem; } .pa-count-text { font-size: 1.05rem; } }
+@media (max-width: 768px) { .mobile-menu-btn { display: flex; } }
+/* 浮動筆記鈕不擋住頁面底部按鈕與提示訊息 */
+body:not(.role-provider) main { padding-bottom: 6rem; }
+body:not(.role-provider) .toast-container { bottom: 5.5rem; }
+body.sidebar-collapsed .role-chip button { white-space: normal; line-height: 1.2; }

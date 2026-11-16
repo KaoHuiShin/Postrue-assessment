@@ -99,8 +99,71 @@ let playingResult = null;          // 計算完的報告
 let sessionMaps = { pre: [], post: [], done: false };
 let sbmPre = null, sbmPost = null; // 人體圖元件
 
+// ── 評估說明頁內容（研究者提供後填入；空白時畫面顯示「待補」） ─────
+const PLAYING_GUIDE_CONTENT = {
+  // 第三階段（演奏中）指定曲目，例如 { zh: 'G 大調三個八度音階＋巴哈無伴奏組曲第 1 號前奏曲', en: '...' }
+  piece: { zh: '', en: '' },
+  // 姿勢異常範例照片：src 填圖檔路徑（例如 'images/example_forward_head.jpg'），null＝顯示「圖片待補」
+  postureExamples: [
+    { id: 'forwardHead', src: null, zh: '頭部前傾', en: 'Forward head' },
+    { id: 'shoulderTilt', src: null, zh: '雙肩傾斜', en: 'Shoulder tilt' },
+    { id: 'elbow', src: null, zh: '手肘角度過大或過小', en: 'Elbow angle out of range' }
+  ],
+  // 拍攝角度：拍攝方向尚未定案（CVA 需側面、雙肩傾斜需正面）；text 留空＝顯示「指導語待補」
+  cameraViews: [
+    { id: 'front', zh: '正面拍攝', en: 'Front view', textZh: '', textEn: '' },
+    { id: 'side', zh: '側面拍攝', en: 'Side view', textZh: '', textEn: '' }
+  ]
+};
+// 開始錄製前倒數秒數；校準取倒數最後 CALIB_SEC 秒的畫面平均
+const COUNTDOWN_RULES = { COUNTDOWN_SEC: 10, CALIB_SEC: 1.5, MAX_RETRY: 3 };
+// 分數說明（分級門檻與評語待定）：例如 [{ min: 80, zh: '…', en: '…', commentZh: '…', commentEn: '…' }]，依 min 由高到低
+// 空陣列＝畫面顯示「說明待補」，不自行編寫門檻
+const SCORE_BANDS = [];
+
+const pickLang = (zh, en) => (currentLang === 'en' ? (en || zh) : zh);
+function pieceText() { const t = pickLang(PLAYING_GUIDE_CONTENT.piece.zh, PLAYING_GUIDE_CONTENT.piece.en); return t || tApp('piece_pending'); }
+/** 分數說明 HTML（分數旁顯示） */
+function scoreExplainHtml(score) {
+  if (!SCORE_BANDS.length || score === null || score === undefined) return `<span class="muted">${tApp('score_explain_pending')}</span>`;
+  const b = SCORE_BANDS.find(x => score >= x.min) || SCORE_BANDS[SCORE_BANDS.length - 1];
+  return `<strong>${escapeHtml(pickLang(b.zh, b.en))}</strong><br><span class="muted">${escapeHtml(pickLang(b.commentZh, b.commentEn) || '')}</span>`;
+}
+
+let playingGuideDone = false;
+function startPlayingFromGuide() { playingGuideDone = true; renderPlayingPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function showPlayingGuide() {
+  if (cvaState.isRecording || countdownState) { showToast(tApp('toast_stop_first'), 'warning'); return; }
+  playingGuideDone = false; renderPlayingPage();
+}
+function renderPlayingGuide() {
+  const ex = document.getElementById('pg-examples');
+  if (!ex) return;
+  ex.innerHTML = PLAYING_GUIDE_CONTENT.postureExamples.map(e => `
+    <figure class="pg-example">
+      ${e.src ? `<img src="${e.src}" alt="${escapeHtml(pickLang(e.zh, e.en))}">` : `<div class="pg-img-pending"><i data-lucide="image"></i>${tApp('img_pending')}</div>`}
+      <figcaption>${escapeHtml(pickLang(e.zh, e.en))}</figcaption>
+    </figure>`).join('');
+  document.getElementById('pg-views').innerHTML = PLAYING_GUIDE_CONTENT.cameraViews.map(v => {
+    const txt = pickLang(v.textZh, v.textEn);
+    return `<div class="pg-view"><div class="pg-view-title"><i data-lucide="${v.id === 'front' ? 'user' : 'user-round'}"></i>${escapeHtml(pickLang(v.zh, v.en))}</div>
+      <p class="${txt ? '' : 'muted'}">${txt ? escapeHtml(txt) : tApp('cam_text_pending')}</p></div>`;
+  }).join('');
+  const p = { n: COUNTDOWN_RULES.COUNTDOWN_SEC };
+  document.getElementById('pg-steps').innerHTML = [1, 2, 3, 4, 5].map(k => `<li>${tApp('pg_step' + k, p)}</li>`).join('');
+  document.getElementById('pg-stages').innerHTML = STAGES.map(s => `
+    <div class="pg-stage"><strong>${tApp('stage_' + s)}</strong><p class="muted small">${stageInstruction(s)}</p></div>`).join('');
+}
+function stageInstruction(s) {
+  if (s === 'playing') return tApp('stage_ins_playing', { piece: escapeHtml(pieceText()) });
+  return tApp('stage_ins_' + s);
+}
+
 // ── 頁面渲染 ─────────────────────────────────────────────────────
 function renderPlayingPage() {
+  const sec = document.getElementById('section-playing');
+  sec.classList.toggle('show-guide', !playingGuideDone);
+  if (!playingGuideDone) { renderPlayingGuide(); lucide.createIcons(); return; }
   if (!document.querySelector('.capture-steps .step-card')) renderStageCards();
   document.getElementById('practice-rule-text').textContent = tApp('practice_rule', {
     min: PRACTICE_RULES.REST_AFTER_MIN, bad: Math.round(PRACTICE_RULES.BAD_POSTURE_LIMIT_SEC / 60)
@@ -117,67 +180,49 @@ function renderStageCards() {
   document.querySelector('.capture-steps').innerHTML = STAGES.map((s, i) => `
     <div class="step-card ${i === 0 ? 'active' : ''}" id="step-${s}" onclick="selectStep('${s}')">
       <div class="step-icon"><i data-lucide="${icons[s]}"></i></div>
-      <strong style="font-size:0.88rem;" data-i18n="stage_${s}">${tApp('stage_' + s)}</strong>
+      <strong style="font-size:0.88rem;">${tApp('stage_' + s)}</strong>
+      <span class="muted small stage-ins" id="ins-${s}"></span>
       <span class="muted small" id="label-${s}"></span>
       <div class="cva-step-controls" onclick="event.stopPropagation()">
-        <button class="btn btn-interactive" id="cva-btn-${s}" onclick="openCamera('${s}', event)"></button>
-        <button class="btn btn-warning-outline" id="cva-calib-btn-${s}" onclick="runCalibration('${s}', event)" style="display:none;"></button>
-        <div class="calib-status" id="cva-calib-status-${s}" style="display:none;"></div>
-        <button class="btn btn-primary" id="cva-rec-btn-${s}" onclick="toggleRecording('${s}', event)" style="display:none;"></button>
-        <button class="btn btn-outline btn-sm" id="cva-close-btn-${s}" onclick="closeCamera(); refreshStageCards();" style="display:none;"></button>
+        <button class="btn btn-primary" id="stage-btn-${s}" onclick="onStageButton('${s}')"></button>
         <div class="cva-live-badge" id="cva-live-${s}" style="display:none;"><span class="cva-live-dot"></span><span id="cva-angle-${s}">--</span><span id="cva-frames-${s}" style="font-size:0.7rem; opacity:0.7;"></span></div>
       </div>
     </div>`).join('');
   lucide.createIcons();
 }
 
-/** 依目前狀態更新三個階段卡片的按鈕與文字 */
+/** 依目前狀態更新三個階段卡片：每階段只有一顆按鈕（開始／取消倒數／停止錄製／重新錄製） */
 function refreshStageCards() {
-  if (!document.getElementById('cva-btn-relax')) return;
+  if (!document.getElementById('stage-btn-relax')) return;
   STAGES.forEach(s => {
     const isActive = cvaState.activeStage === s;
-    const openBtn = document.getElementById(`cva-btn-${s}`);
-    const calibBtn = document.getElementById(`cva-calib-btn-${s}`);
-    const calibStatus = document.getElementById(`cva-calib-status-${s}`);
-    const recBtn = document.getElementById(`cva-rec-btn-${s}`);
-    const closeBtn = document.getElementById(`cva-close-btn-${s}`);
+    const btn = document.getElementById(`stage-btn-${s}`);
     const live = document.getElementById(`cva-live-${s}`);
     const label = document.getElementById(`label-${s}`);
     const strong = document.querySelector(`#step-${s} strong`);
     if (strong) strong.textContent = tApp('stage_' + s);
-
-    openBtn.style.display = isActive ? 'none' : 'inline-flex';
-    openBtn.innerHTML = `<i data-lucide="video"></i>${tApp('btn_open_camera')}`;
-    closeBtn.style.display = isActive && !cvaState.isRecording ? 'inline-flex' : 'none';
-    closeBtn.innerHTML = `<i data-lucide="video-off"></i>${tApp('btn_close_camera')}`;
-
-    calibBtn.style.display = isActive ? 'inline-flex' : 'none';
-    calibBtn.disabled = cvaState.isCalibrating || cvaState.isRecording;
-    calibBtn.innerHTML = cvaState.isCalibrating && isActive
-      ? `<i data-lucide="loader"></i>${tApp('calib_sampling')}`
-      : `<i data-lucide="crosshair"></i>${tApp(cvaState.referenceAngle !== null ? 'btn_recalibrate' : 'btn_calibrate')}`;
-
-    calibStatus.style.display = isActive && (cvaState.referenceAngle !== null || cvaState.isCalibrating) ? 'block' : 'none';
-    calibStatus.textContent = cvaState.isCalibrating ? tApp('calib_hold') :
-      (cvaState.referenceAngle !== null ? tApp('baseline_text', { v: cvaState.referenceAngle.toFixed(1) }) : '');
-
-    const canRecord = isActive && cvaState.referenceAngle !== null && !cvaState.isCalibrating;
-    recBtn.style.display = canRecord ? 'inline-flex' : 'none';
-    if (cvaState.isRecording && isActive) {
-      recBtn.innerHTML = `<i data-lucide="square"></i>${tApp('btn_stop_rec')}`;
-      recBtn.classList.add('btn-danger'); recBtn.classList.remove('btn-primary');
+    document.getElementById(`ins-${s}`).innerHTML = stageInstruction(s);
+    const counting = countdownState && countdownState.stage === s;
+    const busyOther = (cvaState.isRecording || countdownState) && !isActive && !counting;
+    btn.disabled = !!busyOther || (btnLoading === s);
+    btn.classList.remove('btn-danger', 'btn-outline', 'btn-primary');
+    if (btnLoading === s) {
+      btn.innerHTML = `<i data-lucide="loader"></i>${tApp('loading')}`; btn.classList.add('btn-primary');
+    } else if (counting) {
+      btn.innerHTML = `<i data-lucide="x"></i>${tApp('btn_cancel_countdown')}`; btn.classList.add('btn-outline');
+    } else if (cvaState.isRecording && isActive) {
+      btn.innerHTML = `<i data-lucide="square"></i>${tApp('btn_stop_rec')}`; btn.classList.add('btn-danger');
+    } else if (cvaState.stageDone[s]) {
+      btn.innerHTML = `<i data-lucide="refresh-cw"></i>${tApp('btn_re_rec')}`; btn.classList.add('btn-outline');
     } else {
-      recBtn.innerHTML = `<i data-lucide="${cvaState.stageDone[s] ? 'refresh-cw' : 'circle'}"></i>${tApp(cvaState.stageDone[s] ? 'btn_re_rec' : 'btn_start_rec')}`;
-      recBtn.classList.remove('btn-danger'); recBtn.classList.add('btn-primary');
+      btn.innerHTML = `<i data-lucide="play"></i>${tApp('btn_stage_start')}`; btn.classList.add('btn-primary');
     }
     live.style.display = cvaState.isRecording && isActive ? 'flex' : 'none';
-
-    if (cvaState.isRecording && isActive) label.textContent = tApp('recording_now');
+    if (counting) label.textContent = tApp('countdown_label');
+    else if (cvaState.isRecording && isActive) label.textContent = tApp('recording_now');
     else if (cvaState.stageDone[s]) label.textContent = tApp('stage_done', { n: cvaState.frameBuffers[s].length, t: fmtClock(cvaState.stageDuration[s]) });
     else label.textContent = tApp('not_recorded');
-
-    const card = document.getElementById(`step-${s}`);
-    card.classList.toggle('captured', cvaState.stageDone[s]);
+    document.getElementById(`step-${s}`).classList.toggle('captured', cvaState.stageDone[s]);
   });
   lucide.createIcons();
 }
@@ -216,9 +261,12 @@ function onPoseResults(results) {
 
   const shDelta = cvaState.refShoulderTilt !== null ? params.shoulderTilt - cvaState.refShoulderTilt : 0;
   const flags = evaluateFrame(params.cva, shDelta, params.leftElbow, params.rightElbow);
+  // 第一階段（放鬆）不顯示姿勢錯誤提示（不跳警示、骨架不標紅），但角度與超過警戒值的旗標照常記錄
+  const quiet = cvaState.activeStage === 'relax' || !!countdownState;
+  const shownFlags = quiet ? { cva: false, shoulder: false, elbow: false, any: false } : flags;
 
   const overlay = document.getElementById('cva-overlay-canvas');
-  if (overlay) { syncOverlaySize(overlay); drawCvaOverlay(overlay, results.poseLandmarks, params, shDelta, flags); }
+  if (overlay) { syncOverlaySize(overlay); drawCvaOverlay(overlay, results.poseLandmarks, params, shDelta, shownFlags); }
 
   if (cvaState.isCalibrating) {
     cvaState.calibFrames.push(params.cva);
@@ -229,7 +277,7 @@ function onPoseResults(results) {
   const live = document.getElementById('cva-live-overlay-angle');
   if (live) {
     live.textContent = `CVA ${params.cva.toFixed(1)}°  ${tApp('shoulder_short')} Δ${shDelta >= 0 ? '+' : ''}${shDelta.toFixed(1)}°`;
-    live.style.color = flags.cva ? '#FEDFE1' : '#E5ECE4';
+    live.style.color = shownFlags.cva ? '#FEDFE1' : '#E5ECE4';
   }
 
   if (!cvaState.isRecording || cvaState.referenceAngle === null) { cvaState.lastFrameT = null; return; }
@@ -258,7 +306,7 @@ function onPoseResults(results) {
     `CVA ${params.cva.toFixed(1)}° | ${tApp('shoulder_short')} Δ${shDelta.toFixed(1)}° | ` +
     `L ${isNaN(params.leftElbow) ? '--' : params.leftElbow.toFixed(0)}° R ${isNaN(params.rightElbow) ? '--' : params.rightElbow.toFixed(0)}°`);
 
-  handlePostureAlert(flags, now);
+  if (stage !== 'relax') handlePostureAlert(flags, now);
   checkPracticeReminders();
   if (now - practiceSession.lastUiT > 250) { practiceSession.lastUiT = now; updatePracticeUI(); }
 }
@@ -384,89 +432,133 @@ function drawCvaOverlay(canvas, lm, params, shDelta, flags) {
   void NEUTRAL;
 }
 
-// ── ① 啟動攝影機 ─────────────────────────────────────────────────
-async function openCamera(stage, event) {
-  if (event) event.stopPropagation();
-  if (!App.profile || !App.profile.instrument) {
-    showToast(tApp('toast_need_profile'), 'warning');
-    switchSection('profile');
-    return;
-  }
-  if (cvaState.isRecording) { showToast(tApp('toast_stop_first'), 'warning'); return; }
+// ── 一鍵開始：開攝影機 → 倒數（最後 1.5 秒自動校準）→ 自動開始錄製 ─────
+let countdownState = null;   // { stage, start, timer, calibStarted, retry }
+let btnLoading = null;
 
-  const openBtn = document.getElementById(`cva-btn-${stage}`);
-  openBtn.disabled = true;
-  openBtn.textContent = tApp('loading');
+function onStageButton(stage) {
+  if (countdownState && countdownState.stage === stage) { cancelCountdown(); return; }
+  if (cvaState.isRecording && cvaState.activeStage === stage) { toggleRecording(stage); return; }
+  startStageAuto(stage);
+}
 
+/** 開啟攝影機（已開啟則直接回傳 true） */
+async function ensureCamera() {
   const ready = await initCvaPose().catch(err => { console.error(err); return false; });
-  if (!ready) { openBtn.disabled = false; refreshStageCards(); return; }
-
-  if (!cvaState.stream) {
-    try {
-      cvaState.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    } catch (err) {
-      showToast(tApp('toast_camera_denied'), 'danger');
-      openBtn.disabled = false;
-      refreshStageCards();
-      return;
-    }
-    const video = document.getElementById('cva-video');
-    video.srcObject = cvaState.stream;
-    video.style.display = 'block';
-    document.getElementById('cva-overlay-canvas').style.display = 'block';
-    document.getElementById('video-placeholder').style.display = 'none';
-    document.getElementById('cva-live-overlay-angle').style.display = 'block';
-    document.getElementById('cva-ref-badge').style.display = 'block';
-    cvaState.camera = new Camera(video, {
-      onFrame: async () => { if (cvaState.pose) await cvaState.pose.send({ image: video }); },
-      width: 640, height: 480
-    });
-    cvaState.camera.start();
+  if (!ready) return false;
+  if (cvaState.stream) return true;
+  try {
+    cvaState.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  } catch (err) {
+    showToast(tApp('toast_camera_denied'), 'danger');
+    return false;
   }
-  openBtn.disabled = false;
+  if (App.currentSection !== 'playing') { cvaState.stream.getTracks().forEach(t => t.stop()); cvaState.stream = null; return false; }
+  const video = document.getElementById('cva-video');
+  video.srcObject = cvaState.stream;
+  video.style.display = 'block';
+  document.getElementById('cva-overlay-canvas').style.display = 'block';
+  document.getElementById('video-placeholder').style.display = 'none';
+  document.getElementById('cva-live-overlay-angle').style.display = 'block';
+  document.getElementById('cva-ref-badge').style.display = 'block';
+  cvaState.camera = new Camera(video, {
+    onFrame: async () => { if (cvaState.pose && !(typeof SM !== 'undefined' && SM.active)) await cvaState.pose.send({ image: video }); },
+    width: 640, height: 480
+  });
+  cvaState.camera.start();
+  return true;
+}
+
+async function startStageAuto(stage) {
+  if (!App.profile || !App.profile.instrument) { showToast(tApp('toast_need_profile'), 'warning'); switchSection('profile'); return; }
+  if (cvaState.isRecording || countdownState) { showToast(tApp('toast_stop_first'), 'warning'); return; }
+  btnLoading = stage; refreshStageCards();
+  const ok = await ensureCamera();
+  btnLoading = null;
+  if (!ok) { refreshStageCards(); return; }
   cvaState.activeStage = stage;
   cvaState.isCalibrating = false;
-  cvaState.isRecording = false;
   selectStep(stage);
-  setVideoStatus(`CAMERA [${stage.toUpperCase()}]`, '#36563C');
-  updateRefBadge();
-  setHud(cvaState.referenceAngle === null ? tApp('hud_need_calib') : tApp('hud_ready'));
-  refreshStageCards();
+  beginCountdown(stage, 0);
 }
 
-function updateRefBadge() {
-  const b = document.getElementById('cva-ref-badge');
-  b.textContent = cvaState.referenceAngle === null ? tApp('baseline_none') : tApp('baseline_text', { v: cvaState.referenceAngle.toFixed(1) });
+function beginCountdown(stage, retry) {
+  hidePostureAlert();
+  countdownState = { stage, start: performance.now(), calibStarted: false, retry, timer: null };
+  setVideoStatus(`COUNTDOWN [${stage.toUpperCase()}]`, '#6C6024');
+  setHud(tApp('hud_countdown'));
+  showCountdownOverlay(true);
+  refreshStageCards();
+  countdownState.timer = setInterval(tickCountdown, 100);
+  tickCountdown();
 }
 
-// ── ② 校準歸零（收集 1.5 秒取平均） ──────────────────────────────
-async function runCalibration(stage, event) {
-  if (event) event.stopPropagation();
-  if (cvaState.activeStage !== stage || !cvaState.camera) return;
-  if (cvaState.isRecording) { showToast(tApp('toast_stop_first'), 'warning'); return; }
-  cvaState.calibFrames = [];
-  cvaState.calibShoulderFrames = [];
-  cvaState.isCalibrating = true;
-  setVideoStatus('CALIBRATING…', '#6C6024');
-  setHud(tApp('calib_hold'));
-  refreshStageCards();
-  await new Promise(r => setTimeout(r, 1500));
+function tickCountdown() {
+  const cs = countdownState;
+  if (!cs) return;
+  const el = (performance.now() - cs.start) / 1000;
+  const left = COUNTDOWN_RULES.COUNTDOWN_SEC - el;
+  if (!cs.calibStarted && left <= COUNTDOWN_RULES.CALIB_SEC) {
+    cs.calibStarted = true;
+    cvaState.calibFrames = [];
+    cvaState.calibShoulderFrames = [];
+    cvaState.isCalibrating = true;   // onPoseResults 收集校準幀
+  }
+  document.getElementById('pa-count-num').textContent = Math.max(1, Math.ceil(left));
+  document.getElementById('pa-count-sub').textContent = cs.stage === 'playing' ? tApp('countdown_next_playing', { piece: pieceText() }) : tApp('countdown_next_' + cs.stage);
+  if (left <= 0) finishCountdown();
+}
+
+function finishCountdown() {
+  const cs = countdownState;
+  clearInterval(cs.timer);
   cvaState.isCalibrating = false;
-
+  const stage = cs.stage;
   if (!cvaState.calibFrames.length) {
-    showToast(tApp('toast_calib_fail'), 'danger');
-    setVideoStatus(`CAMERA [${stage.toUpperCase()}]`, '#36563C');
-    refreshStageCards();
+    // 沒偵測到人：提示後重新倒數，最多 MAX_RETRY 次
+    if (cs.retry + 1 < COUNTDOWN_RULES.MAX_RETRY) {
+      showToast(tApp('toast_calib_retry'), 'warning');
+      countdownState = null;
+      beginCountdown(stage, cs.retry + 1);
+    } else {
+      countdownState = null;
+      showCountdownOverlay(false);
+      showToast(tApp('toast_calib_fail'), 'danger');
+      setVideoStatus(`CAMERA [${stage.toUpperCase()}]`, '#36563C');
+      setHud('STATUS: WAITING');
+      refreshStageCards();
+    }
     return;
   }
   const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
   cvaState.referenceAngle = avg(cvaState.calibFrames);
   cvaState.refShoulderTilt = avg(cvaState.calibShoulderFrames);
-  setVideoStatus(`CAMERA [${stage.toUpperCase()}]`, '#36563C');
+  countdownState = null;
+  showCountdownOverlay(false);
   updateRefBadge();
-  setHud(tApp('hud_ready'));
+  toggleRecording(stage);   // 自動開始錄製
+}
+
+function cancelCountdown() {
+  if (!countdownState) return;
+  clearInterval(countdownState.timer);
+  const stage = countdownState.stage;
+  countdownState = null;
+  cvaState.isCalibrating = false;
+  showCountdownOverlay(false);
+  setVideoStatus(`CAMERA [${stage.toUpperCase()}]`, '#36563C');
+  setHud('STATUS: WAITING');
   refreshStageCards();
-  showToast(tApp('toast_calib_done', { v: cvaState.referenceAngle.toFixed(1) }), 'success');
+}
+
+function showCountdownOverlay(show) {
+  const el = document.getElementById('pa-countdown');
+  if (el) el.classList.toggle('show', show);
+}
+
+function updateRefBadge() {
+  const b = document.getElementById('cva-ref-badge');
+  b.textContent = cvaState.referenceAngle === null ? tApp('baseline_none') : tApp('baseline_text', { v: cvaState.referenceAngle.toFixed(1) });
 }
 
 // ── ③ 開始／停止錄製 ─────────────────────────────────────────────
@@ -523,6 +615,7 @@ function toggleRecording(stage, event) {
 
 // ── 關閉攝影機 ───────────────────────────────────────────────────
 function closeCamera() {
+  if (countdownState) cancelCountdown();
   if (cvaState.isRecording) toggleRecording(cvaState.activeStage);
   cvaState.isCalibrating = false;
   cvaState.activeStage = null;
@@ -547,7 +640,7 @@ function stopAllDetection() {
 }
 
 function onLeavePlaying() {
-  if (cvaState.activeStage) { closeCamera(); refreshStageCards(); }
+  if (cvaState.activeStage || cvaState.stream || countdownState) { closeCamera(); refreshStageCards(); }
 }
 
 // ── 統計摘要 ─────────────────────────────────────────────────────
@@ -665,8 +758,8 @@ function renderPlayingResults() {
   const badge = document.getElementById('playing-score-badge');
   badge.className = 'score-badge-large ' + { good: 'optimal', caution: 'warning', alert: 'danger' }[level];
   document.getElementById('playing-score-val').textContent = score ?? '--';
-  document.getElementById('playing-rating-text').textContent = tApp('rating_' + level);
-  document.getElementById('playing-result-desc').textContent = tApp('rating_desc_' + level);
+  document.getElementById('playing-rating-text').textContent = tApp('score_explain_title');
+  document.getElementById('playing-result-desc').innerHTML = scoreExplainHtml(score);
 
   const T = ALERT_THRESHOLDS;
   document.getElementById('playing-metrics').innerHTML = s ? [

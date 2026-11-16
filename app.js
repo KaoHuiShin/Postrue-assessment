@@ -49,11 +49,27 @@ function setLang(lang) {
     const key = el.getAttribute('data-i18n-ph');
     if (dict[key]) el.placeholder = dict[key];
   });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    if (dict[key]) { el.title = dict[key]; el.setAttribute('aria-label', dict[key]); }
+  });
   document.title = dict.brand_name || document.title;
 
   // 重新繪製 JS 動態產生的文字
   if (App.ready) refreshCurrentView();
 }
+
+// ── 側邊選單收合（桌機：縮成圖示列；手機：滑出／收起） ─────────────
+const isMobileNav = () => window.matchMedia('(max-width: 768px)').matches;
+function toggleSidebar() {
+  if (isMobileNav()) { document.body.classList.toggle('sidebar-open'); return; }
+  const collapsed = document.body.classList.toggle('sidebar-collapsed');
+  try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+}
+function closeMobileSidebar() { document.body.classList.remove('sidebar-open'); }
+(function restoreSidebar() {
+  try { if (localStorage.getItem('sidebarCollapsed') === '1') document.body.classList.add('sidebar-collapsed'); } catch (e) {}
+})();
 
 // ── 全域狀態 ─────────────────────────────────────────────────────
 const App = {
@@ -359,6 +375,7 @@ function switchSection(sectionId) {
   const nav = document.getElementById(`nav-${navId}`);
   if (nav) nav.classList.add('active');
   App.currentSection = sectionId;
+  closeMobileSidebar();
   renderSection(sectionId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -466,11 +483,33 @@ function dateInputToMs(str, endOfDay) {
 }
 function instrumentLabel(v) {
   if (v === '小提琴' || v === 'violin') return tApp('opt_violin');
+  if (v === '中提琴' || v === 'viola') return tApp('opt_viola');
   if (v === '大提琴' || v === 'cello') return tApp('opt_cello');
   return v || '--';
 }
 function optionLabel(map, v) { return map[v] ? tApp(map[v]) : (v || '--'); }
 const GENDER_KEYS = { '男': 'opt_male', '女': 'opt_female', '其他': 'opt_other', '不便透露': 'opt_na' };
+/** 職業類別顯示文字（新欄位 occupation；舊資料退回 identity） */
+function occupationText(p) {
+  if (!p) return '--';
+  const o = occupationFromLegacy(p);
+  if (!o.occupation) return '--';
+  if (o.occupation === '其他') return o.occupationOther ? `${tApp('opt_other')}：${o.occupationOther}` : tApp('opt_other');
+  const opt = OCCUPATION_OPTIONS.find(x => x.value === o.occupation);
+  return opt ? (currentLang === 'en' ? opt.en : opt.zh) : o.occupation;
+}
+function handednessText(v) { return v ? tApp('hand_' + v) : '--'; }
+function comorbidityText(p) {
+  if (!p) return '--';
+  const arr = (p.comorbidities || []).map(v => comorbidityLabel(v, currentLang));
+  if (p.comorbidityOther) arr.push(p.comorbidityOther);
+  return arr.length ? arr.join(currentLang === 'en' ? ', ' : '、') : '--';
+}
+/** 下拉選「其他」時顯示自填框 */
+function toggleOtherInput(selectId, inputId) {
+  const s = document.getElementById(selectId), i = document.getElementById(inputId);
+  if (s && i) i.style.display = s.value === '其他' ? 'block' : 'none';
+}
 const IDENTITY_KEYS = { '音樂系學生': 'id_student', '職業演奏者': 'id_pro', '業餘演奏者': 'id_amateur', '其他': 'opt_other' };
 const TITLE_KEYS = { '醫師': 'title_doctor', '物理治療師': 'title_pt', '其他': 'opt_other' };
 const SPECIALTY_KEYS = { '骨科': 'sp_ortho', '復健科': 'sp_rehab', '運動醫學科': 'sp_sports', '一般物理治療': 'sp_pt', '其他': 'opt_other' };
@@ -703,7 +742,13 @@ function fillProfileForm() {
   set('pf-username', p.username || App.user.displayName || '');
   set('pf-gender', p.gender);
   set('pf-birthdate', p.birthdate);
-  set('pf-identity', p.identity);
+  const occ = occupationFromLegacy(p);
+  set('pf-occupation', occ.occupation);
+  set('pf-occupation-other', occ.occupationOther);
+  toggleOtherInput('pf-occupation', 'pf-occupation-other');
+  set('pf-handedness', p.handedness);
+  document.getElementById('pf-comorbidities').innerHTML = comorbidityChecksHtml('pf-comorb', p.comorbidities, currentLang);
+  set('pf-comorbidity-other', p.comorbidityOther);
   set('pf-phone', p.phone);
   set('pf-height', p.height);
   set('pf-weight', p.weight);
@@ -719,8 +764,6 @@ function fillProfileForm() {
   set('pf-allergy', p.allergies);
   set('pf-referral', p.referralSource);
   document.querySelectorAll('input[name="pf-pt"]').forEach(r => { r.checked = (r.value === 'yes') === !!p.hadPhysicalTherapy; });
-  document.getElementById('pf-consent-research').checked = !!p.consentResearch;
-  document.getElementById('pf-consent-data').checked = !!p.consentDataUse;
 
   const hint = document.getElementById('pf-age-hint');
   const age = ageFromBirthdate(p.birthdate) ?? p.age;
@@ -737,9 +780,7 @@ async function saveProfile(event) {
   event.preventDefault();
   const v = id => document.getElementById(id).value.trim();
   const n = id => { const x = v(id); return x === '' ? null : Number(x); };
-  const consentResearch = document.getElementById('pf-consent-research').checked;
-  const consentDataUse = document.getElementById('pf-consent-data').checked;
-  if (!consentResearch || !consentDataUse) { showToast(tApp('toast_consent_required'), 'warning'); return; }
+  if (v('pf-occupation') === '其他' && !v('pf-occupation-other')) { showToast(tApp('toast_fill_required'), 'warning'); return; }
 
   const birthdate = v('pf-birthdate');
   const pt = document.querySelector('input[name="pf-pt"]:checked');
@@ -752,7 +793,11 @@ async function saveProfile(event) {
     gender: v('pf-gender'),
     birthdate,
     age: ageFromBirthdate(birthdate),
-    identity: v('pf-identity'),
+    occupation: v('pf-occupation'),
+    occupationOther: v('pf-occupation') === '其他' ? v('pf-occupation-other') : '',
+    handedness: v('pf-handedness'),
+    comorbidities: Array.from(document.querySelectorAll('input[name="pf-comorb"]:checked')).map(x => x.value),
+    comorbidityOther: v('pf-comorbidity-other'),
     phone: v('pf-phone'),
     height: n('pf-height'),
     weight: n('pf-weight'),
@@ -767,9 +812,8 @@ async function saveProfile(event) {
     surgeryHistory: v('pf-surgery'),
     currentMedication: v('pf-meds'),
     allergies: v('pf-allergy'),
-    referralSource: v('pf-referral'),
-    consentResearch, consentDataUse,
-    consentAt: old.consentAt || Date.now()
+    referralSource: v('pf-referral')
+    // 研究同意不在系統內勾選（v2.8）；舊資料的 consentResearch／consentDataUse 欄位保留不刪
   };
   try {
     await DataAPI.updateProfile(App.user.uid, profile);
@@ -802,7 +846,6 @@ function renderDashboard() {
   const weekAgo = Date.now() - 7 * 86400000;
   const weekSec = App.practiceLogs.filter(p => docTimeMs(p) >= weekAgo).reduce((a, p) => a + (p.durationSec || 0), 0);
   document.getElementById('stat-week-practice').textContent = fmtMinutes(weekSec);
-  document.getElementById('stat-providers').textContent = App.bindings.filter(b => b.status === 'active').length;
 
   renderDashboardTrendChart();
 
@@ -1033,6 +1076,7 @@ function viewHistoryDetail(id, ctx) {
           <div class="muted small">${tApp('ps_duration')}：${r.practice ? fmtClock(r.practice.durationSec) : '--'}</div>
           <div class="muted small">${tApp('ps_bad')}：${r.practice ? fmtClock(r.practice.badPostureSec) : '--'}</div>
           <div class="muted small">${tApp('ps_alerts')}：${r.practice ? r.practice.alertCount : '--'}</div>
+          <div class="small" style="margin-top:0.4rem;">${tApp('score_explain_title')}：${typeof scoreExplainHtml === 'function' ? scoreExplainHtml(r.score) : ''}</div>
         </div>
       </div>
       <div class="card">

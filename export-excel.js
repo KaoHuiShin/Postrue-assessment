@@ -58,8 +58,10 @@ function buildAssessmentRows(records, bodyMaps) {
     row[tApp('xl_practice_min')] = xNum(m.practiceSec / 60);
     row[tApp('xl_bad_min')] = xNum(m.badSec / 60);
     row[tApp('ps_alerts')] = m.alertCount;
-    row[tApp('xl_pre_parts')] = pre ? BodyMap.summarize(pre.marks) : '';
-    row[tApp('xl_post_parts')] = post ? BodyMap.summarize(post.marks) : '';
+    row[tApp('xl_pre_parts')] = pre ? BodyMap.summarizeDetail(pre.marks) : '';
+    row[tApp('xl_post_parts')] = post ? BodyMap.summarizeDetail(post.marks) : '';
+    row[tApp('xl_pre_max_pain')] = pre ? xNum(BodyMap.maxIntensity(pre.marks), 0) : '';
+    row[tApp('xl_post_max_pain')] = post ? xNum(BodyMap.maxIntensity(post.marks), 0) : '';
     row[tApp('xl_post_count')] = post ? (post.marks || []).length : '';
     row[tApp('xl_version')] = r.details && r.details.summary ? 'v2' : tApp('xl_legacy');
     row['recordId'] = m.id;
@@ -90,6 +92,22 @@ function buildStandardRows(records) {
   });
 }
 
+/** 疼痛標記 → 每個標記一列 */
+function buildPainRows(maps) {
+  const rows = [];
+  (maps || []).slice().sort((a, b) => docTimeMs(a) - docTimeMs(b)).forEach(mp => (mp.marks || []).forEach(mk => rows.push({
+    [tApp('xl_date')]: xDate(docTimeMs(mp)),
+    [tApp('xl_time')]: xTime(docTimeMs(mp)),
+    [tApp('th_context')]: tApp('ctx_' + (mp.context || 'baseline')),
+    [tApp('th_region')]: BodyMap.regionLabel(mk.region),
+    [tApp('xl_pain_nrs')]: xNum(mk.intensity, 0),
+    [tApp('th_sensation')]: BodyMap.sensationText(mk),
+    [tApp('th_note')]: mk.note || '',
+    recordId: mp.recordId || ''
+  })));
+  return rows;
+}
+
 function buildPracticeRows(logs) {
   return logs.slice().sort((a, b) => docTimeMs(a) - docTimeMs(b)).map(p => ({
     [tApp('xl_date')]: p.dateKey || xDate(docTimeMs(p)),
@@ -104,6 +122,26 @@ function buildPracticeRows(logs) {
 
 function buildQuestionnaireRows(list) {
   return list.slice().sort((a, b) => docTimeMs(a) - docTimeMs(b)).map(q => {
+    if (q.type === 'pain') {
+      const a = q.answers || {};
+      const row = {
+        [tApp('xl_date')]: xDate(docTimeMs(q)),
+        [tApp('xl_q_type')]: tApp('pain_q_title'),
+        [tApp('label_phase')]: '',
+        [tApp('xl_score')]: '',
+        [tApp('xl_max_score')]: '',
+        [tApp('xl_ipaq_cat')]: '',
+        [tApp('xl_sample')]: q.isSample ? tApp('opt_yes') : ''
+      };
+      PAIN_QUESTIONNAIRE.periods.forEach(p => { const x = (a.impact || {})[p]; row['impact_' + p] = x ? (x.answer === 'other' ? 'other:' + (x.other || '') : x.answer) : ''; });
+      row.cause = a.cause || '';
+      row.causeNote = a.causeNote || '';
+      row.painNRS = typeof a.intensity === 'number' ? a.intensity : '';
+      row.sensations = (a.sensations || []).join(',');
+      row.sensationOther = a.sensationOther || '';
+      row.impactScale = '';
+      return row;
+    }
     const row = {
       [tApp('xl_date')]: xDate(docTimeMs(q)),
       [tApp('xl_q_type')]: q.type === 'ipaq' ? 'IPAQ-SF' : tApp('scale_title'),
@@ -123,7 +161,8 @@ function buildMedicalRows(list) {
     [tApp('xl_date')]: m.date || '',
     [tApp('label_department')]: m.department || '',
     [tApp('label_reason')]: m.reason || '',
-    [tApp('label_medication')]: m.medication || ''
+    [tApp('label_medication')]: medicationListText(m),
+    [tApp('label_medication_detail_short')]: m.medication || ''
   }));
 }
 
@@ -138,12 +177,12 @@ function buildProfileRows(p, baseline) {
   const age = ageFromBirthdate(p.birthdate) ?? p.age;
   const rows = [
     ['label_name', p.username], ['label_gender', optionLabel(GENDER_KEYS, p.gender)],
-    ['label_birthdate', p.birthdate], ['xl_age', age], ['label_identity', optionLabel(IDENTITY_KEYS, p.identity)],
-    ['label_height', p.height], ['label_weight', p.weight], ['label_instrument', instrumentLabel(p.instrument)],
+    ['label_birthdate', p.birthdate], ['xl_age', age], ['label_occupation', occupationText(p)],
+    ['label_height', p.height], ['label_weight', p.weight], ['label_instrument', instrumentLabel(p.instrument)], ['label_handedness', handednessText(p.handedness)],
     ['label_years', p.yearsOfStudy], ['label_days', p.practiceDaysPerWeek], ['label_minutes', p.practiceMinutesPerSession],
     ['label_pt', p.hadPhysicalTherapy ? `${tApp('opt_yes')} ${p.physicalTherapyNote || ''}` : tApp('opt_no')],
-    ['label_painmap', baseline ? BodyMap.summarize(baseline.marks) : ''],
-    ['label_msk', p.mskHistory], ['label_surgery', p.surgeryHistory], ['label_meds', p.currentMedication],
+    ['label_painmap', baseline ? BodyMap.summarizeDetail(baseline.marks) : ''],
+    ['label_msk', p.mskHistory], ['label_comorbidity', comorbidityText(p)], ['label_surgery', p.surgeryHistory], ['label_meds', p.currentMedication],
     ['label_allergy', p.allergies], ['label_referral', optionLabel(REFERRAL_KEYS, p.referralSource)]
   ];
   return rows.map(([k, v]) => ({ [tApp('xl_field')]: tApp(k), [tApp('xl_value')]: v === null || v === undefined || v === '--' ? '' : v }));
@@ -192,6 +231,7 @@ async function exportExcelWorkbook(src, meta = {}) {
   const wb = XLSX.utils.book_new();
   addSheet(wb, buildAssessmentRows(src.records, src.bodyMaps), tApp('xl_sheet_assess'));
   addSheet(wb, buildStandardRows(src.records), tApp('xl_sheet_standard'));
+  addSheet(wb, buildPainRows(src.painMaps || src.bodyMaps), tApp('xl_sheet_pain'));
   addSheet(wb, buildPracticeRows(src.practiceLogs), tApp('xl_sheet_practice'));
   addSheet(wb, buildQuestionnaireRows(src.questionnaires), tApp('xl_sheet_quest'));
   addSheet(wb, buildMedicalRows(src.medicalLogs), tApp('xl_sheet_medical'));
@@ -230,7 +270,7 @@ function exportCaseExcel() {
   const per = getCasePeriod();
   const f = key => filterByPeriod(d[key], per.from, per.to);
   exportExcelWorkbook({
-    profile: d.profile, records: f('records'), bodyMaps: d.bodyMaps, practiceLogs: f('practiceLogs'),
+    profile: d.profile, records: f('records'), bodyMaps: d.bodyMaps, painMaps: f('bodyMaps'), practiceLogs: f('practiceLogs'),
     questionnaires: f('questionnaires'), medicalLogs: f('medicalLogs'), notes: f('notes')
   }, {
     fileName: `case_${d.profile.username || d.uid}`,

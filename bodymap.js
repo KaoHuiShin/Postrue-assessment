@@ -46,7 +46,10 @@ const BODYMAP_I18N = {
     caption: '正面圖｜圖面左側＝您的右側',
     hint: '點選身體上不適或曾受傷的部位，即可新增標記並填寫備註',
     empty: '尚未標記任何部位',
-    note_ph: '備註（例如：開始時間、疼痛程度 0–10、何時加劇）',
+    note_ph: '備註（例如：什麼時候開始、做什麼動作會更痛）',
+    intensity: '疼痛強度', intensity_hint: '0＝不痛，10＝想像得到最痛', intensity_unset: '未填', intensity_val: '{n} 分',
+    sensation: '感覺（可複選）', sens_other_ph: '其他感覺（請填寫）',
+    sens_sore: '酸', sens_numb: '麻', sens_sharp: '刺痛', sens_swollen: '腫', sens_distended: '脹', sens_tight: '緊繃', sens_other: '其他',
     none: '無標記',
     other: '其他部位',
     del: '刪除',
@@ -56,7 +59,10 @@ const BODYMAP_I18N = {
     caption: 'Front view | left side of image = your RIGHT side',
     hint: 'Click a body area that hurts or was injured to add a mark and a note',
     empty: 'No areas marked yet',
-    note_ph: 'Note (e.g. onset, pain 0–10, what makes it worse)',
+    note_ph: 'Note (e.g. when it started, which movements make it worse)',
+    intensity: 'Pain intensity', intensity_hint: '0 = no pain, 10 = worst pain imaginable', intensity_unset: 'not rated', intensity_val: '{n}/10',
+    sensation: 'How it feels (tick all that apply)', sens_other_ph: 'Other feeling (please specify)',
+    sens_sore: 'Aching', sens_numb: 'Numb', sens_sharp: 'Sharp / stabbing', sens_swollen: 'Swollen', sens_distended: 'Bloated / full', sens_tight: 'Tight', sens_other: 'Other',
     none: 'No marks',
     other: 'Other area',
     del: 'Delete',
@@ -64,13 +70,28 @@ const BODYMAP_I18N = {
   }
 };
 
+// 疼痛感覺選項（可複選）；'other' 另有自填欄
+const BODY_SENSATIONS = ['sore', 'numb', 'sharp', 'swollen', 'distended', 'tight', 'other'];
+
 const BodyMap = (() => {
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   function lang() {
     try { return localStorage.getItem('lang') === 'en' ? 'en' : 'zh'; } catch { return 'zh'; }
   }
-  function t(key) { return BODYMAP_I18N[lang()][key] || key; }
+  function t(key, params) {
+    let s = BODYMAP_I18N[lang()][key] || key;
+    if (params) Object.keys(params).forEach(k => { s = s.replace('{' + k + '}', params[k]); });
+    return s;
+  }
+  const validIntensity = v => typeof v === 'number' && v >= 0 && v <= 10;
+  /** 單一標記的強度、感覺文字（唯讀顯示、照護端、Excel 共用） */
+  function intensityText(m) { return validIntensity(m.intensity) ? t('intensity_val', { n: m.intensity }) : t('intensity_unset'); }
+  function sensationText(m) {
+    const arr = (m.sensations || []).filter(x => x !== 'other').map(x => t('sens_' + x));
+    if ((m.sensations || []).includes('other')) arr.push(m.sensationOther ? m.sensationOther : t('sens_other'));
+    return arr.join(lang() === 'en' ? ', ' : '、');
+  }
 
   function regionLabel(id) {
     const r = BODY_REGIONS.find(r => r.id === id);
@@ -211,16 +232,80 @@ const BodyMap = (() => {
         reg.textContent = regionLabel(m.region);
         body.appendChild(reg);
         if (state.editable) {
+          // 疼痛強度 0–10（未點選＝null）
+          const il = document.createElement('div');
+          il.className = 'bm-field-label';
+          il.innerHTML = `${t('intensity')} <span class="bm-int-val">${intensityText(m)}</span>`;
+          body.appendChild(il);
+          const scale = document.createElement('div');
+          scale.className = 'bm-nrs';
+          for (let n = 0; n <= 10; n++) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = n;
+            if (m.intensity === n) b.classList.add('on');
+            b.addEventListener('click', () => {
+              state.marks[i].intensity = state.marks[i].intensity === n ? null : n; // 再點一次取消
+              scale.querySelectorAll('button').forEach((x, k) => x.classList.toggle('on', state.marks[i].intensity === k));
+              il.querySelector('.bm-int-val').textContent = intensityText(state.marks[i]);
+              emit();
+            });
+            scale.appendChild(b);
+          }
+          body.appendChild(scale);
+          const ih = document.createElement('div');
+          ih.className = 'bm-hint';
+          ih.textContent = t('intensity_hint');
+          body.appendChild(ih);
+          // 感覺描述（可複選）
+          const sl = document.createElement('div');
+          sl.className = 'bm-field-label';
+          sl.textContent = t('sensation');
+          body.appendChild(sl);
+          const chips = document.createElement('div');
+          chips.className = 'bm-sens';
+          const other = document.createElement('input');
+          other.type = 'text';
+          other.className = 'bm-sens-other';
+          other.placeholder = t('sens_other_ph');
+          other.value = m.sensationOther || '';
+          other.style.display = (m.sensations || []).includes('other') ? 'block' : 'none';
+          other.addEventListener('input', () => { state.marks[i].sensationOther = other.value; emit(); });
+          BODY_SENSATIONS.forEach(code => {
+            const lab = document.createElement('label');
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = (m.sensations || []).includes(code);
+            cb.addEventListener('change', () => {
+              const set = new Set(state.marks[i].sensations || []);
+              if (cb.checked) set.add(code); else set.delete(code);
+              state.marks[i].sensations = BODY_SENSATIONS.filter(x => set.has(x));
+              if (code === 'other') other.style.display = cb.checked ? 'block' : 'none';
+              emit();
+            });
+            lab.appendChild(cb);
+            lab.appendChild(document.createTextNode(t('sens_' + code)));
+            chips.appendChild(lab);
+          });
+          body.appendChild(chips);
+          body.appendChild(other);
           const ta = document.createElement('textarea');
           ta.placeholder = t('note_ph');
           ta.value = m.note || '';
           ta.addEventListener('input', () => { state.marks[i].note = ta.value; emit(); });
           body.appendChild(ta);
-        } else if (m.note) {
-          const p = document.createElement('div');
-          p.className = 'list-item-sub';
-          p.textContent = m.note;
-          body.appendChild(p);
+        } else {
+          const info = document.createElement('div');
+          info.className = 'list-item-sub';
+          const sens = sensationText(m);
+          info.textContent = `${t('intensity')}：${intensityText(m)}${sens ? ' · ' + sens : ''}`;
+          body.appendChild(info);
+          if (m.note) {
+            const p = document.createElement('div');
+            p.className = 'list-item-sub';
+            p.textContent = m.note;
+            body.appendChild(p);
+          }
         }
         row.appendChild(num);
         row.appendChild(body);
@@ -248,16 +333,23 @@ const BodyMap = (() => {
       const p = pt.matrixTransform(ctm.inverse());
       const region = findRegion(p.x, p.y);
       if (!region) return; // 點在身體以外的地方不加標記
-      state.marks.push({ region, x: +(p.x / 200).toFixed(4), y: +(p.y / 440).toFixed(4), note: '' });
+      state.marks.push({ region, x: +(p.x / 200).toFixed(4), y: +(p.y / 440).toFixed(4), note: '', intensity: null, sensations: [], sensationOther: '' });
       renderMarks();
       emit();
       if (notesEl) {
-        const last = notesEl.querySelector('.bodymap-note:last-child textarea');
-        if (last) last.focus();
+        const last = notesEl.querySelector('.bodymap-note:last-child');
+        if (last) last.scrollIntoView({ block: 'nearest' });
       }
     });
 
-    function getMarks() { return state.marks.map(m => ({ region: m.region, x: m.x, y: m.y, note: (m.note || '').trim() })); }
+    function getMarks() {
+      return state.marks.map(m => ({
+        region: m.region, x: m.x, y: m.y, note: (m.note || '').trim(),
+        intensity: validIntensity(m.intensity) ? m.intensity : null,           // 0–10；未填＝null
+        sensations: Array.isArray(m.sensations) ? m.sensations.slice() : [],
+        sensationOther: (m.sensations || []).includes('other') ? (m.sensationOther || '').trim() : ''
+      }));
+    }
     function setMarks(marks) { state.marks = Array.isArray(marks) ? marks.map(m => ({ ...m })) : []; renderMarks(); }
     renderMarks();
     return { getMarks, setMarks, rerender: renderMarks };
@@ -271,5 +363,21 @@ const BodyMap = (() => {
     return names.join(lang() === 'en' ? ', ' : '、');
   }
 
-  return { create, regionLabel, summarize, regions: BODY_REGIONS };
+  /** 「右肩 6 分（酸、緊繃）、頸部」：照護端表格、Excel 用 */
+  function summarizeDetail(marks) {
+    if (!marks || !marks.length) return '';
+    return marks.map(m => {
+      const parts = [];
+      if (validIntensity(m.intensity)) parts.push(t('intensity_val', { n: m.intensity }));
+      const sens = sensationText(m);
+      if (sens) parts.push(sens);
+      return regionLabel(m.region) + (parts.length ? `（${parts.join('；')}）` : '');
+    }).join(lang() === 'en' ? '; ' : '、');
+  }
+  function maxIntensity(marks) {
+    const v = (marks || []).map(m => m.intensity).filter(validIntensity);
+    return v.length ? Math.max(...v) : null;
+  }
+
+  return { create, regionLabel, summarize, summarizeDetail, maxIntensity, intensityText, sensationText, regions: BODY_REGIONS };
 })();

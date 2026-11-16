@@ -183,7 +183,7 @@ function renderCaseDashboard() {
   const p = d.profile;
   document.getElementById('case-title-name').textContent = p.username || d.binding.performerName || '--';
   const age = ageFromBirthdate(p.birthdate) ?? p.age;
-  document.getElementById('case-title-sub').textContent = [instrumentLabel(p.instrument), optionLabel(GENDER_KEYS, p.gender), age !== null && age !== undefined ? tApp('age_hint', { age }) : null, optionLabel(IDENTITY_KEYS, p.identity)].filter(x => x && x !== '--').join(' · ');
+  document.getElementById('case-title-sub').textContent = [instrumentLabel(p.instrument), optionLabel(GENDER_KEYS, p.gender), age !== null && age !== undefined ? tApp('age_hint', { age }) : null, occupationText(p)].filter(x => x && x !== '--').join(' · ');
 
   const sw = document.getElementById('case-switcher');
   sw.innerHTML = Prov.bindings.filter(b => b.status === 'active').map(b => `<option value="${b.performerUid}" ${b.performerUid === d.uid ? 'selected' : ''}>${escapeHtml(b.performerName || b.performerUid)}</option>`).join('');
@@ -383,12 +383,29 @@ function renderCaseDetail() {
   if (stdBody) stdBody.innerHTML = stdRecs.length ? stdRecs.map(r => standardRowHtml(r, true)).join('')
     : `<tr><td colspan="7"><div class="empty-state">${tApp('no_records_in_period')}</div></td></tr>`;
 
+  // 疼痛標記（基本資料 baseline、每次評估的練習前／後）
+  const maps = caseInPeriod('bodyMaps');
+  const painRows = [];
+  maps.forEach(mp => (mp.marks || []).forEach(mk => painRows.push({ ms: docTimeMs(mp), ctx: mp.context, mk })));
+  document.getElementById('case-pain-body').innerHTML = painRows.length ? painRows.map(({ ms, ctx, mk }) => `<tr>
+      <td style="white-space:nowrap;">${fmtDateTime(ms)}</td>
+      <td><span class="badge ${ctx === 'post' ? 'badge-warning' : 'badge-muted'}">${tApp('ctx_' + (ctx || 'baseline'))}</span></td>
+      <td>${escapeHtml(BodyMap.regionLabel(mk.region))}</td>
+      <td>${escapeHtml(BodyMap.intensityText(mk))}</td>
+      <td>${escapeHtml(BodyMap.sensationText(mk)) || '--'}</td>
+      <td style="max-width:260px; white-space:pre-wrap;">${escapeHtml(mk.note || '')}</td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state">${tApp('no_records_in_period')}</div></td></tr>`;
+
   const notes = caseInPeriod('notes');
   document.getElementById('case-notes').innerHTML = notes.length ? notes.map(n => noteItemHtml(n, false)).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
   const med = caseInPeriod('medicalLogs');
   document.getElementById('case-medical').innerHTML = med.length ? med.map(m => medicalItemHtml(m, false)).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
   const q = caseInPeriod('questionnaires');
-  document.getElementById('case-questionnaires').innerHTML = q.length ? q.map(x => `
+  document.getElementById('case-questionnaires').innerHTML = q.length ? q.map(x => x.type === 'pain' ? `
+    <div class="list-item"><div class="list-item-main">
+      <div class="list-item-title">${tApp('pain_q_title')}</div>
+      <div class="list-item-sub">${escapeHtml(painQuestionnaireSummary(x))} · ${fmtDate(docTimeMs(x))}${x.answers && x.answers.causeNote ? '\n' + escapeHtml(x.answers.causeNote) : ''}</div>
+    </div></div>` : `
     <div class="list-item"><div class="list-item-main">
       <div class="list-item-title">${x.type === 'ipaq' ? 'IPAQ' : tApp('scale_title')} · ${phaseLabel(x.phase)}</div>
       <div class="list-item-sub">${x.type === 'ipaq' ? `${x.score} MET-min/${tApp('unit_week')} · ${tApp('ipaq_cat_' + (x.result ? x.result.category : 'low'))}` : tApp('score_text', { score: x.score, max: x.maxScore || '--' })} · ${fmtDate(docTimeMs(x))}</div>
@@ -419,10 +436,11 @@ function renderCaseProfile() {
     ${row('label_name', p.username)}
     ${row('label_gender', optionLabel(GENDER_KEYS, p.gender))}
     ${row('label_birthdate', p.birthdate ? `${p.birthdate}（${tApp('age_hint', { age })}）` : (age ?? ''))}
-    ${row('label_identity', optionLabel(IDENTITY_KEYS, p.identity))}
+    ${row('label_occupation', occupationText(p))}
     ${row('label_height', p.height)}
     ${row('label_weight', p.weight)}
     ${row('label_instrument', instrumentLabel(p.instrument))}
+    ${row('label_handedness', handednessText(p.handedness))}
     ${row('label_years', p.yearsOfStudy)}
     ${row('label_days', p.practiceDaysPerWeek)}
     ${row('label_minutes', p.practiceMinutesPerSession)}
@@ -432,7 +450,7 @@ function renderCaseProfile() {
   const base = latestBodyMap('baseline', Prov.data.bodyMaps);
   BodyMap.create(document.getElementById('case-baseline-map'), { marks: base ? base.marks : [], editable: false, gender: p.gender });
   document.getElementById('case-pain-info').innerHTML = `<div class="table-wrap"><table><tbody>
-    ${row('label_msk', p.mskHistory)}${row('label_surgery', p.surgeryHistory)}${row('label_meds', p.currentMedication)}${row('label_allergy', p.allergies)}
+    ${row('label_msk', p.mskHistory)}${row('label_comorbidity', comorbidityText(p))}${row('label_surgery', p.surgeryHistory)}${row('label_meds', p.currentMedication)}${row('label_allergy', p.allergies)}
   </tbody></table></div>`;
 }
 

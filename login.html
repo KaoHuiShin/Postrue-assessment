@@ -160,14 +160,16 @@
               </div>
             </div>
             <div class="form-group">
-              <label><span data-i18n="label_identity">身分</span><span class="req">*</span></label>
-              <select class="form-control" id="p-identity">
+              <label><span data-i18n="label_occupation">職業類別</span><span class="req">*</span></label>
+              <select class="form-control" id="p-occupation" onchange="document.getElementById('p-occupation-other').style.display = this.value === '其他' ? 'block' : 'none'">
                 <option value="" data-i18n="ph_select">請選擇</option>
-                <option value="音樂系學生" data-i18n="id_student">音樂系學生</option>
-                <option value="職業演奏者" data-i18n="id_pro">職業演奏者</option>
-                <option value="業餘演奏者" data-i18n="id_amateur">業餘演奏者</option>
-                <option value="其他" data-i18n="opt_other">其他</option>
+                <option value="職業樂團團員" data-i18n="occ_orchestra">職業樂團團員</option>
+                <option value="音樂系學生" data-i18n="occ_student">音樂系學生</option>
+                <option value="音樂教師" data-i18n="occ_teacher">音樂教師</option>
+                <option value="業餘演奏者" data-i18n="occ_amateur">業餘演奏者</option>
+                <option value="其他" data-i18n="opt_other_fill">其他（請填寫）</option>
               </select>
+              <input type="text" class="form-control" id="p-occupation-other" data-i18n-placeholder="ph_other_fill" placeholder="請填寫" style="display:none; margin-top:0.4rem;">
             </div>
             <div class="form-row">
               <div class="form-group">
@@ -197,19 +199,31 @@
                 <select class="form-control" id="p-instrument">
                   <option value="" data-i18n="ph_select">請選擇</option>
                   <option value="小提琴" data-i18n="opt_violin">小提琴</option>
+                  <option value="中提琴" data-i18n="opt_viola">中提琴</option>
                   <option value="大提琴" data-i18n="opt_cello">大提琴</option>
                 </select>
               </div>
               <div class="form-group">
-                <label><span data-i18n="label_years">學習年資（年）</span><span class="req">*</span></label>
-                <input type="number" class="form-control" id="p-years" min="0" max="90">
+                <label><span data-i18n="label_handedness">慣用手</span><span class="req">*</span></label>
+                <select class="form-control" id="p-handedness">
+                  <option value="" data-i18n="ph_select">請選擇</option>
+                  <option value="right" data-i18n="hand_right">右手</option>
+                  <option value="left" data-i18n="hand_left">左手</option>
+                  <option value="both" data-i18n="hand_both">雙手皆可</option>
+                </select>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
+                <label><span data-i18n="label_years">學習年資（年）</span><span class="req">*</span></label>
+                <input type="number" class="form-control" id="p-years" min="0" max="90">
+              </div>
+              <div class="form-group">
                 <label><span data-i18n="label_days">每週練習天數</span><span class="req">*</span></label>
                 <input type="number" class="form-control" id="p-days" min="0" max="7">
               </div>
+            </div>
+            <div class="form-row">
               <div class="form-group">
                 <label><span data-i18n="label_minutes">每次平均練習時長（分鐘）</span><span class="req">*</span></label>
                 <input type="number" class="form-control" id="p-minutes" min="0" max="900">
@@ -233,6 +247,11 @@
               <label data-i18n="label_msk">骨骼肌肉相關疾病或傷害史</label>
               <textarea class="form-control" id="p-msk"></textarea>
             </div>
+            <div class="form-group">
+              <span class="form-label"><span data-i18n="label_comorbidity">慢性病／其他疾病（可複選）</span> <span class="sample-tag" data-i18n="badge_sample_opts">示意選項</span></span>
+              <div class="check-grid" id="p-comorbidities"></div>
+              <input type="text" class="form-control" id="p-comorbidity-other" data-i18n-placeholder="ph_comorbidity_other" placeholder="其他疾病（請填寫）" style="margin-top:0.4rem;">
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label data-i18n="label_surgery">開刀史</label>
@@ -248,9 +267,6 @@
               <input type="text" class="form-control" id="p-allergy">
             </div>
 
-            <div class="reg-sub" data-i18n="sub_consent">研究同意</div>
-            <label class="check-row"><input type="checkbox" id="p-consent-research"> <span><span data-i18n="consent_research">我已閱讀並同意參與本研究（研究參與同意書）</span><span class="req">*</span></span></label>
-            <label class="check-row"><input type="checkbox" id="p-consent-data"> <span><span data-i18n="consent_data">我同意本系統蒐集與使用我的評估資料於研究用途</span><span class="req">*</span></span></label>
             <div class="form-group">
               <label data-i18n="label_referral">轉介來源</label>
               <select class="form-control" id="p-referral">
@@ -337,7 +353,7 @@
         </div>
 
         <div id="auth-error" class="error-msg" style="display:none;"></div>
-        <p class="version-label">Version 2.7.0</p>
+        <p class="version-label">Version 2.8.0</p>
       </div>
     </div>
   </div>
@@ -387,7 +403,11 @@ const i18n = {
     provider_hint: '系統不會驗證執照真偽；註冊後會產生一組邀請碼，個案可輸入邀請碼或您的 Email 授權您查看資料。',
     ph_select: '請選擇', opt_male: '男', opt_female: '女', opt_other: '其他', opt_na: '不便透露',
     id_student: '音樂系學生', id_pro: '職業演奏者', id_amateur: '業餘演奏者',
-    opt_violin: '小提琴', opt_cello: '大提琴', opt_yes: '是', opt_no: '否',
+    opt_violin: '小提琴', opt_viola: '中提琴', opt_cello: '大提琴',
+    label_occupation: '職業類別', occ_orchestra: '職業樂團團員', occ_student: '音樂系學生', occ_teacher: '音樂教師', occ_amateur: '業餘演奏者',
+    opt_other_fill: '其他（請填寫）', ph_other_fill: '請填寫',
+    label_handedness: '慣用手', hand_right: '右手', hand_left: '左手', hand_both: '雙手皆可',
+    label_comorbidity: '慢性病／其他疾病（可複選）', badge_sample_opts: '示意選項', ph_comorbidity_other: '其他疾病（請填寫）', opt_yes: '是', opt_no: '否',
     placeholder_name: '請輸入姓名或代號', placeholder_pw: '至少 8 個字元', placeholder_confirm_pw: '再次輸入密碼',
     forgot_link: '忘記密碼？', btn_login: '登入', btn_register: '建立帳號', btn_send_reset: '寄送重設連結',
     no_account: '還沒有帳號？', go_register: '立即註冊', have_account: '已有帳號？', go_login: '前往登入',
@@ -443,7 +463,11 @@ const i18n = {
     provider_hint: 'Licences are not verified. After registering you get an invite code; cases can enter the code or your email to authorise you.',
     ph_select: 'Select', opt_male: 'Male', opt_female: 'Female', opt_other: 'Other', opt_na: 'Prefer not to say',
     id_student: 'Music student', id_pro: 'Professional performer', id_amateur: 'Amateur performer',
-    opt_violin: 'Violin', opt_cello: 'Cello', opt_yes: 'Yes', opt_no: 'No',
+    opt_violin: 'Violin', opt_viola: 'Viola', opt_cello: 'Cello',
+    label_occupation: 'Occupation', occ_orchestra: 'Professional orchestra member', occ_student: 'Music student', occ_teacher: 'Music teacher', occ_amateur: 'Amateur player',
+    opt_other_fill: 'Other (please specify)', ph_other_fill: 'Please specify',
+    label_handedness: 'Dominant hand', hand_right: 'Right', hand_left: 'Left', hand_both: 'Both (ambidextrous)',
+    label_comorbidity: 'Chronic or other conditions (tick all that apply)', badge_sample_opts: 'Sample options', ph_comorbidity_other: 'Other condition (please specify)', opt_yes: 'Yes', opt_no: 'No',
     placeholder_name: 'Enter your name or ID', placeholder_pw: 'At least 8 characters', placeholder_confirm_pw: 'Re-enter password',
     forgot_link: 'Forgot password?', btn_login: 'Sign In', btn_register: 'Create Account', btn_send_reset: 'Send Reset Link',
     no_account: "Don't have an account?", go_register: 'Register now', have_account: 'Already have an account?', go_login: 'Sign in',
@@ -485,6 +509,7 @@ function setLang(lang) {
   document.title = t('page_title');
   // 人體圖文字跟著語言重繪（保留已標記內容）
   if (regBodyMap) initRegBodyMap(regBodyMap.getMarks());
+  renderRegComorbidities();
   hideError();
 }
 
@@ -508,6 +533,14 @@ function onRoleChange() {
   document.getElementById('role-label-provider').classList.toggle('checked', prov);
   document.getElementById('form-panel').classList.toggle('wide', perf);
   if (perf && !regBodyMap) initRegBodyMap([]);
+  if (perf) renderRegComorbidities();
+}
+
+function renderRegComorbidities() {
+  const cm = document.getElementById('p-comorbidities');
+  if (!cm) return;
+  const keep = Array.from(document.querySelectorAll('input[name="p-comorb"]:checked')).map(x => x.value);
+  cm.innerHTML = comorbidityChecksHtml('p-comorb', keep, currentLang);
 }
 
 function initRegBodyMap(marks) {
@@ -568,7 +601,9 @@ function collectPerformerProfile(name, email) {
     gender: val('p-gender'),
     birthdate,
     age: ageFromBirthdate(birthdate),
-    identity: val('p-identity'),
+    occupation: val('p-occupation'),
+    occupationOther: val('p-occupation') === '其他' ? val('p-occupation-other') : '',
+    handedness: val('p-handedness'),
     height: num('p-height'),
     weight: num('p-weight'),
     phone: val('p-phone'),
@@ -583,9 +618,8 @@ function collectPerformerProfile(name, email) {
     surgeryHistory: val('p-surgery'),
     currentMedication: val('p-meds'),
     allergies: val('p-allergy'),
-    consentResearch: document.getElementById('p-consent-research').checked,
-    consentDataUse: document.getElementById('p-consent-data').checked,
-    consentAt: Date.now(),
+    comorbidities: Array.from(document.querySelectorAll('input[name="p-comorb"]:checked')).map(x => x.value),
+    comorbidityOther: val('p-comorbidity-other'),
     referralSource: val('p-referral')
   };
 }
@@ -621,11 +655,11 @@ async function handleRegister() {
   let perfProfile = null, provProfile = null;
   if (isPerf) {
     perfProfile = collectPerformerProfile(name, email);
-    const required = ['gender', 'birthdate', 'identity', 'height', 'instrument', 'yearsOfStudy', 'practiceDaysPerWeek', 'practiceMinutesPerSession'];
+    const required = ['gender', 'birthdate', 'occupation', 'handedness', 'height', 'instrument', 'yearsOfStudy', 'practiceDaysPerWeek', 'practiceMinutesPerSession'];
     if (required.some(k => perfProfile[k] === '' || perfProfile[k] === null || Number.isNaN(perfProfile[k]))) {
       showError(t('err_fill_required')); return;
     }
-    if (!perfProfile.consentResearch || !perfProfile.consentDataUse) { showError(t('err_consent')); return; }
+    if (perfProfile.occupation === '其他' && !perfProfile.occupationOther) { showError(t('err_fill_required')); return; }
   }
   if (isProv) {
     provProfile = collectProviderProfile(name, email);

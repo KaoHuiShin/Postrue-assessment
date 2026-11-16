@@ -52,10 +52,15 @@
   </div>
 
   <!-- ── Sidebar ─────────────────────────────────────────────── -->
-  <aside>
+  <!-- 手機：左上角選單鈕＋遮罩 -->
+  <button class="mobile-menu-btn" onclick="toggleSidebar()" data-i18n-title="btn_menu" title="選單"><i data-lucide="menu"></i></button>
+  <div class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
+  <aside id="app-sidebar">
     <div class="brand">
       <div class="brand-icon"><i data-lucide="activity"></i></div>
       <div class="brand-name"><span data-i18n="brand_title_html">演奏者<br>智能照護系統</span></div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" data-i18n-title="btn_toggle_sidebar" title="收合／展開選單"><i data-lucide="panel-left"></i></button>
     </div>
 
     <div class="role-chip" id="role-chip">
@@ -93,7 +98,7 @@
       </div>
       <button class="btn-logout" onclick="handleLogout()"><i data-lucide="log-out"></i><span data-i18n="nav_logout">登出</span></button>
       <p data-i18n="brand_name">演奏者智能照護系統</p>
-      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.7.0</p>
+      <p style="margin-top:0.25rem; font-size:0.7rem; opacity:0.7;">Version 2.8.0</p>
     </div>
   </aside>
 
@@ -125,28 +130,25 @@
         <div class="card stat-card"><div class="stat-num" id="stat-total-count">0</div><div class="stat-label" data-i18n="stat_total">總評估次數</div></div>
         <div class="card stat-card"><div class="stat-num" id="stat-last-score">--</div><div class="stat-label" data-i18n="stat_score">最近評估得分</div></div>
         <div class="card stat-card"><div class="stat-num sm" id="stat-week-practice">0</div><div class="stat-label" data-i18n="stat_week_practice">近 7 天練習（分鐘）</div></div>
-        <div class="card stat-card"><div class="stat-num sm" id="stat-providers">0</div><div class="stat-label" data-i18n="stat_providers">已授權照護者</div></div>
       </div>
 
-      <div class="grid-main-side">
+      <div class="grid-2 dash-top">
         <div class="card">
-          <div class="card-header">
-            <div class="card-title"><i data-lucide="trending-up"></i><span data-i18n="dash_trend">歷史評估趨勢</span></div>
-            <span class="card-sub" data-i18n="dash_trend_sub">近 10 次演奏評估</span>
-          </div>
-          <div class="chart-container-large"><canvas id="dashboardTrendChart"></canvas></div>
-          <div class="empty-state" id="dashboard-trend-empty" style="display:none;"><i data-lucide="line-chart"></i><span data-i18n="dash_trend_empty">尚無評估紀錄可繪製趨勢圖</span></div>
+          <div class="card-header"><div class="card-title"><i data-lucide="bell"></i><span data-i18n="dash_reminders">提醒</span></div></div>
+          <div class="stack" id="dashboard-reminders"></div>
         </div>
-        <div class="stack">
-          <div class="card">
-            <div class="card-header"><div class="card-title"><i data-lucide="stethoscope"></i><span data-i18n="dash_advice">照護建議</span></div></div>
-            <div class="stack" id="dashboard-advice"></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title"><i data-lucide="bell"></i><span data-i18n="dash_reminders">提醒</span></div></div>
-            <div class="stack" id="dashboard-reminders"></div>
-          </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="stethoscope"></i><span data-i18n="dash_advice">照護建議</span></div></div>
+          <div class="stack" id="dashboard-advice"></div>
         </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i data-lucide="trending-up"></i><span data-i18n="dash_trend">歷史評估趨勢</span></div>
+          <span class="card-sub" data-i18n="dash_trend_sub">近 10 次演奏評估</span>
+        </div>
+        <div class="chart-container-large"><canvas id="dashboardTrendChart"></canvas></div>
+        <div class="empty-state" id="dashboard-trend-empty" style="display:none;"><i data-lucide="line-chart"></i><span data-i18n="dash_trend_empty">尚無評估紀錄可繪製趨勢圖</span></div>
       </div>
     </section>
 
@@ -178,14 +180,16 @@
           <div class="form-row-3">
             <div class="form-group"><label><span data-i18n="label_birthdate">出生年月日</span><span class="req">*</span></label><input type="date" id="pf-birthdate" class="form-control" required><div class="muted small" id="pf-age-hint"></div></div>
             <div class="form-group">
-              <label><span data-i18n="label_identity">身分</span><span class="req">*</span></label>
-              <select id="pf-identity" class="form-control" required>
+              <label><span data-i18n="label_occupation">職業類別</span><span class="req">*</span></label>
+              <select id="pf-occupation" class="form-control" required onchange="toggleOtherInput('pf-occupation','pf-occupation-other')">
                 <option value="" data-i18n="ph_select">請選擇</option>
-                <option value="音樂系學生" data-i18n="id_student">音樂系學生</option>
-                <option value="職業演奏者" data-i18n="id_pro">職業演奏者</option>
-                <option value="業餘演奏者" data-i18n="id_amateur">業餘演奏者</option>
-                <option value="其他" data-i18n="opt_other">其他</option>
+                <option value="職業樂團團員" data-i18n="occ_orchestra">職業樂團團員</option>
+                <option value="音樂系學生" data-i18n="occ_student">音樂系學生</option>
+                <option value="音樂教師" data-i18n="occ_teacher">音樂教師</option>
+                <option value="業餘演奏者" data-i18n="occ_amateur">業餘演奏者</option>
+                <option value="其他" data-i18n="opt_other_fill">其他（請填寫）</option>
               </select>
+              <input type="text" id="pf-occupation-other" class="form-control" data-i18n-ph="ph_other_fill" placeholder="請填寫" style="display:none; margin-top:0.4rem;">
             </div>
             <div class="form-group"><label data-i18n="label_phone">聯絡電話</label><input type="tel" id="pf-phone" class="form-control"></div>
           </div>
@@ -202,13 +206,25 @@
               <select id="pf-instrument" class="form-control" required>
                 <option value="" data-i18n="ph_select">請選擇</option>
                 <option value="小提琴" data-i18n="opt_violin">小提琴</option>
+                <option value="中提琴" data-i18n="opt_viola">中提琴</option>
                 <option value="大提琴" data-i18n="opt_cello">大提琴</option>
               </select>
             </div>
-            <div class="form-group"><label><span data-i18n="label_years">學習年資（年）</span><span class="req">*</span></label><input type="number" id="pf-years" class="form-control" min="0" max="90" required></div>
+            <div class="form-group">
+              <label><span data-i18n="label_handedness">慣用手</span><span class="req">*</span></label>
+              <select id="pf-handedness" class="form-control" required>
+                <option value="" data-i18n="ph_select">請選擇</option>
+                <option value="right" data-i18n="hand_right">右手</option>
+                <option value="left" data-i18n="hand_left">左手</option>
+                <option value="both" data-i18n="hand_both">雙手皆可</option>
+              </select>
+            </div>
           </div>
           <div class="form-row">
+            <div class="form-group"><label><span data-i18n="label_years">學習年資（年）</span><span class="req">*</span></label><input type="number" id="pf-years" class="form-control" min="0" max="90" required></div>
             <div class="form-group"><label><span data-i18n="label_days">每週練習天數</span><span class="req">*</span></label><input type="number" id="pf-days" class="form-control" min="0" max="7" required></div>
+          </div>
+          <div class="form-row">
             <div class="form-group"><label><span data-i18n="label_minutes">每次平均練習時長（分鐘）</span><span class="req">*</span></label><input type="number" id="pf-minutes" class="form-control" min="0" max="900" required></div>
           </div>
           <div class="form-group">
@@ -227,6 +243,11 @@
             <div class="muted small" id="profile-bodymap-meta" style="margin-top:0.4rem;"></div>
           </div>
           <div class="form-group"><label data-i18n="label_msk">骨骼肌肉相關疾病或傷害史</label><textarea id="pf-msk" class="form-control"></textarea></div>
+          <div class="form-group">
+            <span class="form-label"><span data-i18n="label_comorbidity">慢性病／其他疾病（可複選）</span> <span class="badge badge-warning" data-i18n="badge_sample_opts">示意選項</span></span>
+            <div class="check-grid" id="pf-comorbidities"></div>
+            <input type="text" id="pf-comorbidity-other" class="form-control" data-i18n-ph="ph_comorbidity_other" placeholder="其他疾病（請填寫）" style="margin-top:0.4rem;">
+          </div>
           <div class="form-row">
             <div class="form-group"><label data-i18n="label_surgery">開刀史</label><input type="text" id="pf-surgery" class="form-control"></div>
             <div class="form-group"><label data-i18n="label_meds">目前用藥</label><input type="text" id="pf-meds" class="form-control"></div>
@@ -245,9 +266,6 @@
             </div>
           </div>
 
-          <div class="form-section-title"><i data-lucide="file-check"></i><span data-i18n="sub_consent">研究同意</span></div>
-          <label class="check-row"><input type="checkbox" id="pf-consent-research"> <span><span data-i18n="consent_research">我已閱讀並同意參與本研究（研究參與同意書）</span><span class="req">*</span></span></label>
-          <label class="check-row"><input type="checkbox" id="pf-consent-data"> <span><span data-i18n="consent_data">我同意本系統蒐集與使用我的評估資料於研究用途</span><span class="req">*</span></span></label>
 
           <div class="form-actions">
             <button type="button" class="btn btn-outline" onclick="fillProfileForm()" data-i18n="btn_reset">還原</button>
@@ -267,6 +285,27 @@
         <div class="user-badge"><div class="user-badge-avatar" id="playing-avatar">?</div><span id="playing-username" data-i18n="guest">訪客</span></div>
       </div>
 
+      <!-- 評估說明頁：開始前先看整個流程 -->
+      <div id="playing-guide" class="card">
+        <div class="card-header"><div class="card-title"><i data-lucide="clipboard-list"></i><span data-i18n="pg_title">開始前：評估流程說明</span></div></div>
+        <p class="muted" data-i18n="pg_intro">這項評估會用攝影機記錄您演奏前、準備時與演奏中的姿勢，大約需要 10–15 分鐘。請先看完以下步驟。</p>
+        <div class="pg-grid">
+          <div>
+            <div class="form-label" data-i18n="pg_steps_title">操作步驟</div>
+            <ol class="pg-steps" id="pg-steps"></ol>
+          </div>
+          <div>
+            <div class="form-label" data-i18n="pg_stages_title">三個階段要做什麼</div>
+            <div class="stack" id="pg-stages" style="gap:0.6rem;"></div>
+          </div>
+        </div>
+        <div class="form-label" style="margin-top:1.25rem;"><span data-i18n="pg_views_title">攝影機擺放角度</span> <span class="badge badge-warning" data-i18n="badge_pending">待定</span></div>
+        <div class="pg-views" id="pg-views"></div>
+        <div class="form-label" style="margin-top:1.25rem;" data-i18n="pg_examples_title">常見的姿勢問題（範例照片）</div>
+        <div class="pg-examples" id="pg-examples"></div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="startPlayingFromGuide()"><i data-lucide="play"></i><span data-i18n="pg_start">我了解了，開始評估</span></button></div>
+      </div>
+
       <div class="grid-main-side">
         <div class="capture-container">
           <div class="card" style="padding: 1rem;">
@@ -278,6 +317,11 @@
               <video id="cva-video" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:none;transform:scaleX(-1);" autoplay playsinline muted></video>
               <canvas id="cva-overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);display:none;pointer-events:none;"></canvas>
 
+              <div class="pa-countdown" id="pa-countdown">
+                <div class="pa-count-num" id="pa-count-num">10</div>
+                <div class="pa-count-text" data-i18n="countdown_text">請放鬆坐好、保持不動</div>
+                <div class="pa-count-sub" id="pa-count-sub"></div>
+              </div>
               <div class="posture-alert" id="posture-alert"><i data-lucide="alert-triangle"></i><span id="posture-alert-text"></span></div>
 
               <div class="video-overlay"><div class="video-overlay-dot" id="video-overlay-dot-el"></div><span id="video-status-text">CAMERA OFF</span></div>
@@ -300,6 +344,7 @@
             <p class="muted small" style="margin-top:0.6rem;" id="practice-rule-text"></p>
           </div>
 
+          <div style="display:flex; justify-content:flex-end;"><button class="btn btn-outline btn-sm" onclick="showPlayingGuide()"><i data-lucide="clipboard-list"></i><span data-i18n="sm_btn_guide">查看說明</span></button></div>
           <div class="capture-steps">
             <!-- 階段卡片由 renderStageCards() 產生 -->
           </div>
@@ -523,6 +568,7 @@
       </div>
       <div class="tabs" id="records-tabs">
         <button class="tab-btn active" data-tab="rec-scale" onclick="switchTab('records-tabs','rec-scale')"><i data-lucide="list-checks"></i><span data-i18n="tab_scale">肩背適能量表</span></button>
+        <button class="tab-btn" data-tab="rec-pain" onclick="switchTab('records-tabs','rec-pain')"><i data-lucide="activity"></i><span data-i18n="tab_pain">疼痛問卷</span></button>
         <button class="tab-btn" data-tab="rec-ipaq" onclick="switchTab('records-tabs','rec-ipaq')"><i data-lucide="footprints"></i><span data-i18n="tab_ipaq">IPAQ 活動量</span></button>
         <button class="tab-btn" data-tab="rec-practice" onclick="switchTab('records-tabs','rec-practice')"><i data-lucide="timer"></i><span data-i18n="tab_practice">練習時間</span></button>
         <button class="tab-btn" data-tab="rec-medical" onclick="switchTab('records-tabs','rec-medical')"><i data-lucide="pill"></i><span data-i18n="tab_medical">就醫及用藥</span></button>
@@ -538,13 +584,14 @@
             <div class="sample-flag" id="scale-sample-flag" data-i18n="scale_sample_flag">目前為示意題目，正式題目待研究者提供後替換（questionnaires.js 中的 SHOULDER_BACK_SCALE）。</div>
             <div class="form-group">
               <label data-i18n="label_phase">施測階段</label>
-              <select id="scale-phase" class="form-control" style="max-width:220px;">
-                <option value="pre" data-i18n="phase_pre">前測</option>
-                <option value="post" data-i18n="phase_post">後測</option>
+              <select id="scale-phase" class="form-control" style="max-width:260px;">
+                <option value="pre">前測</option>
+                <option value="post">後測</option>
               </select>
+              <div class="muted small" id="scale-phase-status" style="margin-top:0.4rem;"></div>
             </div>
             <div id="scale-items"></div>
-            <div class="form-actions"><button class="btn btn-primary" onclick="submitScale()"><i data-lucide="send"></i><span data-i18n="btn_submit">送出</span></button></div>
+            <div class="form-actions"><button class="btn btn-primary" id="scale-submit-btn" onclick="submitScale()"><i data-lucide="send"></i><span data-i18n="btn_submit">送出</span></button></div>
           </div>
           <div class="card">
             <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">填寫紀錄</span></div></div>
@@ -554,6 +601,21 @@
       </div>
 
       <!-- IPAQ -->
+      <div class="tab-panel" id="rec-pain">
+        <div class="grid-main-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="activity"></i><span data-i18n="pain_q_title">肩背疼痛問卷</span></div></div>
+            <div class="sample-flag" data-i18n="pain_q_sample_flag">選項為示意，正式選項與「疼痛對演奏的影響」量表待研究者提供後替換（features.js 中的 PAIN_QUESTIONNAIRE）。</div>
+            <div id="pain-q-items"></div>
+            <div class="form-actions"><button class="btn btn-primary" id="pain-q-submit" onclick="submitPainQuestionnaire()"><i data-lucide="send"></i><span data-i18n="btn_submit">送出</span></button></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="history"></i><span data-i18n="history_list">填寫紀錄</span></div></div>
+            <div id="pain-q-history"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="tab-panel" id="rec-ipaq">
         <div class="grid-main-side">
           <div class="card">
@@ -609,7 +671,12 @@
               <div class="form-group"><label data-i18n="label_department">科別</label><input type="text" id="md-dept" class="form-control" data-i18n-ph="ph_department" placeholder="例如：復健科"></div>
             </div>
             <div class="form-group"><label data-i18n="label_reason">就醫原因</label><input type="text" id="md-reason" class="form-control"></div>
-            <div class="form-group"><label data-i18n="label_medication">用藥</label><textarea id="md-meds" class="form-control" data-i18n-ph="ph_medication" placeholder="藥名、劑量、使用期間"></textarea></div>
+            <div class="form-group">
+              <span class="form-label"><span data-i18n="label_medication_types">使用的藥物（可複選）</span> <span class="badge badge-warning" data-i18n="badge_sample_opts">示意選項</span></span>
+              <div class="check-grid" id="md-med-options"></div>
+              <input type="text" id="md-meds-other" class="form-control" data-i18n-ph="ph_med_other" placeholder="其他藥物（請填寫）" style="margin-top:0.4rem;">
+            </div>
+            <div class="form-group"><label data-i18n="label_medication_detail">劑量、使用期間（選填）</label><textarea id="md-meds" class="form-control" data-i18n-ph="ph_medication" placeholder="例如：一天兩次，吃了一週"></textarea></div>
             <div class="form-actions"><button class="btn btn-primary" onclick="submitMedicalLog()"><i data-lucide="plus"></i><span data-i18n="btn_add">新增</span></button></div>
           </div>
           <div class="card">
@@ -860,6 +927,17 @@
             </table>
           </div>
         </div>
+        <div class="card" style="padding:0; overflow:hidden; margin-bottom:1.5rem;">
+          <div class="card-header" style="padding:1rem 1.25rem 0.75rem; margin:0;"><div class="card-title"><i data-lucide="map-pin"></i><span data-i18n="pain_marks_title">疼痛標記紀錄</span></div><span class="card-sub" data-i18n="pain_marks_sub">人體圖上標記的部位、強度與感覺</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="th_time">評估時間</th><th data-i18n="th_context">時機</th><th data-i18n="th_region">部位</th><th data-i18n="th_intensity">疼痛強度</th><th data-i18n="th_sensation">感覺</th><th data-i18n="th_note">備註</th>
+              </tr></thead>
+              <tbody id="case-pain-body"></tbody>
+            </table>
+          </div>
+        </div>
         <div class="grid-3">
           <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="notebook-pen"></i><span data-i18n="tab_notes">筆記</span></div></div><div id="case-notes"></div></div>
           <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="pill"></i><span data-i18n="tab_medical">就醫及用藥</span></div></div><div id="case-medical"></div></div>
@@ -1071,6 +1149,21 @@
   </div>
 
   <div id="print-area"></div>
+  <!-- 浮動筆記（演奏者端，所有頁面都可用） -->
+  <button class="quick-note-fab" id="quick-note-fab" onclick="toggleQuickNote()" data-i18n-title="qn_title" title="快速筆記"><i data-lucide="notebook-pen"></i></button>
+  <div class="quick-note-panel" id="quick-note-panel" role="dialog" aria-labelledby="qn-heading">
+    <div class="qn-head">
+      <strong id="qn-heading"><i data-lucide="notebook-pen"></i><span data-i18n="qn_title">快速筆記</span></strong>
+      <button class="qn-close" onclick="toggleQuickNote(false)" data-i18n-title="btn_close" title="關閉"><i data-lucide="x"></i></button>
+    </div>
+    <textarea id="qn-content" class="form-control" rows="4" data-i18n-ph="ph_note" placeholder="記錄疼痛、當日狀況或練習心得"></textarea>
+    <p class="muted small" data-i18n="qn_hint">儲存後會出現在「問卷與紀錄 → 筆記」，日期為今天。</p>
+    <div class="qn-actions">
+      <button class="btn btn-outline btn-sm" onclick="openNotesPage()"><i data-lucide="list"></i><span data-i18n="qn_view_all">查看全部筆記</span></button>
+      <button class="btn btn-primary btn-sm" id="qn-save-btn" onclick="saveQuickNote()"><i data-lucide="save"></i><span data-i18n="btn_save">儲存</span></button>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script src="firebase-config.js"></script>

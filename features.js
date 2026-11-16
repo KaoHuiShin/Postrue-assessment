@@ -52,11 +52,136 @@ function scoreIPAQ(a) {
   return { total, vigMET: Math.round(vigMET), modMET: Math.round(modMET), walkMET: Math.round(walkMET), category, sittingMin: a.sitMin || 0 };
 }
 
+// ── 肩背疼痛問卷（v2.8 新增；存在 questionnaires，type: 'pain'） ─────
+// ⚠ 選項為示意；第 4 題「疼痛對演奏的影響程度」將採用現有分級量表，量表未定，先留空位（impactScale: null）
+const PAIN_QUESTIONNAIRE = {
+  id: 'pain',
+  isSample: true,
+  periods: ['year', 'month', 'week'],
+  impactOptions: [
+    { value: 'yes', zh: '有', en: 'Yes' },
+    { value: 'no', zh: '沒有', en: 'No' },
+    { value: 'other', zh: '其他（請填寫）', en: 'Other (please specify)' }
+  ],
+  causeOptions: [
+    { value: 'nonPlaying', zh: '非演奏因素（例如外力撞擊、跌倒、運動受傷）', en: 'Not from playing (e.g. a knock, fall, sports injury)' },
+    { value: 'playing', zh: '演奏或重複使用造成', en: 'From playing or repetitive use' },
+    { value: 'both', zh: '兩者都有', en: 'Both' },
+    { value: 'unsure', zh: '不確定', en: 'Not sure' }
+  ],
+  impactScale: null   // 待研究者提供量表題目與選項
+};
+let painQIntensity = null;
+
+function renderPainQuestionnaireForm() {
+  const el = document.getElementById('pain-q-items');
+  if (!el) return;
+  const L = currentLang === 'en' ? 'en' : 'zh';
+  const Q = PAIN_QUESTIONNAIRE;
+  const keep = {};
+  el.querySelectorAll('input:checked').forEach(i => { (keep[i.name] = keep[i.name] || []).push(i.value); });
+  el.querySelectorAll('input[type=text], textarea').forEach(i => { keep[i.id] = i.value; });
+  const isOn = (name, v) => (keep[name] || []).includes(v);
+  const txt = id => escapeHtml(keep[id] || '');
+  el.innerHTML = `
+    <div class="q-item">
+      <div class="q-text">1. ${tApp('pain_q1')}</div>
+      ${Q.periods.map(p => `
+        <div class="pq-row">
+          <span class="pq-period">${tApp('pain_period_' + p)}</span>
+          <div class="q-scale">${Q.impactOptions.map(o => `<label><input type="radio" name="pq-impact-${p}" value="${o.value}" ${isOn('pq-impact-' + p, o.value) ? 'checked' : ''} onchange="document.getElementById('pq-impact-${p}-other').style.display = this.value === 'other' ? 'block' : 'none'"> ${escapeHtml(o[L])}</label>`).join('')}</div>
+          <input type="text" id="pq-impact-${p}-other" class="form-control" placeholder="${tApp('ph_other_fill')}" value="${txt('pq-impact-' + p + '-other')}" style="display:${isOn('pq-impact-' + p, 'other') ? 'block' : 'none'}; margin-top:0.3rem;">
+        </div>`).join('')}
+    </div>
+    <div class="q-item">
+      <div class="q-text">2. ${tApp('pain_q2')}</div>
+      <div class="q-scale q-scale-col">${Q.causeOptions.map(o => `<label><input type="radio" name="pq-cause" value="${o.value}" ${isOn('pq-cause', o.value) ? 'checked' : ''}> ${escapeHtml(o[L])}</label>`).join('')}</div>
+      <textarea id="pq-cause-note" class="form-control" rows="2" placeholder="${tApp('ph_pain_cause')}" style="margin-top:0.4rem;">${txt('pq-cause-note')}</textarea>
+    </div>
+    <div class="q-item">
+      <div class="q-text">3. ${tApp('pain_q3')}</div>
+      <div class="bm-field-label">${tApp('pain_intensity_label')} <span class="bm-int-val" id="pq-int-val">${painQIntensity === null ? tApp('intensity_unset') : tApp('intensity_val', { n: painQIntensity })}</span></div>
+      <div class="bm-nrs" id="pq-nrs">${Array.from({ length: 11 }, (_, n) => `<button type="button" class="${painQIntensity === n ? 'on' : ''}" onclick="setPainQIntensity(${n})">${n}</button>`).join('')}</div>
+      <div class="bm-hint">${tApp('pain_intensity_hint')}</div>
+      <div class="bm-field-label" style="margin-top:0.6rem;">${tApp('pain_sensation_label')}</div>
+      <div class="bm-sens">${BODY_SENSATIONS.map(c => `<label><input type="checkbox" name="pq-sens" value="${c}" ${isOn('pq-sens', c) ? 'checked' : ''} ${c === 'other' ? `onchange="document.getElementById('pq-sens-other').style.display = this.checked ? 'block' : 'none'"` : ''}>${BODYMAP_I18N[L]['sens_' + c]}</label>`).join('')}</div>
+      <input type="text" id="pq-sens-other" class="bm-sens-other" placeholder="${BODYMAP_I18N[L].sens_other_ph}" value="${txt('pq-sens-other')}" style="display:${isOn('pq-sens', 'other') ? 'block' : 'none'};">
+    </div>
+    <div class="q-item">
+      <div class="q-text">4. ${tApp('pain_q4')}</div>
+      <div class="pg-img-pending" style="aspect-ratio:auto; padding:1rem;">${tApp('pain_q4_pending')}</div>
+    </div>`;
+}
+function setPainQIntensity(n) {
+  painQIntensity = painQIntensity === n ? null : n;
+  document.querySelectorAll('#pq-nrs button').forEach((b, k) => b.classList.toggle('on', painQIntensity === k));
+  document.getElementById('pq-int-val').textContent = painQIntensity === null ? tApp('intensity_unset') : tApp('intensity_val', { n: painQIntensity });
+}
+
+async function submitPainQuestionnaire() {
+  const Q = PAIN_QUESTIONNAIRE;
+  const impact = {};
+  for (const p of Q.periods) {
+    const c = document.querySelector(`input[name="pq-impact-${p}"]:checked`);
+    if (!c) { showToast(tApp('toast_answer_all'), 'warning'); return; }
+    impact[p] = { answer: c.value, other: c.value === 'other' ? document.getElementById(`pq-impact-${p}-other`).value.trim() : '' };
+  }
+  const cause = document.querySelector('input[name="pq-cause"]:checked');
+  const sensations = Array.from(document.querySelectorAll('input[name="pq-sens"]:checked')).map(x => x.value);
+  const answers = {
+    impact,
+    cause: cause ? cause.value : null,
+    causeNote: document.getElementById('pq-cause-note').value.trim(),
+    intensity: painQIntensity,                     // 0–10；未填＝null
+    sensations,
+    sensationOther: sensations.includes('other') ? document.getElementById('pq-sens-other').value.trim() : ''
+  };
+  try {
+    await DataAPI.addSub(App.user.uid, 'questionnaires', {
+      type: 'pain', answers, score: null, impactScale: null, isSample: Q.isSample
+    });
+    await refreshPerformerSub('questionnaires', 'questionnaires');
+    painQIntensity = null;
+    document.getElementById('pain-q-items').innerHTML = '';
+    renderPainQuestionnaireForm();
+    renderPainQuestionnaireHistory();
+    showToast(tApp('toast_added'), 'success');
+  } catch (e) { console.error(e); showToast(tApp('toast_save_fail'), 'danger'); }
+}
+
+/** 疼痛問卷摘要文字（演奏者紀錄、照護端、Excel 共用） */
+function painQuestionnaireSummary(q) {
+  const a = q.answers || {};
+  const L = currentLang === 'en' ? 'en' : 'zh';
+  const opt = (list, v) => { const o = list.find(x => x.value === v); return o ? o[L] : (v || '--'); };
+  const imp = PAIN_QUESTIONNAIRE.periods.map(p => {
+    const x = (a.impact || {})[p];
+    return `${tApp('pain_period_short_' + p)}${x ? (x.answer === 'other' ? (x.other || opt(PAIN_QUESTIONNAIRE.impactOptions, 'other')) : opt(PAIN_QUESTIONNAIRE.impactOptions, x.answer)) : '--'}`;
+  }).join(' / ');
+  const sens = BodyMap.sensationText({ sensations: a.sensations || [], sensationOther: a.sensationOther });
+  return `${tApp('pain_impact_short')}：${imp} · ${tApp('pain_intensity_label')}：${typeof a.intensity === 'number' ? tApp('intensity_val', { n: a.intensity }) : tApp('intensity_unset')}${sens ? ' · ' + sens : ''}${a.cause ? ' · ' + tApp('pain_cause_short') + '：' + opt(PAIN_QUESTIONNAIRE.causeOptions, a.cause) : ''}`;
+}
+function renderPainQuestionnaireHistory() {
+  const list = App.questionnaires.filter(q => q.type === 'pain');
+  document.getElementById('pain-q-history').innerHTML = list.length ? list.map(q => `
+    <div class="list-item">
+      <div class="list-item-main">
+        <div class="list-item-title">${fmtDateTime(docTimeMs(q))} ${q.isSample ? `<span class="badge badge-warning">${tApp('badge_sample_opts')}</span>` : ''}</div>
+        <div class="list-item-sub">${escapeHtml(painQuestionnaireSummary(q))}${q.answers && q.answers.causeNote ? '\n' + escapeHtml(q.answers.causeNote) : ''}</div>
+      </div>
+      <button class="btn btn-danger-outline btn-sm" onclick="deletePerformerItem('questionnaires','questionnaires','${q.firestoreId}', renderPainQuestionnaireHistory)"><i data-lucide="trash-2"></i></button>
+    </div>`).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
+  lucide.createIcons();
+}
+
 // =================================================================
 // 問卷與紀錄頁
 // =================================================================
 function renderRecordsPage() {
   ['pr-date', 'md-date', 'nt-date'].forEach(id => { const el = document.getElementById(id); if (el && !el.value) el.value = todayStr(); });
+  renderMedicationOptions();
+  renderPainQuestionnaireForm();
+  renderPainQuestionnaireHistory();
   renderScaleForm();
   renderIPAQForm();
   renderScaleHistory();
@@ -71,8 +196,31 @@ function onTabSwitched(groupId, tabId) {
   if (groupId === 'case-tabs' && typeof onCaseTabSwitched === 'function') onCaseTabSwitched(tabId);
 }
 
+// 肩背適能量表只施測兩次：前測、後測（v2.8；取代「每週一次」）
+const SCALE_PHASES = ['pre', 'post'];
+function scaleDoneMap() {
+  const m = {};
+  App.questionnaires.filter(q => q.type === 'shoulderBack' && SCALE_PHASES.includes(q.phase))
+    .forEach(q => { if (!m[q.phase] || docTimeMs(q) < docTimeMs(m[q.phase])) m[q.phase] = q; });
+  return m;
+}
+function renderScalePhaseSelect() {
+  const sel = document.getElementById('scale-phase');
+  const done = scaleDoneMap();
+  sel.innerHTML = SCALE_PHASES.map(ph => `<option value="${ph}" ${done[ph] ? 'disabled' : ''}>${phaseLabel(ph)}${done[ph] ? '　' + tApp('scale_phase_done', { date: fmtDate(docTimeMs(done[ph])) }) : ''}</option>`).join('');
+  const next = SCALE_PHASES.find(ph => !done[ph]);
+  if (next) sel.value = next;
+  const allDone = !next;
+  sel.disabled = allDone;
+  document.getElementById('scale-submit-btn').disabled = allDone;
+  document.getElementById('scale-phase-status').textContent = allDone ? tApp('scale_all_done') : tApp('scale_phase_hint');
+  document.getElementById('scale-items').style.display = allDone ? 'none' : '';
+}
+
+function refreshScaleSection() { renderScaleForm(); renderScaleHistory(); }
 function renderScaleForm() {
   const L = currentLang === 'en' ? 'en' : 'zh';
+  renderScalePhaseSelect();
   document.getElementById('scale-sample-flag').style.display = SHOULDER_BACK_SCALE.isSample ? 'block' : 'none';
   const el = document.getElementById('scale-items');
   const prev = {};
@@ -95,13 +243,16 @@ async function submitScale() {
   }
   const score = Object.values(answers).reduce((a, b) => a + b, 0);
   const max = SHOULDER_BACK_SCALE.items.length * Math.max(...SHOULDER_BACK_SCALE.options.map(o => o.value));
+  const phase = document.getElementById('scale-phase').value;
+  if (!SCALE_PHASES.includes(phase) || scaleDoneMap()[phase]) { showToast(tApp('toast_scale_phase_done'), 'warning'); return; }
   try {
     await DataAPI.addSub(App.user.uid, 'questionnaires', {
-      type: 'shoulderBack', phase: document.getElementById('scale-phase').value,
+      type: 'shoulderBack', phase,
       answers, score, maxScore: max, isSample: SHOULDER_BACK_SCALE.isSample
     });
     await refreshPerformerSub('questionnaires', 'questionnaires');
     document.querySelectorAll('#scale-items input').forEach(i => { i.checked = false; });
+    renderScalePhaseSelect();
     renderScaleHistory();
     showToast(tApp('toast_submitted_score', { score, max }), 'success');
   } catch (e) { console.error(e); showToast(tApp('toast_save_fail'), 'danger'); }
@@ -117,7 +268,7 @@ function renderScaleHistory() {
         <div class="list-item-title">${phaseLabel(q.phase)} · ${tApp('score_text', { score: q.score, max: q.maxScore || '--' })} ${q.isSample ? `<span class="badge badge-warning">${tApp('badge_sample')}</span>` : ''}</div>
         <div class="list-item-sub">${fmtDateTime(docTimeMs(q))}</div>
       </div>
-      <button class="btn btn-danger-outline btn-sm" onclick="deletePerformerItem('questionnaires','questionnaires','${q.firestoreId}', renderScaleHistory)"><i data-lucide="trash-2"></i></button>
+      <button class="btn btn-danger-outline btn-sm" onclick="deletePerformerItem('questionnaires','questionnaires','${q.firestoreId}', refreshScaleSection)" title="${tApp('scale_delete_hint')}"><i data-lucide="trash-2"></i></button>
     </div>`).join('') : `<p class="empty-state">${tApp('empty_list')}</p>`;
   lucide.createIcons();
 }
@@ -224,16 +375,40 @@ function renderPracticeChart() {
 }
 
 // ── 就醫及用藥 ───────────────────────────────────────────────────
+// 常用藥物類別：【示意選項】正式清單待研究者提供後替換
+const MEDICATION_OPTIONS = [
+  { value: 'analgesic',        zh: '一般止痛藥（如乙醯胺酚）',       en: 'Pain reliever (e.g. paracetamol)' },
+  { value: 'nsaid',            zh: '消炎止痛藥（如布洛芬）',         en: 'Anti-inflammatory pain reliever (e.g. ibuprofen)' },
+  { value: 'muscle_relaxant',  zh: '肌肉鬆弛劑',                     en: 'Muscle relaxant' },
+  { value: 'topical',          zh: '外用藥膏／貼布',                 en: 'Cream / patch' },
+  { value: 'injection',        zh: '局部注射（如類固醇）',           en: 'Local injection (e.g. steroid)' }
+];
+function medicationLabel(v) { const o = MEDICATION_OPTIONS.find(x => x.value === v); return o ? (currentLang === 'en' ? o.en : o.zh) : v; }
+function medicationListText(m) {
+  const arr = (m.medications || []).map(medicationLabel);
+  if (m.medicationOther) arr.push(m.medicationOther);
+  return arr.join(currentLang === 'en' ? ', ' : '、');
+}
+function renderMedicationOptions() {
+  const el = document.getElementById('md-med-options');
+  if (!el) return;
+  const keep = new Set(Array.from(el.querySelectorAll('input:checked')).map(x => x.value));
+  el.innerHTML = MEDICATION_OPTIONS.map(o => `<label class="check-row"><input type="checkbox" name="md-med" value="${o.value}" ${keep.has(o.value) ? 'checked' : ''}> <span>${currentLang === 'en' ? o.en : o.zh}</span></label>`).join('');
+}
+
 async function submitMedicalLog() {
   const date = document.getElementById('md-date').value;
   const department = document.getElementById('md-dept').value.trim();
   const reason = document.getElementById('md-reason').value.trim();
   const medication = document.getElementById('md-meds').value.trim();
-  if (!date || (!department && !reason && !medication)) { showToast(tApp('toast_fill_required'), 'warning'); return; }
+  const medications = Array.from(document.querySelectorAll('input[name="md-med"]:checked')).map(x => x.value);
+  const medicationOther = document.getElementById('md-meds-other').value.trim();
+  if (!date || (!department && !reason && !medication && !medications.length && !medicationOther)) { showToast(tApp('toast_fill_required'), 'warning'); return; }
   try {
-    await DataAPI.addSub(App.user.uid, 'medicalLogs', { date, department, reason, medication, createdAtMs: dateInputToMs(date) + 12 * 3600000, dateKey: date });
+    await DataAPI.addSub(App.user.uid, 'medicalLogs', { date, department, reason, medications, medicationOther, medication, createdAtMs: dateInputToMs(date) + 12 * 3600000, dateKey: date });
     await refreshPerformerSub('medicalLogs', 'medicalLogs');
-    ['md-dept', 'md-reason', 'md-meds'].forEach(id => { document.getElementById(id).value = ''; });
+    ['md-dept', 'md-reason', 'md-meds', 'md-meds-other'].forEach(id => { document.getElementById(id).value = ''; });
+    document.querySelectorAll('input[name="md-med"]').forEach(x => { x.checked = false; });
     renderMedicalHistory();
     showToast(tApp('toast_added'), 'success');
   } catch (e) { console.error(e); showToast(tApp('toast_save_fail'), 'danger'); }
@@ -243,7 +418,7 @@ function medicalItemHtml(m, deletable) {
   return `<div class="list-item">
     <div class="list-item-main">
       <div class="list-item-title">${escapeHtml(m.date || '')} · ${escapeHtml(m.department || '--')}</div>
-      <div class="list-item-sub">${m.reason ? tApp('label_reason') + '：' + escapeHtml(m.reason) + '\n' : ''}${m.medication ? tApp('label_medication') + '：' + escapeHtml(m.medication) : ''}</div>
+      <div class="list-item-sub">${m.reason ? tApp('label_reason') + '：' + escapeHtml(m.reason) + '\n' : ''}${medicationListText(m) ? tApp('label_medication') + '：' + escapeHtml(medicationListText(m)) + '\n' : ''}${m.medication ? tApp('label_medication_detail_short') + '：' + escapeHtml(m.medication) : ''}</div>
     </div>
     ${deletable ? `<button class="btn btn-danger-outline btn-sm" onclick="deletePerformerItem('medicalLogs','medicalLogs','${m.firestoreId}', renderMedicalHistory)"><i data-lucide="trash-2"></i></button>` : ''}
   </div>`;
@@ -268,6 +443,36 @@ async function submitNote() {
     showToast(tApp('toast_added'), 'success');
   } catch (e) { console.error(e); showToast(tApp('toast_save_fail'), 'danger'); }
 }
+// ── 浮動筆記（常駐小視窗，存入同一個 notes 子集合） ────────────────
+function toggleQuickNote(force) {
+  const panel = document.getElementById('quick-note-panel');
+  const open = force === undefined ? !panel.classList.contains('show') : force;
+  panel.classList.toggle('show', open);
+  if (open) setTimeout(() => document.getElementById('qn-content').focus(), 50);
+}
+async function saveQuickNote() {
+  const box = document.getElementById('qn-content');
+  const content = box.value.trim();
+  if (!content) { showToast(tApp('toast_fill_required'), 'warning'); return; }
+  const btn = document.getElementById('qn-save-btn');
+  btn.disabled = true;
+  try {
+    const date = todayStr();
+    await DataAPI.addSub(App.user.uid, 'notes', { date, content, source: 'quick', createdAtMs: Date.now(), dateKey: date });
+    await refreshPerformerSub('notes', 'notes');
+    box.value = '';
+    if (document.getElementById('notes-history')) renderNotesHistory();
+    showToast(tApp('qn_saved'), 'success');
+    toggleQuickNote(false);
+  } catch (e) { console.error(e); showToast(tApp('toast_save_fail'), 'danger'); }
+  finally { btn.disabled = false; }
+}
+function openNotesPage() {
+  toggleQuickNote(false);
+  switchSection('records');
+  switchTab('records-tabs', 'rec-notes');
+}
+
 function noteItemHtml(n, deletable) {
   return `<div class="list-item">
     <div class="list-item-main"><div class="list-item-title">${escapeHtml(n.date || fmtDate(docTimeMs(n)))}</div><div class="list-item-sub">${escapeHtml(n.content || '')}</div></div>
@@ -319,8 +524,12 @@ function generateReminders() {
   if (usual > 0 && weekSec > usual * 1.3) {
     out.push({ level: 'warning', title: tApp('rem_practice_title'), text: tApp('rem_practice_text', { min: fmtMinutes(weekSec) }) });
   }
-  if (!App.questionnaires.some(q => q.type === 'shoulderBack' && q.phase === 'pre')) {
+  const scaleDone = scaleDoneMap();
+  if (!scaleDone.pre) {
     out.push({ level: '', title: tApp('rem_scale_title'), text: tApp('rem_scale_text') });
+  } else if (!scaleDone.post) {
+    // 後測時間點尚未訂定：只提醒、不帶日期
+    out.push({ level: '', title: tApp('rem_scale_post_title'), text: tApp('rem_scale_post_text') });
   }
   if (!App.questionnaires.some(q => q.type === 'ipaq')) {
     out.push({ level: '', title: tApp('rem_ipaq_title'), text: tApp('rem_ipaq_text') });
